@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.env.local
+
+# Temp/test files
+*.json.bak
+article_*.json
+article_*.html
+kw_*.json
+gpt_match.json
+SALES_PAGE_BRIEF.md
+TODO_FUNCIONAL.md
+.obsidian/
+test_*.mjs
+plan_*.json
