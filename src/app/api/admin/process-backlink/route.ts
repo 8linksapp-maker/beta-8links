@@ -184,7 +184,7 @@ JSON: {"keyword": "a keyword escolhida", "reason": "por que essa keyword permite
     }
 
     // Published URL: the Astro site will serve this
-    const publishedUrl = `https://${networkSite.domain}/blog/${slug}`;
+    const publishedUrl = `https://${networkSite.domain}/${slug}`;
 
     // Update backlink in 8links DB
     await supabase.from("backlinks").update({

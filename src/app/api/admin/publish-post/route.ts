@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   );
 
   await appDb.from("backlinks").update({
-    published_url: `https://${domain}/blog/${slug}`,
+    published_url: `https://${domain}/${slug}`,
     article_content: content,
   }).eq("id", backlinkId);
 
