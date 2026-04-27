@@ -284,8 +284,15 @@ function OnboardingContent() {
         try { await supabase.from("competitors").insert(competitors.map(c => ({ client_site_id: siteId, domain: c.domain, da: 0, detected_automatically: true }))); } catch {}
       }
 
-      await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
+      const { error: updateError } = await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
+      if (updateError) {
+        console.error("[onboarding] Error updating profile:", updateError);
+        toast.error("Erro ao salvar: " + updateError.message);
+        setSaving(false);
+        return;
+      }
       toast.success("Site configurado!");
+      router.refresh();
       router.push("/integrations/setup");
     } catch { toast.error("Erro."); setSaving(false); }
   };
