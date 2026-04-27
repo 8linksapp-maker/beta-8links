@@ -6,31 +6,18 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/dashboard";
 
-  // Check for recovery type from Supabase
-  // Supabase sends: ?code=xxx&type=recovery
-  const type = searchParams.get("type");
-
-  console.log("[Auth Callback] Params:", { code: code?.slice(0, 10) + "...", type, url: request.url });
-
   if (code) {
     const supabase = await createClient();
-    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      console.log("[Auth Callback] Session exchanged successfully, type:", type);
+      // After exchanging code, check if user has a session and where they should go
+      const { data: { user } } = await supabase.auth.getUser();
 
-      // Check if this is a password recovery flow
-      // The type param is sent by Supabase for password recovery
-      if (type === "recovery") {
-        console.log("[Auth Callback] Recovery flow detected, redirecting to /reset-password");
-        // For password recovery, redirect to reset-password page
-        // The session is now established and the user can call updateUser
-        return NextResponse.redirect(`${origin}/reset-password`);
-      }
-
-      // Normal auth flow - redirect to dashboard or next path
-      console.log("[Auth Callback] Normal auth flow, redirecting to:", next);
-      return NextResponse.redirect(`${origin}${next}`);
+      // If user just recovered password, they have a session but no metadata indicating recovery completion
+      // We'll redirect to reset-password to let them set a new password
+      // The reset-password page will verify if they have a valid session
+      return NextResponse.redirect(`${origin}/reset-password`);
     }
 
     // If there was an error exchanging the code, redirect to login with error
@@ -39,6 +26,5 @@ export async function GET(request: Request) {
   }
 
   // No code provided - redirect to login
-  console.error("[Auth Callback] No code provided");
   return NextResponse.redirect(`${origin}/login?error=no_code`);
 }
