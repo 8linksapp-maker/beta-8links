@@ -138,7 +138,7 @@ function SelectSiteContent() {
       const supabase = createClient();
       const { data } = await supabase
         .from("network_sites")
-        .select("id, domain, niche, da, site_context, categories, vercel_url")
+        .select("id, domain, niche, da, pa, spam_score, referring_domains, external_backlinks, site_context, categories, vercel_url")
         .eq("status", "active")
         .order("da", { ascending: false });
 
@@ -161,8 +161,9 @@ function SelectSiteContent() {
     return {
       ...s,
       topics: ctx.categories ?? s.categories ?? [],
-      backlinks: ctx.totalBacklinks ?? 0,
-      articles: ctx.articleCount ?? 0,
+      backlinks: s.external_backlinks ?? ctx.totalBacklinks ?? 0,
+      referringDomains: s.referring_domains ?? 0,
+      spamScore: s.spam_score ?? 0,
       match: matchResult.score,
       matchReason: matchResult.reason,
       matchType: matchResult.type,
@@ -324,14 +325,22 @@ function SelectSiteContent() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-4 gap-1.5">
                 <div className="text-center p-1.5 rounded-lg bg-muted/30">
-                  <p className="text-base font-bold font-mono">{site.da}</p>
-                  <p className="text-[8px] text-muted-foreground uppercase">DA</p>
+                  <p className="text-sm font-bold font-mono">{site.da}</p>
+                  <p className="text-[7px] text-muted-foreground uppercase">DA</p>
                 </div>
                 <div className="text-center p-1.5 rounded-lg bg-muted/30">
-                  <p className="text-base font-bold font-mono">{site.backlinks > 1000 ? (site.backlinks / 1000).toFixed(1) + "k" : site.backlinks}</p>
-                  <p className="text-[8px] text-muted-foreground uppercase">Backlinks</p>
+                  <p className="text-sm font-bold font-mono">{site.referringDomains > 999 ? (site.referringDomains / 1000).toFixed(1) + "k" : site.referringDomains}</p>
+                  <p className="text-[7px] text-muted-foreground uppercase">RDs</p>
+                </div>
+                <div className="text-center p-1.5 rounded-lg bg-muted/30">
+                  <p className="text-sm font-bold font-mono">{site.backlinks > 999 ? (site.backlinks / 1000).toFixed(1) + "k" : site.backlinks}</p>
+                  <p className="text-[7px] text-muted-foreground uppercase">Links</p>
+                </div>
+                <div className={`text-center p-1.5 rounded-lg ${site.spamScore <= 10 ? "bg-success/10" : site.spamScore <= 25 ? "bg-warning/10" : "bg-destructive/10"}`}>
+                  <p className={`text-sm font-bold font-mono ${site.spamScore <= 10 ? "text-success" : site.spamScore <= 25 ? "text-warning" : "text-destructive"}`}>{site.spamScore}%</p>
+                  <p className="text-[7px] text-muted-foreground uppercase">Spam</p>
                 </div>
               </div>
 
