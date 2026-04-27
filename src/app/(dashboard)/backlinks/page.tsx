@@ -262,40 +262,40 @@ export default function BacklinksPage() {
                           )}
                         </td>
                         <td className="px-3 py-2.5 text-center">
-                          {bl.status === "published" && bl.article_content && (
-                            <div className="flex items-center gap-1.5">
-                              <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1"
-                                onClick={() => router.push(`/backlinks/${bl.id}/review`)}>
-                                {bl.published_url ? "Revisar" : "Revisar e publicar"}
+                          <div className="flex items-center gap-1.5">
+                            {bl.status === "published" && bl.article_content && (
+                              <>
+                                <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1"
+                                  onClick={() => router.push(`/backlinks/${bl.id}/review`)}>
+                                  {bl.published_url ? "Revisar" : "Revisar e publicar"}
+                                </Button>
+                                {bl.published_url && (
+                                  <a href={bl.published_url} target="_blank" rel="noopener noreferrer">
+                                    <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 text-success">
+                                      <ExternalLink className="w-2.5 h-2.5" /> Ver
+                                    </Button>
+                                  </a>
+                                )}
+                              </>
+                            )}
+                            {bl.status === "error" && (
+                              <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 text-primary" onClick={async () => {
+                                const supabase = createClient();
+                                await supabase.from("backlinks").update({ status: "queued", error_message: null }).eq("id", bl.id);
+                                toast("Tentando novamente...");
+                                try {
+                                  await fetch("/api/admin/process-backlink", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ backlinkId: bl.id }) });
+                                } catch {}
+                              }}>
+                                Tentar novamente
                               </Button>
-                              {bl.published_url && (
-                                <a href={bl.published_url} target="_blank" rel="noopener noreferrer">
-                                  <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 text-success">
-                                    <ExternalLink className="w-2.5 h-2.5" /> Ver
-                                  </Button>
-                                </a>
-                              )}
-                            </div>
-                          )}
-                          {bl.status === "error" && (
-                            <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 text-primary" onClick={async () => {
-                              const supabase = createClient();
-                              await supabase.from("backlinks").update({ status: "queued", error_message: null }).eq("id", bl.id);
-                              toast("Tentando novamente...");
-                              try {
-                                await fetch("/api/admin/process-backlink", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ backlinkId: bl.id }) });
-                              } catch {}
-                            }}>
-                              Tentar novamente
-                            </Button>
-                          )}
-                          <button
-                            onClick={() => setDeleteConfirm(bl)}
-                            className="text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer p-1 ml-1"
-                            title="Excluir backlink"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                            )}
+                            <button onClick={() => setDeleteConfirm(bl)}
+                              className="text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer p-1"
+                              title="Excluir">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
