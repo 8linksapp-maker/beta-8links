@@ -1,22 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
 import { useSite } from "@/lib/hooks/use-site";
 import {
-  FileText, Search, ExternalLink,
-  Eye, Edit3, Trash2, TrendingUp, CheckCircle2, Clock,
-  Sparkles, ArrowRight, Globe,
+  FileText, Search, ExternalLink, Trash2, Clock, Sparkles,
+  Plus, Eye, PenLine, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { StatusTag } from "@/components/ui/status-tag";
-import { NumberTicker } from "@/components/ui/number-ticker";
-import { Progress } from "@/components/ui/progress";
+import { MetricCard } from "@/components/ui/metric-card";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
   DialogDescription, DialogFooter,
@@ -24,230 +22,217 @@ import {
 import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/empty-state";
 
-const scoreBg = (s: number) => s >= 80 ? "bg-success-light ring-success/20" : s >= 60 ? "bg-warning-light ring-warning/20" : s > 0 ? "bg-primary-light ring-primary/20" : "bg-muted ring-border";
-const scoreColor = (s: number) => s >= 80 ? "text-success" : s >= 60 ? "text-warning" : s > 0 ? "text-primary" : "text-muted-foreground";
-
 export default function ArticlesPage() {
+  const router = useRouter();
   const { activeSiteId, loading: siteLoading } = useSite();
   const [filter, setFilter] = useState("all");
-  const [dbArticles, setDbArticles] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [newArticleKeyword, setNewArticleKeyword] = useState("");
-  const [deleteArticleId, setDeleteArticleId] = useState<string | null>(null);
+  const [newKeyword, setNewKeyword] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (siteLoading || !activeSiteId) return;
+    if (siteLoading || !activeSiteId) { setLoaded(true); return; }
 
     async function load() {
       const supabase = createClient();
-      const { data } = await supabase.from("articles").select("*").eq("client_site_id", activeSiteId).order("created_at", { ascending: false });
-      if (data && data.length > 0) {
-        setDbArticles(data.map(a => ({
-          id: a.id, title: a.title ?? "Sem título", keyword: a.keyword,
-          wordCount: a.word_count, contentScore: a.content_score,
-          status: a.status === "published" ? "published" : "draft",
-          wpUrl: a.published_url, backlinks: 0, position: null, traffic: 0,
-          publishedAt: a.published_at ? new Date(a.published_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : null,
-        })));
-      }
+      const { data } = await supabase
+        .from("articles")
+        .select("*")
+        .eq("client_site_id", activeSiteId)
+        .order("created_at", { ascending: false });
+
+      setArticles((data ?? []).map(a => ({
+        id: a.id,
+        title: a.title ?? "Sem título",
+        keyword: a.keyword,
+        wordCount: a.word_count ?? 0,
+        status: a.status ?? "draft",
+        publishedUrl: a.published_url,
+        createdAt: a.created_at,
+      })));
+      setLoaded(true);
     }
     load();
   }, [activeSiteId, siteLoading]);
 
-  async function handleCreateArticle() {
-    if (!newArticleKeyword.trim()) return;
-    if (!activeSiteId) { toast.error("Nenhum site selecionado"); return; }
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { toast.error("Usuário não autenticado"); return; }
-
-    const { data, error } = await supabase.from("articles").insert({
-      user_id: user.id,
-      client_site_id: activeSiteId,
-      keyword: newArticleKeyword.trim(),
-      status: "draft",
-      word_count: 0,
-      content_score: 0,
-      credits_used: 10,
-    }).select().single();
-
-    if (error) { toast.error("Erro ao criar artigo"); return; }
-
-    setDbArticles((prev) => [
-      {
-        id: data.id, title: data.title ?? "Sem título", keyword: data.keyword,
-        wordCount: 0, contentScore: 0, status: "draft",
-        wpUrl: null, backlinks: 0, position: null, traffic: 0, publishedAt: null,
-      },
-      ...prev,
-    ]);
-    toast.success("Artigo criado com sucesso!");
-    setNewArticleKeyword("");
+  const handleCreate = () => {
+    if (!newKeyword.trim()) return;
     setCreateOpen(false);
-  }
+    router.push(`/articles/write?keyword=${encodeURIComponent(newKeyword.trim())}`);
+  };
 
-  async function handleDeleteArticle() {
-    if (!deleteArticleId) return;
+  const handleDelete = async () => {
+    if (!deleteId) return;
     const supabase = createClient();
-    const { error } = await supabase.from("articles").delete().eq("id", deleteArticleId);
-    if (error) { toast.error("Erro ao deletar artigo"); return; }
+    await supabase.from("articles").delete().eq("id", deleteId);
+    setArticles(prev => prev.filter(a => a.id !== deleteId));
+    setDeleteId(null);
+    toast.success("Artigo removido");
+  };
 
-    setDbArticles((prev) => prev.filter((a) => a.id !== deleteArticleId));
-    toast.success("Artigo removido com sucesso!");
-    setDeleteArticleId(null);
-  }
+  // Stats
+  const total = articles.length;
+  const drafts = articles.filter(a => a.status === "draft").length;
+  const published = articles.filter(a => a.status === "published").length;
+  const totalWords = articles.reduce((s, a) => s + (a.wordCount ?? 0), 0);
 
-  const articles = dbArticles;
-  const filtered = filter === "all" ? articles : articles.filter((a: any) => filter === "published" ? a.status === "published" : a.status === "draft");
+  // Filter
+  const filtered = articles
+    .filter(a => filter === "all" || a.status === filter)
+    .filter(a => !search || a.title.toLowerCase().includes(search.toLowerCase()) || a.keyword?.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="page-header">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="page-title">Artigos IA</h1>
-          <p className="page-description">Crie conteúdo otimizado com inteligência artificial</p>
+          <h1 className="text-2xl font-bold font-[family-name:var(--font-display)] tracking-tight">Artigos IA</h1>
+          <p className="text-sm text-muted-foreground mt-1">Crie conteúdo otimizado para o seu site</p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}><Sparkles className="w-4 h-4" /> Criar Artigo</Button>
+        <Button className="gap-2" onClick={() => setCreateOpen(true)}>
+          <Plus className="w-4 h-4" /> Criar Artigo
+        </Button>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: "Total", value: 4, icon: FileText },
-          { label: "Publicados", value: 2, icon: CheckCircle2 },
-          { label: "Score Médio", value: 78, icon: TrendingUp, suffix: "/100" },
-          { label: "Tráfego", value: 520, icon: Eye, suffix: " vis" },
-        ].map((s, i) => (
-          <Card key={i} className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono">{s.label}</span>
-              <s.icon className="w-4 h-4 text-primary" />
-            </div>
-            <p className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight">
-              <NumberTicker value={s.value} />{s.suffix && <span className="text-sm text-muted-foreground">{s.suffix}</span>}
-            </p>
-          </Card>
-        ))}
+      {/* KPIs */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard label="Total" value={total} icon={FileText} />
+        <MetricCard label="Rascunhos" value={drafts} icon={Clock} />
+        <MetricCard label="Publicados" value={published} icon={CheckCircle2} />
+        <MetricCard label="Palavras escritas" value={totalWords} icon={PenLine} />
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex items-center justify-between">
-        <div className="flex gap-2">
-          {[{ id: "all", label: "Todos" }, { id: "published", label: "Publicados" }, { id: "draft", label: "Rascunhos" }].map((f) => (
-            <button key={f.id} onClick={() => setFilter(f.id)} className={`px-4 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-all ${filter === f.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
+      {/* Filters */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex gap-1 p-1 bg-muted/50 rounded-lg">
+          {[
+            { id: "all", label: "Todos" },
+            { id: "draft", label: "Rascunhos" },
+            { id: "published", label: "Publicados" },
+          ].map(f => (
+            <button key={f.id} onClick={() => setFilter(f.id)}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${filter === f.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
               {f.label}
             </button>
           ))}
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Buscar..." className="pl-9 w-56 h-8 text-xs" />
+        <div className="relative max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input placeholder="Buscar artigo..." className="pl-9 h-8 text-xs" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </motion.div>
 
-      {articles.length === 0 ? (
-        <EmptyState
-          icon={FileText}
-          title="Nenhum artigo"
-          description="Crie seu primeiro artigo com IA"
-          action={{ label: "Criar Artigo", onClick: () => setCreateOpen(true) }}
-        />
+      {/* Articles list */}
+      {!loaded ? (
+        <div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+      ) : articles.length === 0 ? (
+        <EmptyState icon={FileText} title="Nenhum artigo"
+          description="Crie seu primeiro artigo com IA — basta digitar uma keyword"
+          action={{ label: "Criar Artigo", onClick: () => setCreateOpen(true) }} />
       ) : (
-      <div className="space-y-4">
-        {filtered.map((article, i) => (
-          <motion.div key={article.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 + i * 0.05 }}>
-            <Card className="card-interactive overflow-hidden">
-              <CardContent className="p-5">
-                <div className="flex items-start gap-5">
-                  <div className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center ring-1 shrink-0 ${scoreBg(article.contentScore)}`}>
-                    {article.contentScore > 0 ? (
-                      <><span className={`text-lg font-black font-[family-name:var(--font-display)] ${scoreColor(article.contentScore)}`}>{article.contentScore}</span><span className="text-[8px] text-muted-foreground font-mono uppercase">Score</span></>
-                    ) : (
-                      <><Clock className="w-5 h-5 text-muted-foreground" /><span className="text-[8px] text-muted-foreground font-mono">Draft</span></>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-bold truncate">{article.title}</h3>
-                        <div className="flex items-center gap-3 mt-1">
-                          <Badge variant="outline" className="text-[10px]">{article.keyword}</Badge>
-                          {article.wordCount > 0 && <span className="text-xs font-mono text-muted-foreground">{article.wordCount.toLocaleString()} palavras</span>}
-                          <StatusTag status={article.status === "published" ? "completed" : "pending"} label={article.status === "published" ? "Publicado" : "Rascunho"} />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-7 w-7"><Eye className="w-3.5 h-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7"><Edit3 className="w-3.5 h-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteArticleId(article.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+        <div className="space-y-2">
+          {filtered.map((article, i) => (
+            <motion.div key={article.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 + i * 0.03 }}>
+              <Card className="hover:border-border-strong transition-colors">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    {/* Status indicator */}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                      article.status === "published" ? "bg-success/10" : "bg-muted/50"
+                    }`}>
+                      {article.status === "published" ? (
+                        <CheckCircle2 className="w-5 h-5 text-success" />
+                      ) : article.wordCount > 0 ? (
+                        <FileText className="w-5 h-5 text-primary" />
+                      ) : (
+                        <Clock className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold truncate">{article.title}</h3>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <Badge variant="outline" className="text-[10px]">{article.keyword}</Badge>
+                        {article.wordCount > 0 && (
+                          <span className="text-[10px] font-mono text-muted-foreground">{article.wordCount.toLocaleString()} palavras</span>
+                        )}
+                        <span className={`text-[10px] font-semibold ${article.status === "published" ? "text-success" : "text-muted-foreground"}`}>
+                          {article.status === "published" ? "Publicado" : article.wordCount > 0 ? "Rascunho" : "Pendente"}
+                        </span>
+                        {article.publishedUrl && (
+                          <a href={article.publishedUrl} target="_blank" rel="noopener noreferrer"
+                            className="text-[9px] font-mono text-primary hover:underline flex items-center gap-0.5">
+                            <ExternalLink className="w-2 h-2" /> Ver
+                          </a>
+                        )}
                       </div>
                     </div>
-                    {article.status === "published" && (
-                      <div className="flex items-center gap-6 mt-3 pt-3 border-t border-border">
-                        <div className="flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-muted-foreground" /><span className="text-xs text-muted-foreground">Posição:</span><span className={`text-xs font-bold font-mono ${article.position && article.position <= 10 ? 'text-success' : ''}`}>#{article.position}</span></div>
-                        <div className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-muted-foreground" /><span className="text-xs text-muted-foreground">Tráfego:</span><span className="text-xs font-bold font-mono">{article.traffic}</span></div>
-                        <div className="flex items-center gap-1.5"><span className="text-xs text-muted-foreground">Backlinks:</span><span className="text-xs font-bold font-mono text-primary">{article.backlinks}</span></div>
-                        <div className="flex items-center gap-1.5 ml-auto"><ExternalLink className="w-3 h-3 text-muted-foreground" /><span className="text-xs font-mono text-muted-foreground truncate max-w-36">{article.wpUrl}</span></div>
-                      </div>
-                    )}
-                    {article.status === "draft" && article.wordCount === 0 && (
-                      <div className="mt-3 pt-3 border-t border-border">
-                        <Button size="sm" variant="outline"><Sparkles className="w-3.5 h-3.5 text-primary" /> Gerar com IA <ArrowRight className="w-3.5 h-3.5" /></Button>
-                      </div>
-                    )}
-                    {article.status === "draft" && article.wordCount > 0 && (
-                      <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                        <div className="flex items-center gap-3"><span className="text-xs text-muted-foreground">Content Score:</span><div className="w-24"><Progress value={article.contentScore} variant={article.contentScore >= 80 ? "success" : "warning"} /></div><span className="text-xs font-mono font-semibold">{article.contentScore}/100</span></div>
-                        <Button size="sm">Publicar <ArrowRight className="w-3.5 h-3.5" /></Button>
-                      </div>
-                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {article.wordCount === 0 ? (
+                        <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1"
+                          onClick={() => router.push(`/articles/write?keyword=${encodeURIComponent(article.keyword)}`)}>
+                          <Sparkles className="w-3 h-3" /> Gerar com IA
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1"
+                          onClick={() => router.push(`/articles/${article.id}/edit`)}>
+                          <Eye className="w-3 h-3" /> {article.status === "draft" ? "Editar" : "Ver"}
+                        </Button>
+                      )}
+                      <button onClick={() => setDeleteId(article.id)}
+                        className="text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer p-1.5">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
       )}
 
-      {/* Create Article Dialog */}
+      {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Criar Artigo</DialogTitle>
-            <DialogDescription>
-              Informe a keyword principal para gerar o artigo com IA.
-            </DialogDescription>
+            <DialogTitle>Criar Artigo com IA</DialogTitle>
+            <DialogDescription>Digite a keyword principal. A IA vai analisar os concorrentes e escrever o artigo.</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="article-keyword">Keyword</Label>
-            <Input
-              id="article-keyword"
-              placeholder="Ex: melhor notebook gamer 2026"
-              value={newArticleKeyword}
-              onChange={(e) => setNewArticleKeyword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreateArticle()}
-            />
+            <Label className="text-xs">Keyword</Label>
+            <Input placeholder="ex: como montar loja virtual" value={newKeyword}
+              onChange={e => setNewKeyword(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleCreate()} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreateArticle}>
-              <Sparkles className="w-4 h-4" /> Criar com IA
+            <Button onClick={handleCreate} disabled={!newKeyword.trim()} className="gap-2">
+              <Sparkles className="w-4 h-4" /> Gerar Artigo
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Article Confirmation Dialog */}
-      <Dialog open={!!deleteArticleId} onOpenChange={(open) => !open && setDeleteArticleId(null)}>
-        <DialogContent>
+      {/* Delete dialog */}
+      <Dialog open={!!deleteId} onOpenChange={o => !o && setDeleteId(null)}>
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Remover Artigo</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja remover este artigo? Esta ação não pode ser desfeita.
-            </DialogDescription>
+            <DialogTitle className="text-destructive">Excluir Artigo</DialogTitle>
+            <DialogDescription>Essa ação é irreversível. O artigo será removido permanentemente.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteArticleId(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleDeleteArticle}>Remover</Button>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDelete}>Excluir</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

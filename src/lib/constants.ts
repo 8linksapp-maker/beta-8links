@@ -138,7 +138,7 @@ export const NAV_ITEMS = {
     { href: "/sites", label: "Meus Sites", icon: "Globe" },
     { href: "/keywords", label: "Keywords", icon: "Search" },
     { href: "/backlinks", label: "Backlinks", icon: "Link" },
-    { href: "/articles", label: "Artigos IA", icon: "FileText", soon: true },
+    { href: "/articles", label: "Artigos IA", icon: "FileText" },
   ],
   intelligence: [
     { href: "/content-audit", label: "Auditoria", icon: "ClipboardCheck", soon: true },
