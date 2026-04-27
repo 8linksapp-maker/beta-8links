@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PLANS } from "@/lib/constants";
 
 export default function SitesPage() {
   const router = useRouter();
@@ -67,6 +68,31 @@ export default function SitesPage() {
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Site limit check
+  const [siteLimit, setSiteLimit] = useState(999);
+  const [planName, setPlanName] = useState("Starter");
+  const [subStatus, setSubStatus] = useState("trialing");
+
+  useEffect(() => {
+    async function checkPlan() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase.from("profiles").select("plan_id, subscription_status").eq("id", user.id).single();
+      if (profile) {
+        const planId = (profile.plan_id || "starter") as keyof typeof PLANS;
+        const plan = PLANS[planId] ?? PLANS.starter;
+        setSiteLimit(plan.limits.sites);
+        setPlanName(plan.name);
+        setSubStatus(profile.subscription_status ?? "trialing");
+      }
+    }
+    checkPlan();
+  }, []);
+
+  const isAtLimit = enrichedSites.length >= siteLimit;
+  const isActive = ["active", "trialing"].includes(subStatus);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -126,7 +152,11 @@ export default function SitesPage() {
           <h1 className="page-title">Meus Sites</h1>
           <p className="page-description">Gerencie seus domínios e acompanhe a evolução.</p>
         </div>
-        <Button className="shrink-0 gap-2" onClick={() => router.push("/sites/new")}>
+        <Button className="shrink-0 gap-2" disabled={isAtLimit || !isActive} onClick={() => {
+          if (!isActive) { toast.error("Ative sua assinatura para adicionar sites."); return; }
+          if (isAtLimit) { toast.error(`Limite de ${siteLimit} site${siteLimit > 1 ? "s" : ""} atingido no plano ${planName}. Faça upgrade.`); return; }
+          router.push("/sites/new");
+        }}>
           <Plus className="w-4 h-4" /> Adicionar Site
         </Button>
       </motion.div>

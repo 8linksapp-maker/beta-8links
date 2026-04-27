@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { createClient } from "@/lib/supabase/client";
+import { PLANS } from "@/lib/constants";
 
 const STEPS = ["url", "analysis", "niche", "keywords"];
 
@@ -109,6 +110,26 @@ export default function NewSitePage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error("Sessão expirada."); return; }
+
+      // Check subscription status
+      const { data: profile } = await supabase.from("profiles").select("plan_id, subscription_status").eq("id", user.id).single();
+      if (!profile || !["active", "trialing"].includes(profile.subscription_status)) {
+        toast.error("Sua assinatura não está ativa. Ative seu plano para adicionar sites.");
+        setSaving(false);
+        return;
+      }
+
+      // Check site limit
+      const planId = (profile.plan_id || "starter") as keyof typeof PLANS;
+      const plan = PLANS[planId] ?? PLANS.starter;
+      const siteLimit = plan.limits.sites;
+
+      const { count } = await supabase.from("client_sites").select("id", { count: "exact", head: true }).eq("user_id", user.id);
+      if ((count ?? 0) >= siteLimit) {
+        toast.error(`Limite de ${siteLimit >= 999 ? "sites" : siteLimit + " site" + (siteLimit > 1 ? "s" : "")} atingido no plano ${plan.name}. Faça upgrade para adicionar mais.`);
+        setSaving(false);
+        return;
+      }
 
       const { data: site, error } = await supabase.from("client_sites").insert({
         user_id: user.id,
