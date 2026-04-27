@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { PLANS } from "@/lib/constants";
 import { SiteProvider } from "@/lib/hooks/use-site";
 import { createClient } from "@/lib/supabase/client";
+import { MigrationBanner } from "@/components/migration-banner";
 
 export default function DashboardLayout({
   children,
@@ -50,6 +51,7 @@ export default function DashboardLayout({
 
   return (
     <SiteProvider>
+      <MigrationBanner />
     <div className="flex h-screen overflow-hidden">
       {mobileOpen && (
         <div
@@ -70,7 +72,7 @@ export default function DashboardLayout({
         />
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 pt-16 lg:pt-14">
         <TopBar
           onMenuClick={() => setMobileOpen(!mobileOpen)}
           userName={userName}
