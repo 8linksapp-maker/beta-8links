@@ -7,7 +7,7 @@ export const PLANS = {
     limits: {
       sites: 1,
       backlinksMonthly: 999,          // ilimitado
-      keywordSearchesDaily: 10,       // 10 pesquisas manuais/dia
+      keywordSearchesDaily: 10,       // 10 pesquisas/dia
       keywordPlansMonthly: 1,         // 1 descoberta automática/mês
       diagnosticsMonthly: 1,          // 1 diagnóstico/mês
       crmClients: 3,                  // 3 clientes para revenda
@@ -31,7 +31,7 @@ export const PLANS = {
     limits: {
       sites: 5,
       backlinksMonthly: 999,          // ilimitado
-      keywordSearchesDaily: 30,       // 30 pesquisas/dia
+      keywordSearchesDaily: 10,       // 10 pesquisas/dia
       keywordPlansMonthly: 5,         // 5 descobertas/mês
       diagnosticsMonthly: 5,          // 5 diagnósticos/mês
       crmClients: 10,                 // 10 clientes para revenda
@@ -55,7 +55,7 @@ export const PLANS = {
     limits: {
       sites: 999,                     // ilimitado
       backlinksMonthly: 999,          // ilimitado
-      keywordSearchesDaily: 30,       // 30 pesquisas/dia
+      keywordSearchesDaily: 20,       // 20 pesquisas/dia
       keywordPlansMonthly: 40,        // 40 descobertas/mês
       diagnosticsMonthly: 999,        // ilimitado
       crmClients: 999,                // ilimitado
@@ -80,7 +80,7 @@ export const PLANS = {
     limits: {
       sites: 999,                     // ilimitado
       backlinksMonthly: 999,          // ilimitado
-      keywordSearchesDaily: 30,       // 30 pesquisas/dia
+      keywordSearchesDaily: 20,       // 20 pesquisas/dia
       keywordPlansMonthly: 40,        // 40 descobertas/mês
       diagnosticsMonthly: 999,        // ilimitado
       crmClients: 999,                // ilimitado
