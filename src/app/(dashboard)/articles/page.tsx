@@ -31,6 +31,9 @@ export default function ArticlesPage() {
   const [loaded, setLoaded] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [newKeyword, setNewKeyword] = useState("");
+  const [customKeyword, setCustomKeyword] = useState("");
+  const [planKeywords, setPlanKeywords] = useState<any[]>([]);
+  const [kwSearch, setKwSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,10 +61,30 @@ export default function ArticlesPage() {
     load();
   }, [activeSiteId, siteLoading]);
 
+  // Load plan keywords when modal opens
+  useEffect(() => {
+    if (!createOpen || !activeSiteId) return;
+    async function loadKw() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("keywords")
+        .select("keyword, search_volume, difficulty")
+        .eq("client_site_id", activeSiteId)
+        .eq("source", "dataforseo")
+        .order("search_volume", { ascending: false })
+        .limit(50);
+      setPlanKeywords(data ?? []);
+    }
+    loadKw();
+  }, [createOpen, activeSiteId]);
+
   const handleCreate = () => {
-    if (!newKeyword.trim()) return;
+    const kw = newKeyword || customKeyword;
+    if (!kw.trim()) return;
     setCreateOpen(false);
-    router.push(`/articles/write?keyword=${encodeURIComponent(newKeyword.trim())}`);
+    setNewKeyword("");
+    setCustomKeyword("");
+    router.push(`/articles/write?keyword=${encodeURIComponent(kw.trim())}`);
   };
 
   const handleDelete = async () => {
@@ -202,21 +225,52 @@ export default function ArticlesPage() {
       )}
 
       {/* Create dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-sm">
+      <Dialog open={createOpen} onOpenChange={o => { setCreateOpen(o); if (!o) { setNewKeyword(""); setCustomKeyword(""); setKwSearch(""); } }}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Criar Artigo com IA</DialogTitle>
-            <DialogDescription>Digite a keyword principal. A IA vai analisar os concorrentes e escrever o artigo.</DialogDescription>
+            <DialogDescription>Escolha uma keyword do seu plano ou digite uma nova.</DialogDescription>
           </DialogHeader>
+
+          {planKeywords.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-[10px] uppercase tracking-wider font-mono text-muted-foreground">Keywords do seu plano</Label>
+              {planKeywords.length > 5 && (
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                  <Input placeholder="Filtrar..." className="pl-8 h-7 text-xs" value={kwSearch} onChange={e => setKwSearch(e.target.value)} />
+                </div>
+              )}
+              <div className="max-h-[200px] overflow-y-auto space-y-0.5 border border-border rounded-lg p-1">
+                {planKeywords
+                  .filter(k => !kwSearch || k.keyword.toLowerCase().includes(kwSearch.toLowerCase()))
+                  .map((k, i) => (
+                    <button key={i} onClick={() => { setNewKeyword(k.keyword); setCustomKeyword(""); }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-left text-xs transition-colors cursor-pointer ${
+                        newKeyword === k.keyword ? "bg-primary/10 text-foreground" : "hover:bg-muted/50 text-muted-foreground"
+                      }`}>
+                      <span className={newKeyword === k.keyword ? "font-semibold text-foreground" : ""}>{k.keyword}</span>
+                      <span className="font-mono text-[10px] shrink-0 ml-2">
+                        {k.search_volume?.toLocaleString() ?? 0} <span className="text-muted-foreground/50">vol</span>
+                      </span>
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
-            <Label className="text-xs">Keyword</Label>
-            <Input placeholder="ex: como montar loja virtual" value={newKeyword}
-              onChange={e => setNewKeyword(e.target.value)}
+            <Label className="text-[10px] uppercase tracking-wider font-mono text-muted-foreground">
+              {planKeywords.length > 0 ? "Ou digite uma keyword" : "Keyword"}
+            </Label>
+            <Input placeholder="ex: como montar loja virtual" value={customKeyword}
+              onChange={e => { setCustomKeyword(e.target.value); setNewKeyword(""); }}
               onKeyDown={e => e.key === "Enter" && handleCreate()} />
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreate} disabled={!newKeyword.trim()} className="gap-2">
+            <Button onClick={handleCreate} disabled={!newKeyword && !customKeyword.trim()} className="gap-2">
               <Sparkles className="w-4 h-4" /> Gerar Artigo
             </Button>
           </DialogFooter>
