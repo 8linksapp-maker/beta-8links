@@ -240,7 +240,16 @@ export default function BacklinksPage() {
                         </td>
                         <td className="px-3 py-2.5 max-w-[200px]">
                           {bl.article_title ? (
-                            <span className="text-xs truncate block text-muted-foreground">{bl.article_title}</span>
+                            <div>
+                              <span className="text-xs truncate block text-muted-foreground">{bl.article_title}</span>
+                              {bl.published_url && (
+                                <a href={bl.published_url} target="_blank" rel="noopener noreferrer"
+                                  className="text-[9px] font-mono text-primary hover:underline flex items-center gap-0.5 mt-0.5">
+                                  {bl.published_url.replace(/^https?:\/\//, "").slice(0, 35)}...
+                                  <ExternalLink className="w-2 h-2" />
+                                </a>
+                              )}
+                            </div>
                           ) : bl.status === "generating" ? (
                             <span className="text-[10px] text-warning animate-pulse">Escrevendo artigo...</span>
                           ) : (
@@ -249,10 +258,19 @@ export default function BacklinksPage() {
                         </td>
                         <td className="px-3 py-2.5 text-center">
                           {bl.status === "published" && bl.article_content && (
-                            <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1"
-                              onClick={() => router.push(`/backlinks/${bl.id}/review`)}>
-                              Revisar e publicar
-                            </Button>
+                            <div className="flex items-center gap-1.5">
+                              <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1"
+                                onClick={() => router.push(`/backlinks/${bl.id}/review`)}>
+                                Revisar
+                              </Button>
+                              {bl.published_url && (
+                                <a href={bl.published_url} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 text-success">
+                                    <ExternalLink className="w-2.5 h-2.5" /> Ver
+                                  </Button>
+                                </a>
+                              )}
+                            </div>
                           )}
                           {bl.status === "error" && (
                             <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 text-primary" onClick={async () => {

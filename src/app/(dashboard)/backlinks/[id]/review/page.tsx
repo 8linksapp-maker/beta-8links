@@ -100,7 +100,16 @@ export default function BacklinkReviewPage() {
       const result = await res.json();
       if (result.success) {
         setPublished(true);
-        toast.success("Artigo publicado no site parceiro!");
+        setBacklink({ ...backlink, published_url: result.url });
+        toast.success(
+          <div>
+            <p className="font-bold">Artigo publicado!</p>
+            <a href={result.url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs mt-1 block">
+              {result.url}
+            </a>
+          </div>,
+          { duration: 10000 }
+        );
       } else {
         toast.error(result.error || "Erro ao publicar");
       }
