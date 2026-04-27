@@ -10,7 +10,7 @@ import {
   Plus, Check, ListChecks, Wand, FileText, Eye,
   ChevronDown, X, Crown, ArrowUpRight, ArrowDownRight,
   ExternalLink, LinkIcon, MousePointerClick, Zap,
-  PenLine, Send, Award,
+  PenLine, Send, Award, Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -105,6 +105,14 @@ export default function KeywordsPage() {
   const [autoStep, setAutoStep] = useState(0);
   const [addingKw, setAddingKw] = useState<Set<string>>(new Set());
 
+  // ─── Pages state (Minhas Páginas) ──────────────────
+  const [sitePages, setSitePages] = useState<Array<{ url: string; title: string }>>([]);
+  const [pagesLoaded, setPagesLoaded] = useState(false);
+  const [pagesLoading, setPagesLoading] = useState(false);
+  const [pagesSearch, setPagesSearch] = useState("");
+  const [pagesPage, setPagesPage] = useState(0);
+  const PAGES_PER_PAGE = 25;
+
   // ─── Usage ────────────────────────────────────────
   const [kwSearchUsage, setKwSearchUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
   const [kwPlanUsage, setKwPlanUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
@@ -192,6 +200,26 @@ export default function KeywordsPage() {
   useEffect(() => {
     if (!siteLoading && activeSiteId) { loadSavedKeywords(); loadUsage(); }
   }, [activeSiteId, siteLoading, loadSavedKeywords, loadUsage]);
+
+  // Load site pages when tab = "paginas"
+  const loadPages = useCallback(async () => {
+    if (!activeSite?.url || pagesLoaded) return;
+    setPagesLoading(true);
+    try {
+      const res = await fetch("/api/integrations/scrape-site", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: activeSite.url }),
+      });
+      const data = await res.json();
+      if (data.pages?.length) setSitePages(data.pages);
+    } catch {}
+    setPagesLoaded(true);
+    setPagesLoading(false);
+  }, [activeSite?.url, pagesLoaded]);
+
+  useEffect(() => {
+    if (tab === "paginas") loadPages();
+  }, [tab, loadPages]);
 
   // ═════════════════════════════════════════════════════
   // ACTIONS
@@ -443,6 +471,10 @@ export default function KeywordsPage() {
           <TabsTrigger value="plano" className="gap-2">
             <ListChecks className="w-3.5 h-3.5" /> Meu Plano
             {savedKeywords.length > 0 && <span className="ml-1 text-[10px] font-bold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">{savedKeywords.length}</span>}
+          </TabsTrigger>
+          <TabsTrigger value="paginas" className="gap-2">
+            <Globe className="w-3.5 h-3.5" /> Minhas Páginas
+            {sitePages.length > 0 && <span className="ml-1 text-[10px] font-bold bg-muted px-1.5 py-0.5 rounded-full">{sitePages.length}</span>}
           </TabsTrigger>
           <TabsTrigger value="pesquisar" className="gap-2">
             <Search className="w-3.5 h-3.5" /> Pesquisar
@@ -712,6 +744,91 @@ export default function KeywordsPage() {
                 </div>
                 <span className="font-mono text-[10px]">{backlinkedCount}/{savedKeywords.length} completas</span>
               </div>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        {/* TAB: MINHAS PÁGINAS                           */}
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <TabsContent value="paginas">
+          {pagesLoading ? (
+            <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+          ) : sitePages.length === 0 ? (
+            <EmptyState icon={Globe} title="Nenhuma página encontrada"
+              description="Não encontramos o sitemap do seu site. Verifique se ele está acessível."
+              action={{ label: "Tentar novamente", onClick: () => { setPagesLoaded(false); loadPages(); } }} />
+          ) : (
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input placeholder="Buscar página..." value={pagesSearch} onChange={e => { setPagesSearch(e.target.value); setPagesPage(0); }} className="pl-9" />
+              </div>
+
+              <Card className="overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[600px]">
+                    <thead>
+                      <tr className="border-b bg-muted/30">
+                        <th className="text-left text-[10px] font-semibold text-muted-foreground px-4 py-2.5 uppercase tracking-wider font-mono">Página</th>
+                        <th className="text-center text-[10px] font-semibold text-muted-foreground px-3 py-2.5 uppercase tracking-wider font-mono w-36">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const filtered = sitePages.filter(p =>
+                          !pagesSearch ||
+                          p.title.toLowerCase().includes(pagesSearch.toLowerCase()) ||
+                          p.url.toLowerCase().includes(pagesSearch.toLowerCase())
+                        );
+                        const totalPagesCount = Math.ceil(filtered.length / PAGES_PER_PAGE);
+                        const pageItems = filtered.slice(pagesPage * PAGES_PER_PAGE, (pagesPage + 1) * PAGES_PER_PAGE);
+                        return (
+                          <>
+                            {pageItems.map((page, i) => {
+                              const fullUrl = page.url.startsWith("http") ? page.url : `${activeSite?.url}${page.url}`;
+                              return (
+                                <tr key={i} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
+                                  <td className="px-4 py-2.5">
+                                    <div>
+                                      <p className="font-medium text-[13px] truncate max-w-[500px]">{page.title}</p>
+                                      <a href={fullUrl} target="_blank" rel="noopener noreferrer"
+                                        className="text-[10px] font-mono text-muted-foreground hover:text-primary truncate block max-w-[500px]">
+                                        {page.url} <ExternalLink className="w-2 h-2 inline ml-0.5" />
+                                      </a>
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-2.5 text-center">
+                                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1.5 px-2.5"
+                                      onClick={() => openBacklinkModal(page.title, fullUrl)}>
+                                      <Send className="w-3 h-3" /> Enviar Backlink
+                                    </Button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            {totalPagesCount > 1 && (
+                              <tr>
+                                <td colSpan={2}>
+                                  <div className="flex items-center justify-between px-4 py-3 bg-muted/20">
+                                    <p className="text-[10px] text-muted-foreground font-mono">
+                                      {pagesPage * PAGES_PER_PAGE + 1}–{Math.min((pagesPage + 1) * PAGES_PER_PAGE, filtered.length)} de {filtered.length}
+                                    </p>
+                                    <div className="flex items-center gap-1.5">
+                                      <Button variant="outline" size="sm" className="h-7 text-xs px-2.5" disabled={pagesPage === 0} onClick={() => setPagesPage(p => p - 1)}>Anterior</Button>
+                                      <Button variant="outline" size="sm" className="h-7 text-xs px-2.5" disabled={pagesPage >= totalPagesCount - 1} onClick={() => setPagesPage(p => p + 1)}>Próximo</Button>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
             </div>
           )}
         </TabsContent>
