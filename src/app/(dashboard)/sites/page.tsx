@@ -72,10 +72,42 @@ export default function SitesPage() {
     if (!deleteId) return;
     setDeleting(true);
     const supabase = createClient();
+
+    // 1. Get all published backlinks for this site to delete from network sites
+    const { data: backlinks } = await supabase
+      .from("backlinks")
+      .select("id, published_url, network_sites(domain)")
+      .eq("client_site_id", deleteId);
+
+    // 2. Delete published posts from network sites
+    for (const bl of backlinks ?? []) {
+      if (bl.published_url) {
+        const slug = bl.published_url.split("/").pop();
+        const domain = (bl as any).network_sites?.domain;
+        if (slug && domain) {
+          try {
+            await fetch("/api/admin/delete-post", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ domain, slug }),
+            });
+          } catch {}
+        }
+      }
+    }
+
+    // 3. Delete backlinks (cascade from client_sites should handle this,
+    //    but explicit delete ensures network_posts cleanup above runs first)
+    await supabase.from("backlinks").delete().eq("client_site_id", deleteId);
+
+    // 4. Delete keywords
+    await supabase.from("keywords").delete().eq("client_site_id", deleteId);
+
+    // 5. Delete the site
     const { error } = await supabase.from("client_sites").delete().eq("id", deleteId);
     setDeleting(false);
     if (error) { toast.error(`Erro: ${error.message}`); return; }
-    toast.success("Site removido!");
+    toast.success("Site e todos os backlinks removidos!");
     setDeleteId(null);
     reload();
   };
@@ -213,15 +245,21 @@ export default function SitesPage() {
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Excluir Site</DialogTitle>
-            <DialogDescription>
-              Tem certeza? Isso vai remover o site, backlinks, keywords e todos os dados associados. Esta ação é irreversível.
+            <DialogTitle className="text-destructive">Excluir Site</DialogTitle>
+            <DialogDescription className="space-y-2">
+              <p>Essa ação é <strong className="text-destructive">irreversível</strong>. Serão excluídos permanentemente:</p>
+              <ul className="list-disc pl-4 space-y-1 text-xs">
+                <li>O site e todas as configurações</li>
+                <li>Todos os backlinks criados</li>
+                <li>Artigos publicados nos sites parceiros</li>
+                <li>Keywords e dados de monitoramento</li>
+              </ul>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? "Excluindo..." : "Excluir"}
+              {deleting ? "Excluindo tudo..." : "Excluir permanentemente"}
             </Button>
           </DialogFooter>
         </DialogContent>
