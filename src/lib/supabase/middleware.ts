@@ -38,6 +38,11 @@ export async function updateSession(request: NextRequest) {
   const isAuthCallback = pathname.startsWith("/auth/callback");
   const isOnboarding = pathname === "/onboarding";
 
+  // Skip auth checks for callback routes to avoid interfering with recovery flow
+  if (isAuthCallback) {
+    return supabaseResponse;
+  }
+
   // Not logged in → redirect to login
   if (!user && !isPublicPath && !isApiPath && !isAuthCallback) {
     const url = request.nextUrl.clone();
