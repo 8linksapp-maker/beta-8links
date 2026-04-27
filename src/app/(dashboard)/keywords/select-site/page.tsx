@@ -325,7 +325,7 @@ function SelectSiteContent() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-3 gap-1.5">
                 <div className="text-center p-1.5 rounded-lg bg-muted/30">
                   <p className="text-sm font-bold font-mono">{site.da}</p>
                   <p className="text-[7px] text-muted-foreground uppercase">DA</p>
@@ -336,11 +336,7 @@ function SelectSiteContent() {
                 </div>
                 <div className="text-center p-1.5 rounded-lg bg-muted/30">
                   <p className="text-sm font-bold font-mono">{site.backlinks > 999 ? (site.backlinks / 1000).toFixed(1) + "k" : site.backlinks}</p>
-                  <p className="text-[7px] text-muted-foreground uppercase">Links</p>
-                </div>
-                <div className={`text-center p-1.5 rounded-lg ${site.spamScore <= 10 ? "bg-success/10" : site.spamScore <= 25 ? "bg-warning/10" : "bg-destructive/10"}`}>
-                  <p className={`text-sm font-bold font-mono ${site.spamScore <= 10 ? "text-success" : site.spamScore <= 25 ? "text-warning" : "text-destructive"}`}>{site.spamScore}%</p>
-                  <p className="text-[7px] text-muted-foreground uppercase">Spam</p>
+                  <p className="text-[7px] text-muted-foreground uppercase">Backlinks</p>
                 </div>
               </div>
 
