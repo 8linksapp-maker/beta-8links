@@ -8,7 +8,7 @@ import { motion } from "motion/react";
 import {
   Link as LinkIcon, ExternalLink, TrendingUp, Search,
   ArrowDown, ArrowUp, Globe, Shield, Loader2, Play, Check,
-  Plus, Target, Layers, ArrowRight, Zap, Sparkles, FileText, Trash2,
+  Plus, Target, Layers, ArrowRight, Zap, Sparkles, FileText, Trash2, AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MetricCard } from "@/components/ui/metric-card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -28,6 +28,8 @@ export default function BacklinksPage() {
   const router = useRouter();
   const { activeSiteId, loading: siteLoading } = useSite();
   const [createOpen, setCreateOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
   const [processResult, setProcessResult] = useState<any>(null);
   const [backlinks, setBacklinks] = useState<any[]>([]);
   const [totalBacklinks, setTotalBacklinks] = useState(0);
@@ -288,13 +290,7 @@ export default function BacklinksPage() {
                             </Button>
                           )}
                           <button
-                            onClick={async () => {
-                              if (!confirm("Excluir este backlink?")) return;
-                              const supabase = createClient();
-                              await supabase.from("backlinks").delete().eq("id", bl.id);
-                              setCreatedBacklinks(prev => prev.filter(b => b.id !== bl.id));
-                              toast.success("Backlink excluído");
-                            }}
+                            onClick={() => setDeleteConfirm(bl)}
                             className="text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer p-1 ml-1"
                             title="Excluir backlink"
                           >
@@ -604,6 +600,58 @@ export default function BacklinksPage() {
               </div>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" /> Excluir backlink
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              Essa ação é <span className="text-destructive font-bold">irreversível</span>. O artigo será removido do site parceiro e o backlink deixará de existir.
+            </p>
+            {deleteConfirm && (
+              <div className="bg-muted/30 rounded-lg p-3 space-y-1 text-xs">
+                <p><span className="text-muted-foreground">Âncora:</span> <span className="font-semibold">{deleteConfirm.anchor_text}</span></p>
+                <p><span className="text-muted-foreground">Site:</span> {deleteConfirm.network_sites?.domain ?? "—"}</p>
+                {deleteConfirm.published_url && <p><span className="text-muted-foreground">URL:</span> <span className="font-mono">{deleteConfirm.published_url}</span></p>}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancelar</Button>
+            <Button variant="destructive" disabled={deleting} onClick={async () => {
+              if (!deleteConfirm) return;
+              setDeleting(true);
+              const supabase = createClient();
+
+              // Remove from network_posts (external Supabase) if published
+              if (deleteConfirm.published_url && deleteConfirm.network_sites?.domain) {
+                try {
+                  const slug = deleteConfirm.published_url.split("/").pop();
+                  await fetch("/api/admin/delete-post", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ domain: deleteConfirm.network_sites.domain, slug }),
+                  });
+                } catch {}
+              }
+
+              // Delete from backlinks table
+              await supabase.from("backlinks").delete().eq("id", deleteConfirm.id);
+              setCreatedBacklinks(prev => prev.filter(b => b.id !== deleteConfirm.id));
+              setDeleteConfirm(null);
+              setDeleting(false);
+              toast.success("Backlink excluído permanentemente");
+            }}>
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Excluir permanentemente"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
