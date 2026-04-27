@@ -259,26 +259,29 @@ function OnboardingContent() {
         scrapedAt: new Date().toISOString().split("T")[0],
       };
 
-      await supabase.from("client_sites").update({
-        niche_primary: selectedNiches[0] || customNiche || null,
-        niche_secondary: selectedNiches[1] || null,
-        da_current: da,
-        da_history: da > 0 ? [{ date: new Date().toISOString().split("T")[0], value: da }] : [],
-        avg_cpc: avgCpc,
-        site_context: siteContext,
-      }).eq("id", siteId);
+      if (siteId) {
+        await supabase.from("client_sites").update({
+          niche_primary: selectedNiches[0] || customNiche || "Geral",
+          niche_secondary: selectedNiches[1] || null,
+          da_current: da,
+          da_history: da > 0 ? [{ date: new Date().toISOString().split("T")[0], value: da }] : [],
+          avg_cpc: avgCpc,
+          site_context: siteContext,
+        }).eq("id", siteId);
+      }
 
       // Save keywords
-      const all = keywordsToMonitor.map((k: any) => ({
-        client_site_id: siteId!, keyword: k.keyword,
-        search_volume: k.volume || k.impressions || 0,
-        difficulty: k.difficulty || 0, position_current: k.position,
-      }));
-      if (all.length > 0) {
-        await supabase.from("keywords").insert(all);
+      if (siteId && keywordsToMonitor.length > 0) {
+        const all = keywordsToMonitor.map((k: any) => ({
+          client_site_id: siteId, keyword: k.keyword,
+          search_volume: k.volume || k.impressions || 0,
+          difficulty: k.difficulty || 0, position_current: k.position,
+          source: "gsc" as const,
+        }));
+        try { await supabase.from("keywords").insert(all); } catch {}
       }
-      if (competitors.length > 0) {
-        try { await supabase.from("competitors").insert(competitors.map(c => ({ client_site_id: siteId!, domain: c.domain, da: 0, detected_automatically: true }))); } catch {}
+      if (siteId && competitors.length > 0) {
+        try { await supabase.from("competitors").insert(competitors.map(c => ({ client_site_id: siteId, domain: c.domain, da: 0, detected_automatically: true }))); } catch {}
       }
 
       await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
