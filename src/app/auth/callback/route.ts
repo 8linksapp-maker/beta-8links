@@ -6,26 +6,30 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/dashboard";
 
-  // Note: Supabase sends the type in the URL for password recovery
-  // We need to check for both "type" and "code" params
+  // Check for recovery type from Supabase
+  // Supabase sends: ?code=xxx&type=recovery
   const type = searchParams.get("type");
+
+  console.log("[Auth Callback] Params:", { code: code?.slice(0, 10) + "...", type, url: request.url });
 
   if (code) {
     const supabase = await createClient();
     const { error, data } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Check if this is a password recovery flow
-      // The session will have a 'recovery' or 'email_change' type if it's a recovery flow
-      const sessionType = type || searchParams.get("type");
+      console.log("[Auth Callback] Session exchanged successfully, type:", type);
 
-      if (sessionType === "recovery") {
+      // Check if this is a password recovery flow
+      // The type param is sent by Supabase for password recovery
+      if (type === "recovery") {
+        console.log("[Auth Callback] Recovery flow detected, redirecting to /reset-password");
         // For password recovery, redirect to reset-password page
         // The session is now established and the user can call updateUser
         return NextResponse.redirect(`${origin}/reset-password`);
       }
 
       // Normal auth flow - redirect to dashboard or next path
+      console.log("[Auth Callback] Normal auth flow, redirecting to:", next);
       return NextResponse.redirect(`${origin}${next}`);
     }
 
@@ -35,5 +39,6 @@ export async function GET(request: Request) {
   }
 
   // No code provided - redirect to login
+  console.error("[Auth Callback] No code provided");
   return NextResponse.redirect(`${origin}/login?error=no_code`);
 }

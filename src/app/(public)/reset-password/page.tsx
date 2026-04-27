@@ -19,10 +19,30 @@ export default function ResetPasswordPage() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   // Check if user has a valid session (required for password update)
+  // Also listen for PASSWORD_RECOVERY event from Supabase
   useEffect(() => {
+    const supabase = createClient();
+
+    // Listen for auth state changes - PASSWORD_RECOVERY event indicates valid recovery flow
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("[Reset Password] Auth event:", event, "Session:", session ? "present" : "null");
+
+      if (event === "PASSWORD_RECOVERY") {
+        // Valid recovery flow - session is present
+        console.log("[Reset Password] Password recovery event detected");
+        setCheckingSession(false);
+      } else if (event === "SIGNED_IN" && session) {
+        // User has a session, allow password reset
+        console.log("[Reset Password] User signed in");
+        setCheckingSession(false);
+      }
+    });
+
+    // Also check initial session
     const checkSession = async () => {
-      const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
+
+      console.log("[Reset Password] Initial session check:", session ? "present" : "null");
 
       if (!session) {
         // No session means the user didn't come from the recovery email
@@ -33,6 +53,10 @@ export default function ResetPasswordPage() {
     };
 
     checkSession();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
