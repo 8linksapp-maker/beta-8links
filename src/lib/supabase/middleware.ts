@@ -32,7 +32,7 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Public routes
-  const publicPaths = ["/", "/pricing", "/checkout", "/login", "/register", "/forgot-password", "/verificar-nicho"];
+  const publicPaths = ["/", "/pricing", "/checkout", "/login", "/register", "/forgot-password", "/reset-password", "/verificar-nicho"];
   const isPublicPath = publicPaths.some((path) => pathname === path) || pathname.startsWith("/report/");
   const isApiPath = pathname.startsWith("/api/");
   const isAuthCallback = pathname.startsWith("/auth/callback");

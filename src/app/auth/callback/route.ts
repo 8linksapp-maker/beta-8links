@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     if (!error) {
       // If it's a password recovery, redirect to update password page
       if (type === "recovery") {
-        return NextResponse.redirect(`${origin}/settings`);
+        return NextResponse.redirect(`${origin}/reset-password`);
       }
       return NextResponse.redirect(`${origin}${next}`);
     }
