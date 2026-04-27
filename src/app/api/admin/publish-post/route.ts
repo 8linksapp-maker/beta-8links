@@ -75,7 +75,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     success: true,
-    url: `https://${domain}/blog/${slug}`,
+    url: `https://${domain}/${slug}`,
     slug,
   });
 }
