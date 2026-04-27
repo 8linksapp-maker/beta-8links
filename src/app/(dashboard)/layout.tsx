@@ -23,7 +23,16 @@ export default function DashboardLayout({
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) supabase.from("profiles").update({ last_active_at: new Date().toISOString() }).eq("id", user.id).then(() => {});
+      if (user) {
+        supabase.from("profiles")
+          .update({ last_active_at: new Date().toISOString() })
+          .eq("id", user.id)
+          .then(({ error }) => {
+            if (error) console.error("[Layout] Error updating last_active_at:", error.message);
+          });
+      }
+    }).catch((err) => {
+      console.error("[Layout] Error getting user:", err);
     });
   }, []);
 

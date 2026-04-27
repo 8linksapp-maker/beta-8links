@@ -28,11 +28,15 @@ export function useUser(): UserState {
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single();
+
+      if (profileError) {
+        console.error("[useUser] Error loading profile:", profileError.message);
+      }
 
       setState({
         user,
