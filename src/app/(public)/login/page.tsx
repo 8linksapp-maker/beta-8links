@@ -29,12 +29,13 @@ export default function LoginPage() {
     });
 
     if (authError) {
-      setError(authError.message === "Invalid login credentials"
-        ? "Email ou senha incorretos"
-        : authError.message === "Email not confirmed"
-        ? "Confirme seu email antes de entrar"
-        : authError.message
-      );
+      if (authError.message === "Invalid login credentials") {
+        setError("migrate");
+      } else if (authError.message === "Email not confirmed") {
+        setError("Confirme seu email antes de entrar");
+      } else {
+        setError(authError.message);
+      }
       setLoading(false);
       return;
     }
@@ -67,9 +68,15 @@ export default function LoginPage() {
 
         <div className="card-beam rounded-2xl border bg-card p-6 relative overflow-hidden">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
+            {error && error !== "migrate" && (
               <div className="p-3 rounded-lg bg-[hsl(0_80%_60%/0.1)] border border-[hsl(0_80%_60%/0.2)] text-sm text-destructive">
                 {error}
+              </div>
+            )}
+            {error === "migrate" && (
+              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 space-y-2">
+                <p className="text-sm font-semibold text-foreground">Migramos para uma nova plataforma!</p>
+                <p className="text-xs text-muted-foreground">Clique em <strong>"Esqueceu?"</strong> ao lado da senha para criar uma nova senha e acessar a nova versão do 8links.</p>
               </div>
             )}
 
