@@ -250,8 +250,8 @@ export default function BacklinksPage() {
                         <td className="px-3 py-2.5 text-center">
                           {bl.status === "published" && bl.article_content && (
                             <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1"
-                              onClick={() => setProcessResult({ success: true, article: bl.article_content, outline: { title: bl.article_title } })}>
-                              Ver artigo
+                              onClick={() => router.push(`/backlinks/${bl.id}/review`)}>
+                              Revisar e publicar
                             </Button>
                           )}
                           {bl.status === "error" && (
