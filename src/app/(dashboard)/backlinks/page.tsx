@@ -8,7 +8,7 @@ import { motion } from "motion/react";
 import {
   Link as LinkIcon, ExternalLink, TrendingUp, Search,
   ArrowDown, ArrowUp, Globe, Shield, Loader2, Play, Check,
-  Plus, Target, Layers, ArrowRight, Zap, Sparkles, FileText,
+  Plus, Target, Layers, ArrowRight, Zap, Sparkles, FileText, Trash2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -287,6 +287,19 @@ export default function BacklinksPage() {
                               Tentar novamente
                             </Button>
                           )}
+                          <button
+                            onClick={async () => {
+                              if (!confirm("Excluir este backlink?")) return;
+                              const supabase = createClient();
+                              await supabase.from("backlinks").delete().eq("id", bl.id);
+                              setCreatedBacklinks(prev => prev.filter(b => b.id !== bl.id));
+                              toast.success("Backlink excluído");
+                            }}
+                            className="text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer p-1 ml-1"
+                            title="Excluir backlink"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </td>
                       </tr>
                     ))}
