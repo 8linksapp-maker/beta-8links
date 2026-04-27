@@ -960,38 +960,40 @@ export default function KeywordsPage() {
       <Dialog open={blModalOpen} onOpenChange={setBlModalOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Enviar backlink para "{blKeyword}"</DialogTitle>
+            <DialogTitle className="text-base leading-tight">Enviar backlink</DialogTitle>
           </DialogHeader>
 
           {blUrl && (
-            <div className="bg-muted/30 rounded-lg p-3 mb-2">
+            <div className="bg-muted/30 rounded-lg p-3">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-1">URL de destino</p>
-              <p className="text-xs font-mono truncate">{blUrl}</p>
+              <p className="text-xs font-mono break-all">{blUrl}</p>
             </div>
           )}
 
-          <div className="space-y-2 mb-2">
+          <div className="space-y-2">
             <Label className="text-xs">Texto âncora</Label>
-            <Input value={blAnchor} onChange={e => setBlAnchor(e.target.value)} placeholder={blKeyword} />
+            <Input value={blAnchor} onChange={e => setBlAnchor(e.target.value)} placeholder="ex: consultoria de SEO" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button onClick={() => submitBacklink("auto")} disabled={blCreating || !blAnchor}
-              className="p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:bg-primary/5 transition-all text-left cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed">
+            {/* Automático — em breve */}
+            <div className="p-4 rounded-xl border border-border bg-card opacity-40 cursor-default relative">
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
                 <Zap className="w-4 h-4 text-primary" />
               </div>
               <p className="text-sm font-bold mb-1">Automático</p>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">O 8links escolhe o melhor site, gera o artigo e publica.</p>
-            </button>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">Escolhe o site, gera artigo e publica.</p>
+              <span className="absolute top-3 right-3 text-[8px] font-bold uppercase tracking-wider bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground">breve</span>
+            </div>
 
-            <button onClick={() => submitBacklink("manual")} disabled={!blAnchor}
-              className="p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:bg-primary/5 transition-all text-left cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed">
-              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center mb-2">
-                <Search className="w-4 h-4 text-muted-foreground" />
+            {/* Manual */}
+            <button onClick={() => submitBacklink("manual")} disabled={!blAnchor || blCreating}
+              className="p-4 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-all text-left cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed">
+              <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center mb-2">
+                <Search className="w-4 h-4 text-primary" />
               </div>
-              <p className="text-sm font-bold mb-1">Manual</p>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">Escolha você mesmo o site parceiro da rede.</p>
+              <p className="text-sm font-bold mb-1">Escolher site</p>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">Escolha o site parceiro e revise antes de publicar.</p>
             </button>
           </div>
         </DialogContent>

@@ -152,9 +152,9 @@ export default function BacklinkReviewPage() {
             {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
             {copied ? "Copiado!" : "HTML"}
           </Button>
-          <Button size="sm" className={`gap-1.5 text-xs h-8 ${published ? "bg-success hover:bg-success/80" : ""}`} onClick={publishToSite} disabled={publishing}>
-            {publishing ? <Loader2 className="w-3 h-3 animate-spin" /> : published ? <CheckCircle2 className="w-3 h-3" /> : <Send className="w-3 h-3" />}
-            {publishing ? "Publicando..." : published ? "Republicar" : "Publicar no site"}
+          <Button size="sm" className={`gap-1.5 text-xs h-8 ${published ? "" : "bg-primary"}`} onClick={publishToSite} disabled={publishing}>
+            {publishing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+            {publishing ? "Publicando..." : published ? "Atualizar publicação" : "Publicar no site"}
           </Button>
         </div>
       </div>

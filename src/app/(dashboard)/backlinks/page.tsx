@@ -8,7 +8,7 @@ import { motion } from "motion/react";
 import {
   Link as LinkIcon, ExternalLink, TrendingUp, Search,
   ArrowDown, ArrowUp, Globe, Shield, Loader2, Play, Check,
-  Plus, Target, Layers, ArrowRight, Zap, Sparkles,
+  Plus, Target, Layers, ArrowRight, Zap, Sparkles, FileText,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -217,8 +217,11 @@ export default function BacklinksPage() {
                               </div>
                             </div>
                           )}
-                          {bl.status === "published" && (
+                          {bl.status === "published" && bl.published_url && (
                             <span className="inline-flex items-center gap-1.5 text-xs text-success"><Check className="w-3.5 h-3.5" /> Publicado</span>
+                          )}
+                          {bl.status === "published" && !bl.published_url && (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-primary"><FileText className="w-3.5 h-3.5" /> Pronto</span>
                           )}
                           {bl.status === "error" && (
                             <div>
@@ -227,8 +230,8 @@ export default function BacklinksPage() {
                             </div>
                           )}
                         </td>
-                        <td className="px-3 py-2.5">
-                          <span className="text-xs font-semibold">{bl.anchor_text}</span>
+                        <td className="px-3 py-2.5 max-w-[150px]">
+                          <span className="text-xs font-semibold break-words">{bl.anchor_text}</span>
                         </td>
                         <td className="px-3 py-2.5 max-w-[200px]">
                           <a href={bl.target_url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-mono text-muted-foreground hover:text-primary truncate block">
@@ -261,7 +264,7 @@ export default function BacklinksPage() {
                             <div className="flex items-center gap-1.5">
                               <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1"
                                 onClick={() => router.push(`/backlinks/${bl.id}/review`)}>
-                                Revisar
+                                {bl.published_url ? "Revisar" : "Revisar e publicar"}
                               </Button>
                               {bl.published_url && (
                                 <a href={bl.published_url} target="_blank" rel="noopener noreferrer">

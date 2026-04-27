@@ -159,39 +159,14 @@ JSON: {"keyword": "a keyword escolhida", "reason": "por que essa keyword permite
       process.env.NETWORK_SUPABASE_SERVICE_KEY!
     );
 
-    // Find the network site ID in the external DB (integer, matched by domain)
-    const { data: extSite } = await networkDb
-      .from("network_sites")
-      .select("id")
-      .eq("domain", networkSite.domain)
-      .single();
+    // Article ready — user will review and publish manually via /backlinks/[id]/review
+    // Don't publish to network_posts yet (user needs to review first)
 
-    if (extSite) {
-      const { error: postError } = await networkDb.from("network_posts").upsert({
-        network_site_id: extSite.id,
-        domain: networkSite.domain,
-        slug,
-        title,
-        content: articleData.article,
-        meta_description: metaDesc,
-        featured_image: firstImage,
-        published_at: now,
-      }, { onConflict: "domain,slug" });
-
-      if (postError) console.error("[process-backlink] Error publishing to network DB:", postError.message);
-    } else {
-      console.warn(`[process-backlink] Site ${networkSite.domain} not found in network DB`);
-    }
-
-    // Published URL: the Astro site will serve this
-    const publishedUrl = `https://${networkSite.domain}/${slug}`;
-
-    // Update backlink in 8links DB
     await supabase.from("backlinks").update({
       status: "published",
       article_title: title,
       article_content: articleData.article,
-      published_url: publishedUrl,
+      published_url: null, // Will be set when user clicks "Publicar" in review
       published_at: now,
       error_message: null,
     }).eq("id", backlinkId);
