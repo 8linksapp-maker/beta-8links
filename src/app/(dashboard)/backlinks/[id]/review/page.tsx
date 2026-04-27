@@ -143,16 +143,10 @@ export default function BacklinkReviewPage() {
             {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
             {copied ? "Copiado!" : "HTML"}
           </Button>
-          {published ? (
-            <Button size="sm" className="gap-1.5 text-xs h-8 bg-success hover:bg-success/90" disabled>
-              <CheckCircle2 className="w-3 h-3" /> Publicado
-            </Button>
-          ) : (
-            <Button size="sm" className="gap-1.5 text-xs h-8" onClick={publishToSite} disabled={publishing}>
-              {publishing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-              Publicar no site
-            </Button>
-          )}
+          <Button size="sm" className={`gap-1.5 text-xs h-8 ${published ? "bg-success hover:bg-success/80" : ""}`} onClick={publishToSite} disabled={publishing}>
+            {publishing ? <Loader2 className="w-3 h-3 animate-spin" /> : published ? <CheckCircle2 className="w-3 h-3" /> : <Send className="w-3 h-3" />}
+            {publishing ? "Publicando..." : published ? "Republicar" : "Publicar no site"}
+          </Button>
         </div>
       </div>
 
@@ -256,5 +250,9 @@ function markdownToHtml(md: string): string {
 }
 
 function inl(t:string):string{
-  return t.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\*(.+?)\*/g,"<em>$1</em>").replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  return t
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" style="max-width:100%;border-radius:12px;margin:16px 0" />')
+    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g,"<em>$1</em>")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
 }
