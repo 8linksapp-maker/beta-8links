@@ -72,7 +72,7 @@ export default function DashboardLayout({
         />
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0 pt-16 lg:pt-14">
+      <div className="flex-1 flex flex-col min-w-0 pt-28 lg:pt-24">
         <TopBar
           onMenuClick={() => setMobileOpen(!mobileOpen)}
           userName={userName}
