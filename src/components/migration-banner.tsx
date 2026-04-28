@@ -8,7 +8,7 @@ export function MigrationBanner() {
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-primary via-[hsl(35,100%,55%)] to-[hsl(45,100%,50%)]"
+      className="fixed top-0 left-0 right-0 z-[110] bg-gradient-to-r from-primary via-[hsl(35,100%,55%)] to-[hsl(45,100%,50%)]"
     >
       <div className="max-w-[1400px] mx-auto px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-center gap-4">

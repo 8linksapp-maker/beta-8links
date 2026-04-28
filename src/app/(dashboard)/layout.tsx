@@ -61,7 +61,7 @@ export default function DashboardLayout({
       )}
 
       <div className={cn(
-        "fixed lg:relative z-50 h-full transition-transform duration-300",
+        "fixed lg:relative z-50 h-full transition-transform duration-300 mt-28 lg:mt-24",
         mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <AppSidebar
