@@ -61,7 +61,7 @@ export default function DashboardLayout({
       )}
 
       <div className={cn(
-        "fixed lg:relative z-50 h-full transition-transform duration-300 mt-28 lg:mt-24",
+        "fixed lg:relative z-50 h-full transition-transform duration-300 mt-16 lg:mt-14",
         mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <AppSidebar
@@ -72,7 +72,7 @@ export default function DashboardLayout({
         />
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0 pt-28 lg:pt-24">
+      <div className="flex-1 flex flex-col min-w-0 pt-16 lg:pt-14">
         <TopBar
           onMenuClick={() => setMobileOpen(!mobileOpen)}
           userName={userName}
