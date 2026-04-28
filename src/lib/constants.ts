@@ -47,9 +47,34 @@ export const PLANS = {
       support: "priority",
     },
   },
-  agency: {
-    id: "agency",
-    name: "Legacy",
+  legacy_monthly: {
+    id: "legacy_monthly",
+    name: "Legacy Mensal",
+    price: 97,
+    billing: "monthly" as const,
+    limits: {
+      sites: 999,                     // ilimitado
+      backlinksMonthly: 999,          // ilimitado
+      keywordSearchesDaily: 20,       // 20 pesquisas/dia
+      keywordPlansMonthly: 40,        // 40 descobertas/mês
+      diagnosticsMonthly: 999,        // ilimitado
+      crmClients: 999,                // ilimitado
+      articlesMonthly: 999,           // ilimitado
+    },
+    features: {
+      wordpress: true,
+      crm: true,
+      whiteLabel: true,
+      aiVisibility: { platforms: ["chatgpt", "perplexity", "google_aio", "gemini"], frequency: "daily", prompts: 150 },
+      competitors: 10,
+      courses: "all",
+      support: "dedicated",
+      badgeFounder: true,
+    },
+  },
+  legacy: {
+    id: "legacy",
+    name: "Legacy Anual",
     price: 997,
     billing: "yearly" as const,
     limits: {
@@ -70,6 +95,55 @@ export const PLANS = {
       courses: "all",
       support: "dedicated",
       badgeFounder: true,
+    },
+  },
+  agency: {
+    id: "agency",
+    name: "Agency",
+    price: 997,
+    billing: "yearly" as const,
+    limits: {
+      sites: 999,                     // ilimitado
+      backlinksMonthly: 999,          // ilimitado
+      keywordSearchesDaily: 20,       // 20 pesquisas/dia
+      keywordPlansMonthly: 40,        // 40 descobertas/mês
+      diagnosticsMonthly: 999,        // ilimitado
+      crmClients: 999,                // ilimitado
+      articlesMonthly: 999,           // ilimitado
+    },
+    features: {
+      wordpress: true,
+      crm: true,
+      whiteLabel: true,
+      aiVisibility: { platforms: ["chatgpt", "perplexity", "google_aio", "gemini"], frequency: "daily", prompts: 150 },
+      competitors: 10,
+      courses: "all",
+      support: "dedicated",
+      badgeFounder: true,
+    },
+  },
+  club: {
+    id: "club",
+    name: "Club",
+    price: 197,
+    billing: "monthly" as const,
+    limits: {
+      sites: 1,
+      backlinksMonthly: 999,
+      keywordSearchesDaily: 10,
+      keywordPlansMonthly: 1,
+      diagnosticsMonthly: 1,
+      crmClients: 3,
+      articlesMonthly: 10,
+    },
+    features: {
+      wordpress: false,
+      crm: false,
+      whiteLabel: false,
+      aiVisibility: false,
+      competitors: 1,
+      courses: "all",
+      support: "bot",
     },
   },
   lifetime: {
