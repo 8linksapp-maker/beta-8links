@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import {
@@ -10,7 +9,6 @@ import {
   Search,
   Eye,
   Pencil,
-  Trash2,
   Loader2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,24 +36,16 @@ export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("Todos");
   const [dbData, setDbData] = useState<any[]>([]);
 
-  // Edit Role state
-  const [editRoleOpen, setEditRoleOpen] = useState(false);
-  const [editingUserId, setEditingUserId] = useState<string | number | null>(null);
-  const [editingUserName, setEditingUserName] = useState("");
-  const [editingUserCurrentRole, setEditingUserCurrentRole] = useState("");
-  const [newRole, setNewRole] = useState("client");
-  const [savingRole, setSavingRole] = useState(false);
+  // Edit User state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editUser, setEditUser] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ name: "", email: "", plan_id: "", subscription_status: "", role: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // Create User state
   const [createOpen, setCreateOpen] = useState(false);
   const [newUser, setNewUser] = useState({ email: "", name: "", password: "", plan_id: "starter", subscription_status: "active" });
   const [creating, setCreating] = useState(false);
-
-  // Deactivate User state
-  const [deactivateOpen, setDeactivateOpen] = useState(false);
-  const [deactivatingUserId, setDeactivatingUserId] = useState<string | number | null>(null);
-  const [deactivatingUserName, setDeactivatingUserName] = useState("");
-  const [deactivating, setDeactivating] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -68,37 +58,43 @@ export default function UsersPage() {
     load();
   }, []);
 
-  async function handleChangeRole() {
-    if (!editingUserId) return;
-    setSavingRole(true);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", editingUserId);
-      if (error) throw error;
-      setDbData(prev => prev.map(u => u.id === editingUserId ? { ...u, role: newRole } : u));
-      toast.success("Role atualizado com sucesso!");
-      setEditRoleOpen(false);
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao atualizar role");
-    } finally {
-      setSavingRole(false);
-    }
+  function openEditModal(user: any) {
+    setEditUser(user);
+    setEditForm({
+      name: user.name || "",
+      email: user.email || "",
+      plan_id: user.plan || "starter",
+      subscription_status: user.status || "active",
+      role: user.role || "client",
+    });
+    setEditOpen(true);
   }
 
-  async function handleDeactivateUser() {
-    if (!deactivatingUserId) return;
-    setDeactivating(true);
+  async function handleSaveEdit() {
+    if (!editUser) return;
+    setSavingEdit(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.from("profiles").update({ subscription_status: "canceled" }).eq("id", deactivatingUserId);
-      if (error) throw error;
-      setDbData(prev => prev.map(u => u.id === deactivatingUserId ? { ...u, status: "canceled" } : u));
-      toast.success("Usuario desativado com sucesso!");
-      setDeactivateOpen(false);
+      const res = await fetch("/api/admin/users/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editUser.id, ...editForm }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao salvar");
+      setDbData(prev => prev.map(u => u.id === editUser.id ? {
+        ...u,
+        name: editForm.name,
+        email: editForm.email,
+        plan: editForm.plan_id,
+        status: editForm.subscription_status,
+        role: editForm.role,
+      } : u));
+      toast.success("Usuario atualizado!");
+      setEditOpen(false);
     } catch (err: any) {
-      toast.error(err.message || "Erro ao desativar usuario");
+      toast.error(err.message || "Erro ao salvar");
     } finally {
-      setDeactivating(false);
+      setSavingEdit(false);
     }
   }
 
@@ -298,31 +294,8 @@ export default function UsersPage() {
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => router.push(`/admin/users/${user.id}`)}><Eye className="w-4 h-4" /></Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => {
-                              setEditingUserId(user.id);
-                              setEditingUserName(user.name);
-                              setEditingUserCurrentRole((user as any).role || "client");
-                              setNewRole((user as any).role || "client");
-                              setEditRoleOpen(true);
-                            }}
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditModal(user)}>
                             <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => {
-                              setDeactivatingUserId(user.id);
-                              setDeactivatingUserName(user.name);
-                              setDeactivateOpen(true);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </td>
@@ -346,25 +319,64 @@ export default function UsersPage() {
         </Card>
       </motion.div>
 
-      {/* Edit Role Dialog */}
-      <Dialog open={editRoleOpen} onOpenChange={setEditRoleOpen}>
-        <DialogContent>
+      {/* Edit User Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Alterar Role</DialogTitle>
+            <DialogTitle className="text-lg">Editar Usuario</DialogTitle>
             <DialogDescription>
-              Altere o role de <strong>{editingUserName}</strong>
+              {editUser?.email} <span className="text-muted-foreground/50">·</span> ID: <span className="font-mono text-[10px]">{editUser?.id?.slice(0, 8)}</span>
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 py-2">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Role atual</label>
-              <p className="text-sm text-muted-foreground capitalize">{editingUserCurrentRole}</p>
+              <label className="text-xs font-medium mb-1.5 block text-muted-foreground">Nome</label>
+              <Input
+                value={editForm.name}
+                onChange={e => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+              />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Novo role</label>
+              <label className="text-xs font-medium mb-1.5 block text-muted-foreground">Email</label>
+              <Input
+                type="email"
+                value={editForm.email}
+                onChange={e => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1.5 block text-muted-foreground">Plano</label>
               <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
+                value={editForm.plan_id}
+                onChange={e => setEditForm(prev => ({ ...prev, plan_id: e.target.value }))}
+                className="w-full h-9 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="starter">Starter</option>
+                <option value="pro">Pro</option>
+                <option value="legacy_monthly">Legacy Mensal</option>
+                <option value="legacy">Legacy Anual</option>
+                <option value="lifetime">Lifetime</option>
+                <option value="club">Club</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1.5 block text-muted-foreground">Status</label>
+              <select
+                value={editForm.subscription_status}
+                onChange={e => setEditForm(prev => ({ ...prev, subscription_status: e.target.value }))}
+                className="w-full h-9 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="active">Ativo</option>
+                <option value="trialing">Trial</option>
+                <option value="past_due">Pendente</option>
+                <option value="canceled">Cancelado</option>
+              </select>
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs font-medium mb-1.5 block text-muted-foreground">Role</label>
+              <select
+                value={editForm.role}
+                onChange={e => setEditForm(prev => ({ ...prev, role: e.target.value }))}
                 className="w-full h-9 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
                 <option value="client">Client</option>
@@ -373,27 +385,9 @@ export default function UsersPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditRoleOpen(false)}>Cancelar</Button>
-            <Button onClick={handleChangeRole} disabled={savingRole}>
-              {savingRole ? "Salvando..." : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Deactivate User Dialog */}
-      <Dialog open={deactivateOpen} onOpenChange={setDeactivateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Desativar Usuario</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja desativar <strong>{deactivatingUserName}</strong>? O status sera alterado para cancelado.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeactivateOpen(false)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleDeactivateUser} disabled={deactivating}>
-              {deactivating ? "Desativando..." : "Desativar"}
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveEdit} disabled={savingEdit} className="min-w-[120px]">
+              {savingEdit ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Salvando...</> : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>
