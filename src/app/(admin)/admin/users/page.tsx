@@ -255,6 +255,7 @@ export default function UsersPage() {
                     <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground" onClick={() => toggleSort("joined")}>
                       Cadastro {sortBy === "joined" && (sortDir === "desc" ? "↓" : "↑")}
                     </th>
+                    <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Último acesso</th>
                     <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
@@ -288,8 +289,19 @@ export default function UsersPage() {
                       </td>
                       <td className="px-5 py-3 font-mono font-bold">{user.sites}</td>
                       <td className="px-5 py-3 font-mono">{user.backlinks ?? 0}</td>
-                      <td className="px-5 py-3 font-mono text-muted-foreground text-xs">
-                        {new Date(user.joined).toLocaleDateString("pt-BR")}
+                      <td className="px-5 py-3 text-xs">
+                        <span className="font-mono text-muted-foreground">{user.joined ? new Date(user.joined).toLocaleDateString("pt-BR") : "—"}</span>
+                        {user.joined && <span className="text-[10px] text-muted-foreground/50 ml-1">({timeAgo(user.joined)})</span>}
+                      </td>
+                      <td className="px-5 py-3 text-xs">
+                        {user.lastSignIn ? (
+                          <div>
+                            <span className="font-mono text-muted-foreground">{new Date(user.lastSignIn).toLocaleDateString("pt-BR")}</span>
+                            <span className="text-[10px] text-muted-foreground/50 ml-1">({timeAgo(user.lastSignIn)})</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground/40">Nunca</span>
+                        )}
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-1">
@@ -464,4 +476,20 @@ export default function UsersPage() {
       </Dialog>
     </div>
   );
+}
+
+function timeAgo(date: string): string {
+  const now = new Date();
+  const d = new Date(date);
+  const diffMs = now.getTime() - d.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 60) return `${mins}min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}m`;
+  const years = Math.floor(months / 12);
+  return `${years}a`;
 }

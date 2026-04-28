@@ -25,6 +25,23 @@ export async function GET() {
 
   if (!profiles) return NextResponse.json({ users: [] });
 
+  // Get auth users for last_sign_in_at
+  const authData: Record<string, { lastSignIn: string | null; signInCount: number }> = {};
+  let authPage = 1;
+  while (true) {
+    const { data: { users: authUsers } } = await supabase.auth.admin.listUsers({ page: authPage, perPage: 100 });
+    if (!authUsers || authUsers.length === 0) break;
+    for (const u of authUsers) {
+      // Supabase doesn't track sign-in count natively, but we can infer activity
+      authData[u.id] = {
+        lastSignIn: u.last_sign_in_at || null,
+        signInCount: u.app_metadata?.sign_in_count ?? (u.last_sign_in_at ? 1 : 0),
+      };
+    }
+    if (authUsers.length < 100) break;
+    authPage++;
+  }
+
   // Count sites per user (service role bypasses RLS)
   const siteCounts: Record<string, number> = {};
   let offset = 0;
@@ -125,6 +142,8 @@ export async function GET() {
       realDate = oldDate;
     }
 
+    const auth = authData[d.id];
+
     return {
       id: d.id,
       name: d.name || d.email?.split("@")[0] || "Sem nome",
@@ -136,6 +155,7 @@ export async function GET() {
       backlinks: (blCounts[d.id] ?? 0) + (oldBlCounts[d.id] ?? 0),
       joined: realDate?.split("T")[0] || "",
       lastActive: d.last_active_at,
+      lastSignIn: auth?.lastSignIn || null,
     };
   });
 
