@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { PLANS } from "@/lib/constants";
 import { SiteProvider } from "@/lib/hooks/use-site";
 import { createClient } from "@/lib/supabase/client";
+import { MigrationBanner } from "@/components/migration-banner";
 
 export default function DashboardLayout({
   children,
@@ -76,6 +77,7 @@ export default function DashboardLayout({
           userName={userName}
           planName={plan?.name ?? "Starter"}
         />
+        <MigrationBanner />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-[1400px] p-6">
             {children}
