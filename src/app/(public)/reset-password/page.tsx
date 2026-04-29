@@ -19,42 +19,41 @@ export default function ResetPasswordPage() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   // Check if user has a valid session (required for password update)
-  // Also listen for PASSWORD_RECOVERY event from Supabase
+  // Retry a few times because cookies from the callback may take a moment to propagate
   useEffect(() => {
     const supabase = createClient();
+    let cancelled = false;
 
-    // Listen for auth state changes - PASSWORD_RECOVERY event indicates valid recovery flow
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("[Reset Password] Auth event:", event, "Session:", session ? "present" : "null");
-
-      if (event === "PASSWORD_RECOVERY") {
-        // Valid recovery flow - session is present
-        console.log("[Reset Password] Password recovery event detected");
-        setCheckingSession(false);
-      } else if (event === "SIGNED_IN" && session) {
-        // User has a session, allow password reset
-        console.log("[Reset Password] User signed in");
+      if (cancelled) return;
+      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
         setCheckingSession(false);
       }
     });
 
-    // Also check initial session
+    // Retry session check — cookies from server-side callback may not be available immediately
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      console.log("[Reset Password] Initial session check:", session ? "present" : "null");
-
-      if (!session) {
-        // No session means the user didn't come from the recovery email
-        // or the session expired
-        setError("Sessão inválida ou expirada. Por favor, solicite um novo link de recuperação.");
+      for (let attempt = 0; attempt < 5; attempt++) {
+        if (cancelled) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setCheckingSession(false);
+          return;
+        }
+        // Wait before retrying (200ms, 400ms, 600ms, 800ms)
+        if (attempt < 4) await new Promise(r => setTimeout(r, 200 * (attempt + 1)));
       }
-      setCheckingSession(false);
+      if (!cancelled) {
+        setError("Sessão inválida ou expirada. Por favor, solicite um novo link de recuperação.");
+        setCheckingSession(false);
+      }
     };
 
     checkSession();
 
     return () => {
+      cancelled = true;
       subscription.unsubscribe();
     };
   }, []);
