@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const type = searchParams.get("type");
   const next = searchParams.get("next") ?? "/dashboard";
 
   if (code) {
@@ -12,12 +11,9 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Recovery flow → redirect to reset-password
-      if (type === "recovery") {
-        return NextResponse.redirect(`${origin}/reset-password`);
-      }
-
-      // Normal auth flow (login, signup, magic link) → go to next or dashboard
+      // next is set by the page that initiated the flow:
+      // - forgot-password sets next=/reset-password
+      // - login/register defaults to /dashboard
       return NextResponse.redirect(`${origin}${next}`);
     }
 
