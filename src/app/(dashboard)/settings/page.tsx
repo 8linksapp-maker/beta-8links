@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { NumberTicker } from "@/components/ui/number-ticker";
+import { PLANS } from "@/lib/constants";
 
 const tabs = [
   { id: "profile", label: "Perfil", icon: User },
@@ -190,21 +191,53 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">Plano atual</p>
-                      <p className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mt-1">
-                        {profile?.plan_id === "agency" ? "Agência" : profile?.plan_id === "pro" ? "Pro" : "Starter"}
-                        <Badge variant="success" className="ml-2">{profile?.subscription_status === "active" ? "Ativo" : profile?.subscription_status === "trialing" ? "Trial" : "Inativo"}</Badge>
-                      </p>
+                      {(() => {
+                        const planId = (profile?.plan_id || "starter") as keyof typeof PLANS;
+                        const plan = PLANS[planId] ?? PLANS.starter;
+                        const billingLabel = plan.billing === "yearly" ? "/ano" : plan.billing === "once" ? " único" : "/mês";
+                        return (
+                          <>
+                            <p className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mt-1">
+                              {plan.name}
+                              <Badge variant={profile?.subscription_status === "active" ? "success" : profile?.subscription_status === "trialing" ? "info" : "outline"} className="ml-2">
+                                {profile?.subscription_status === "active" ? "Ativo" : profile?.subscription_status === "trialing" ? "Trial" : profile?.subscription_status === "past_due" ? "Pendente" : "Inativo"}
+                              </Badge>
+                            </p>
+                          </>
+                        );
+                      })()}
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-black font-[family-name:var(--font-display)]">R$ {profile?.plan_id === "agency" ? 597 : profile?.plan_id === "pro" ? 297 : 147}<span className="text-sm text-muted-foreground font-normal">/mês</span></p>
-                    </div>
+                    {(() => {
+                      const planId = (profile?.plan_id || "starter") as keyof typeof PLANS;
+                      const plan = PLANS[planId] ?? PLANS.starter;
+                      const billingLabel = plan.billing === "yearly" ? "/ano" : plan.billing === "once" ? " único" : "/mês";
+                      return (
+                        <div className="text-right">
+                          <p className="text-2xl font-black font-[family-name:var(--font-display)]">R$ {plan.price}<span className="text-sm text-muted-foreground font-normal">{billingLabel}</span></p>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <Separator />
-                  <div className="mt-4">
-                    <div className="flex justify-between text-sm mb-2"><span>Créditos IA</span><span className="font-mono font-semibold"><NumberTicker value={profile?.credits_balance ?? 0} /> / {profile?.plan_id === "agency" ? 2000 : profile?.plan_id === "pro" ? 500 : 100}</span></div>
-                    <Progress value={((profile?.credits_balance ?? 0) / (profile?.plan_id === "agency" ? 2000 : profile?.plan_id === "pro" ? 500 : 100)) * 100} />
-                    <p className="text-xs text-muted-foreground mt-2">Renovam em 18 dias • <button className="text-primary hover:underline cursor-pointer">Comprar créditos extras</button></p>
-                  </div>
+                  {(() => {
+                    const planId = (profile?.plan_id || "starter") as keyof typeof PLANS;
+                    const plan = PLANS[planId] ?? PLANS.starter;
+                    const articlesLimit = plan.limits.articlesMonthly;
+                    const searchesLimit = plan.limits.keywordSearchesDaily;
+                    return (
+                      <div className="mt-4 space-y-3">
+                        <div>
+                          <div className="flex justify-between text-sm mb-1"><span>Artigos IA / mês</span><span className="font-mono font-semibold">{articlesLimit >= 999 ? "Ilimitado" : articlesLimit}</span></div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-sm mb-1"><span>Pesquisas / dia</span><span className="font-mono font-semibold">{searchesLimit}</span></div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-sm mb-1"><span>Sites</span><span className="font-mono font-semibold">{plan.limits.sites >= 999 ? "Ilimitado" : plan.limits.sites}</span></div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

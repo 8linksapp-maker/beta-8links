@@ -145,7 +145,7 @@ export function AppSidebar({ collapsed, onToggle, userName = "Usuário", userPla
       {/* User */}
       <div className="p-3 border-t border-border">
         <div className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.03] cursor-pointer transition-all",
+          "flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.03] transition-all",
           collapsed && "justify-center px-0"
         )}>
           <Avatar size="sm">
@@ -157,7 +157,9 @@ export function AppSidebar({ collapsed, onToggle, userName = "Usuário", userPla
               <p className="text-[10px] font-mono text-primary font-semibold uppercase">{userPlan}</p>
             </div>
           )}
-          {!collapsed && <button onClick={handleSignOut} className="cursor-pointer hover:text-foreground transition-colors"><LogOut className="w-4 h-4 text-muted-foreground shrink-0" /></button>}
+          <button onClick={handleSignOut} title="Sair" className="cursor-pointer hover:text-foreground transition-colors">
+            <LogOut className="w-4 h-4 text-muted-foreground shrink-0" />
+          </button>
         </div>
       </div>
     </aside>

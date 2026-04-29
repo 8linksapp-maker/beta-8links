@@ -1,4 +1,4 @@
-export type PlanId = "starter" | "pro" | "agency";
+export type PlanId = "starter" | "pro" | "agency" | "legacy_monthly" | "legacy" | "lifetime" | "club";
 
 export type UserRole = "client" | "admin";
 
