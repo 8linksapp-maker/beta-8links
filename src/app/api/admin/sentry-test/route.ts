@@ -5,7 +5,6 @@ import { NextResponse } from "next/server";
  * Throws a deliberate error to verify Sentry is capturing server-side exceptions.
  */
 export async function GET() {
-  throw new Error("Sentry server test — disparado de /api/admin/sentry-test em " + new Date().toISOString());
-  // unreachable
-  return NextResponse.json({ ok: true });
+  const tag = Math.floor(Math.random() * 100000);
+  throw new Error(`Sentry server test #${tag} em ${new Date().toISOString()}`);
 }

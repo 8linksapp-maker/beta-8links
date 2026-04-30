@@ -111,8 +111,9 @@ export default function DebugPage() {
               variant="outline"
               className="h-8 text-xs"
               onClick={() => {
-                Sentry.captureException(new Error("Sentry client test — disparado de /admin/debug em " + new Date().toISOString()));
-                toast.success("Erro client-side enviado. Confira no dashboard do Sentry.");
+                const msg = `Sentry client test #${Math.floor(Math.random() * 100000)} em ${new Date().toISOString()}`;
+                Sentry.captureException(new Error(msg));
+                toast.success("Erro client-side enviado. Confira no Slack #alerts em ~30s.");
               }}
             >
               Disparar erro (client)
