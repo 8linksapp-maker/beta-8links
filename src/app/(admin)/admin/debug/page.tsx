@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Loader2, Play, ChevronDown, ChevronRight, Copy, Check } from "lucide-react";
+import { Loader2, Play, ChevronDown, ChevronRight, Copy, Check, Bug } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,6 +97,45 @@ export default function DebugPage() {
         <h1 className="text-xl font-bold font-[family-name:var(--font-display)]">Debug: Gerador de Artigos</h1>
         <p className="text-sm text-muted-foreground mt-1">Analise cada etapa do pipeline de geração</p>
       </div>
+
+      {/* Sentry test */}
+      <Card>
+        <CardContent className="p-4 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Bug className="w-4 h-4" />
+            <span>Teste de captura do Sentry — dispara um erro proposital pra validar a integração</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs"
+              onClick={() => {
+                Sentry.captureException(new Error("Sentry client test — disparado de /admin/debug em " + new Date().toISOString()));
+                toast.success("Erro client-side enviado. Confira no dashboard do Sentry.");
+              }}
+            >
+              Disparar erro (client)
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs"
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/admin/sentry-test");
+                  if (!res.ok) toast.success("Erro server-side enviado. Confira no dashboard do Sentry.");
+                  else toast.error("Esperava-se erro mas API retornou OK — verifique o route.");
+                } catch {
+                  toast.success("Erro server-side enviado. Confira no dashboard do Sentry.");
+                }
+              }}
+            >
+              Disparar erro (server)
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Input */}
       <Card>

@@ -154,7 +154,11 @@ export default function NewSitePage() {
 
       toast.success("Site adicionado!");
       router.push(`/integrations/setup`);
-    } catch { toast.error("Erro."); setSaving(false); }
+    } catch (e) {
+      console.error("[sites/new] save failed:", e);
+      toast.error("Não conseguimos cadastrar seu site. Tente novamente em alguns instantes.");
+      setSaving(false);
+    }
   };
 
   return (

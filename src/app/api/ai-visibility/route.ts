@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   const { domain, queries } = await request.json();
-  if (!domain || !queries?.length) return NextResponse.json({ error: "domain and queries required" }, { status: 400 });
+  if (!domain || !queries?.length) return NextResponse.json({ error: "Informe o domínio e ao menos uma busca para analisar." }, { status: 400 });
 
   const results = [];
 
@@ -53,7 +53,8 @@ export async function POST(request: Request) {
   }
 
   if (results.length === 0) {
-    return NextResponse.json({ error: "No AI APIs configured. Add API keys in .env.local" });
+    console.error("[ai-visibility] no AI providers configured (missing OPENAI_API_KEY/ANTHROPIC_API_KEY/GOOGLE_AI_API_KEY)");
+    return NextResponse.json({ error: "Análise de visibilidade em IAs temporariamente indisponível. Tente novamente em alguns instantes." });
   }
 
   const total = results.length;

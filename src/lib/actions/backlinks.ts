@@ -28,7 +28,7 @@ export async function getBacklinkStats(siteId?: string) {
 
   let query = supabase
     .from("backlinks")
-    .select("status, da_at_creation")
+    .select("status, da_at_creation, created_at")
     .eq("user_id", user.id);
 
   if (siteId) {
@@ -45,10 +45,9 @@ export async function getBacklinkStats(siteId?: string) {
     ? Math.round(backlinks.reduce((acc, b) => acc + (b.da_at_creation ?? 0), 0) / backlinks.length)
     : 0;
 
-  // This month count
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const thisMonth = backlinks.filter(b => new Date(b.status !== "queued" ? now : now) >= firstOfMonth).length;
+  const thisMonth = backlinks.filter(b => b.created_at && new Date(b.created_at) >= firstOfMonth).length;
 
   return { total, published, indexed, avgDa, thisMonth };
 }

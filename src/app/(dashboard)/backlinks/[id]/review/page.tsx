@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import {
   ArrowLeft, Copy, Check, Loader2, Send, Globe,
-  Bold, Italic, Heading2, Heading3, Type, LinkIcon, List,
-  Undo2, Redo2, Image as ImageIcon, ExternalLink, CheckCircle2,
+  Bold, Italic, Heading2, Heading3, Type, List,
+  Undo2, Redo2, Image as ImageIcon, ExternalLink, AlertTriangle, Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
+import { validateBacklinkContent } from "@/lib/utils/link-validation";
+import { humanizeError } from "@/lib/utils/error-messages";
 
 export default function BacklinkReviewPage() {
   const router = useRouter();
@@ -27,6 +28,17 @@ export default function BacklinkReviewPage() {
 
   const editorRef = useRef<HTMLDivElement>(null);
   const [wordCount, setWordCount] = useState(0);
+  const [editorContent, setEditorContent] = useState("");
+
+  const validationError = useMemo(() => {
+    if (!backlink || !editorContent) return null;
+    const result = validateBacklinkContent({
+      content: editorContent,
+      targetUrl: backlink.target_url,
+      publisherDomain: backlink.network_sites?.domain ?? "",
+    });
+    return result.ok ? null : result;
+  }, [editorContent, backlink]);
 
   // Load backlink
   useEffect(() => {
@@ -46,19 +58,21 @@ export default function BacklinkReviewPage() {
     load();
   }, [backlinkId]);
 
+  const countWords = useCallback(() => {
+    if (!editorRef.current) return;
+    const text = editorRef.current.textContent || "";
+    setWordCount(text.split(/\s+/).filter(w => w.length > 0).length);
+    setEditorContent(editorRef.current.innerHTML);
+  }, []);
+
   // Set editor content after load
   useEffect(() => {
     if (backlink?.article_content && editorRef.current) {
       editorRef.current.innerHTML = markdownToHtml(backlink.article_content);
       countWords();
+      setEditorContent(editorRef.current.innerHTML);
     }
-  }, [backlink]);
-
-  const countWords = useCallback(() => {
-    if (!editorRef.current) return;
-    const text = editorRef.current.textContent || "";
-    setWordCount(text.split(/\s+/).filter(w => w.length > 0).length);
-  }, []);
+  }, [backlink, countWords]);
 
   const exec = (cmd: string, val?: string) => {
     document.execCommand(cmd, false, val);
@@ -74,18 +88,28 @@ export default function BacklinkReviewPage() {
 
   const publishToSite = async () => {
     if (!backlink) return;
+
+    const editedContent = editorRef.current?.innerHTML ?? backlink.article_content;
+
+    const preCheck = validateBacklinkContent({
+      content: editedContent,
+      targetUrl: backlink.target_url,
+      publisherDomain: backlink.network_sites?.domain ?? "",
+    });
+    if (!preCheck.ok) {
+      toast.error(preCheck.reason);
+      return;
+    }
+
     setPublishing(true);
 
     try {
       const supabase = createClient();
-      const editedContent = editorRef.current?.innerHTML ?? backlink.article_content;
 
-      // Save edited content back to backlink
       await supabase.from("backlinks").update({
         article_content: editedContent,
       }).eq("id", backlinkId);
 
-      // Publish to network_posts (external Supabase)
       const res = await fetch("/api/admin/publish-post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -97,8 +121,8 @@ export default function BacklinkReviewPage() {
         }),
       });
 
-      const result = await res.json();
-      if (result.success) {
+      const result = await res.json().catch(() => ({}));
+      if (res.ok && result.success) {
         setPublished(true);
         setBacklink({ ...backlink, published_url: result.url });
         toast.success(
@@ -111,10 +135,12 @@ export default function BacklinkReviewPage() {
           { duration: 10000 }
         );
       } else {
-        toast.error(result.error || "Erro ao publicar");
+        toast.error(result.error || humanizeError(result.detail ?? `HTTP ${res.status}`).user);
+        console.error("[publish] erro:", result);
       }
-    } catch {
-      toast.error("Erro ao publicar");
+    } catch (e) {
+      toast.error(humanizeError(e).user);
+      console.error("[publish] erro de rede:", e);
     }
 
     setPublishing(false);
@@ -152,7 +178,13 @@ export default function BacklinkReviewPage() {
             {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
             {copied ? "Copiado!" : "HTML"}
           </Button>
-          <Button size="sm" className={`gap-1.5 text-xs h-8 ${published ? "" : "bg-primary"}`} onClick={publishToSite} disabled={publishing}>
+          <Button
+            size="sm"
+            className={`gap-1.5 text-xs h-8 ${published ? "" : "bg-primary"}`}
+            onClick={publishToSite}
+            disabled={publishing || !!validationError}
+            title={validationError?.reason}
+          >
             {publishing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
             {publishing ? "Publicando..." : published ? "Atualizar publicação" : "Publicar no site"}
           </Button>
@@ -176,6 +208,36 @@ export default function BacklinkReviewPage() {
         </CardContent>
       </Card>
 
+      {/* Regras de edição */}
+      <Card className="bg-muted/30 border-border/50">
+        <CardContent className="p-3 flex items-start gap-2.5 text-[11px]">
+          <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="text-muted-foreground leading-relaxed">
+            Você pode editar livremente o texto do artigo. Apenas links para <span className="font-mono text-foreground">{backlink.target_url?.replace(/^https?:\/\//, "").split("/")[0]}</span> são permitidos. O link autorizado precisa permanecer no artigo. Links para outros domínios externos serão bloqueados na publicação.
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Alerta de validação ao vivo */}
+      {validationError && (
+        <Card className="bg-destructive/10 border-destructive/30">
+          <CardContent className="p-3 flex items-start gap-2.5 text-xs">
+            <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-destructive font-semibold">Não é possível publicar</p>
+              <p className="text-destructive/80 text-[11px] mt-0.5">{validationError.reason}</p>
+              {validationError.offendingLinks && validationError.offendingLinks.length > 0 && (
+                <ul className="text-destructive/70 text-[10px] font-mono mt-1.5 space-y-0.5">
+                  {validationError.offendingLinks.slice(0, 5).map((href) => (
+                    <li key={href} className="truncate">• {href}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Editor */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
         {/* Toolbar */}
@@ -191,7 +253,6 @@ export default function BacklinkReviewPage() {
           <TBtn icon={Type} label="Parágrafo" onClick={() => exec("formatBlock", "p")} />
           <Sep />
           <TBtn icon={List} label="Lista" onClick={() => exec("insertUnorderedList")} />
-          <TBtn icon={LinkIcon} label="Link" onClick={() => { const u = prompt("URL:"); if (u) exec("createLink", u); }} />
           <TBtn icon={ImageIcon} label="Imagem" onClick={() => { const u = prompt("URL da imagem:"); if (u) exec("insertImage", u); }} />
           <div className="ml-auto text-[10px] font-mono text-muted-foreground">
             {wordCount.toLocaleString()} palavras

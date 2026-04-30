@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { analyzeSERP } from "@/lib/apis/dataforseo";
 import { normalizeArticle } from "@/lib/utils/normalize-article";
+import { fetchWithRetry } from "@/lib/utils/fetch-retry";
 
 /**
  * POST /api/admin/test-article
@@ -226,10 +227,10 @@ REGRAS DE ESCRITA:
   let outputTokens = 0;
   let usedModel = model;
   let fallbackUsed = false;
-  const FALLBACK_MODEL = "gpt-5.4-mini";
+  const FALLBACK_MODEL = "gpt-4.1-nano";
 
   async function callGPT(m: string) {
-    return fetch("https://api.openai.com/v1/chat/completions", {
+    return fetchWithRetry("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -237,16 +238,15 @@ REGRAS DE ESCRITA:
         ...(m.startsWith("gpt-5") ? { max_completion_tokens: 8000 } : { max_tokens: 4000 }),
         messages: [{ role: "user", content: articlePrompt }],
       }),
-    });
+    }, { label: `test-article:write(${m})`, maxRetries: 1 });
   }
 
   try {
     let articleRes = await callGPT(model);
     let articleData = await articleRes.json();
 
-    // Fallback to gpt-5.4-mini if primary model fails
     if (articleData.error && model !== FALLBACK_MODEL) {
-      console.warn(`[test-article] ${model} failed: ${articleData.error.message}. Falling back to ${FALLBACK_MODEL}`);
+      console.warn(`[test-article] ${model} failed (${articleData.error.code ?? "?"}): ${articleData.error.message}. Falling back to ${FALLBACK_MODEL}`);
       usedModel = FALLBACK_MODEL;
       fallbackUsed = true;
       articleRes = await callGPT(FALLBACK_MODEL);
@@ -254,6 +254,7 @@ REGRAS DE ESCRITA:
     }
 
     if (articleData.error) {
+      console.error(`[test-article] Article generation failed on ${usedModel}:`, articleData.error);
       steps.push({ step: `4. Write article (${usedModel})`, duration: Date.now() - s4, data: { error: articleData.error.message ?? JSON.stringify(articleData.error) } });
       return NextResponse.json({ error: "Article generation failed", articleError: articleData.error, keyword, model: usedModel, outline, steps, competitorOutlines });
     }
@@ -334,9 +335,6 @@ REGRAS DE ESCRITA:
     "gpt-4.1-nano": { input: 0.10, output: 0.40 },
     "gpt-4.1-mini": { input: 0.40, output: 1.60 },
     "gpt-4.1": { input: 2.00, output: 8.00 },
-    "gpt-5.4-nano": { input: 0.20, output: 1.25 },
-    "gpt-5.4-mini": { input: 0.75, output: 4.50 },
-    "gpt-5.4": { input: 2.50, output: 15.00 },
   };
   const p = pricing[usedModel] ?? { input: 1, output: 4 };
   const cost = (inputTokens * p.input / 1_000_000) + (outputTokens * p.output / 1_000_000);

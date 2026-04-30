@@ -16,7 +16,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? "";
  * 2. Runs the full article pipeline with that keyword
  */
 export async function POST(request: Request) {
-  const { planKeywords, backlink, networkContext, model = "gpt-5.4-nano" } = await request.json();
+  const { planKeywords, backlink, networkContext, model = "gpt-4.1-nano" } = await request.json();
 
   if (!planKeywords?.length || !backlink?.anchor) {
     return NextResponse.json({ error: "planKeywords and backlink.anchor required" }, { status: 400 });

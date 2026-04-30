@@ -241,14 +241,14 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Card className="card-interactive cursor-pointer" onClick={() => toast("Em breve!")}>
+                <Card className="card-interactive cursor-pointer" onClick={() => toast("Esta funcionalidade será liberada em breve!")}>
                   <CardContent className="p-5 flex items-center gap-4">
                     <CreditCard className="w-5 h-5 text-muted-foreground" />
                     <div><p className="text-sm font-semibold">Método de pagamento</p><p className="text-xs text-muted-foreground">Visa •••• 4242</p></div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
                   </CardContent>
                 </Card>
-                <Card className="card-interactive cursor-pointer" onClick={() => toast("Em breve!")}>
+                <Card className="card-interactive cursor-pointer" onClick={() => toast("Esta funcionalidade será liberada em breve!")}>
                   <CardContent className="p-5 flex items-center gap-4">
                     <Zap className="w-5 h-5 text-primary" />
                     <div><p className="text-sm font-semibold">Fazer upgrade</p><p className="text-xs text-muted-foreground">Mudar para Agência (R$597/mês)</p></div>

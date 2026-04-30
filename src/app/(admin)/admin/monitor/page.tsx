@@ -196,7 +196,7 @@ export default function ApiMonitorPage() {
             </div>
             <div className="mt-3 pt-3 border-t text-[10px] text-muted-foreground">
               <p>Câmbio: $1 = R$5.70 · Modelo primário: gpt-4.1-mini</p>
-              <p>Fallback: gpt-5.4-mini (+3x custo GPT)</p>
+              <p>Fallback: gpt-4.1-nano (mais barato que primário)</p>
             </div>
           </CardContent>
         </Card>
@@ -249,6 +249,7 @@ export default function ApiMonitorPage() {
               <div key={bl.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/20 text-xs">
                 <div className="flex items-center gap-2 min-w-0">
                   {bl.status === "published" && <Check className="w-3.5 h-3.5 text-success shrink-0" />}
+                  {bl.status === "ready_for_review" && <FileText className="w-3.5 h-3.5 text-primary shrink-0" />}
                   {bl.status === "queued" && <Clock className="w-3.5 h-3.5 text-primary shrink-0" />}
                   {bl.status === "generating" && <RefreshCw className="w-3.5 h-3.5 text-warning animate-spin shrink-0" />}
                   {bl.status === "error" && <XCircle className="w-3.5 h-3.5 text-destructive shrink-0" />}

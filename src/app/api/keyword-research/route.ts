@@ -14,12 +14,11 @@ import { useActionOrFail } from "@/lib/actions/usage";
  */
 export async function POST(request: Request) {
   const { keyword, siteId } = await request.json();
-  if (!keyword?.trim()) return NextResponse.json({ error: "keyword required" }, { status: 400 });
+  if (!keyword?.trim()) return NextResponse.json({ error: "Digite uma palavra-chave para pesquisar." }, { status: 400 });
 
-  // Auth check
   const supabaseAuth = await createClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Sua sessão expirou. Recarregue a página e faça login novamente." }, { status: 401 });
 
   // Check daily search limit (separate from auto discovery)
   const usage = await useActionOrFail(user.id, "keyword_search", keyword.trim());

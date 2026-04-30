@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
+import { humanizeError } from "@/lib/utils/error-messages";
 import {
   Search, TrendingUp, Target, Sparkles, Loader2,
   Download, ArrowDown, ArrowUp, Hash, Trophy, Rocket,
@@ -266,8 +267,14 @@ export default function KeywordsPage() {
       });
       const result = await res.json();
       if (result.success) toast.success("Backlink publicado!", { duration: 6000 });
-      else toast.error(result.error || "Erro ao processar", { duration: 5000 });
-    } catch { toast.error("Erro ao processar backlink"); }
+      else {
+        toast.error(result.error || humanizeError(result.detail).user, { duration: 5000 });
+        console.error("[backlink] erro:", result.detail ?? result);
+      }
+    } catch (e) {
+      toast.error(humanizeError(e).user);
+      console.error("[backlink] erro de rede:", e);
+    }
     setBlCreating(false);
   };
 
@@ -333,7 +340,10 @@ export default function KeywordsPage() {
       client_site_id: activeSiteId, keyword: kw.keyword, search_volume: kw.volume,
       difficulty: kw.difficulty, cpc: kw.cpc ?? 0, source: "dataforseo", content_status: "pendente",
     });
-    if (error) { toast.error("Erro ao adicionar"); }
+    if (error) {
+      console.error("[keywords] add failed:", error);
+      toast.error("Não conseguimos adicionar essa palavra-chave. Tente novamente.");
+    }
     else {
       setResults(prev => prev.map(r => r.keyword === kw.keyword ? { ...r, inList: true } : r));
       setAutoResults(prev => prev.map(r => r.keyword === kw.keyword ? { ...r, inList: true } : r));

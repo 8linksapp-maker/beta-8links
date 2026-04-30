@@ -18,6 +18,7 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { humanizeError } from "@/lib/utils/error-messages";
 import {
   ResponsiveContainer, PieChart, Pie, Cell,
   BarChart, Bar, XAxis, YAxis,
@@ -171,13 +172,45 @@ export default function BacklinksPage() {
                   {createdBacklinks.filter((b: any) => b.status === "queued").length > 0 && (
                     <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={async () => {
                       const queued = createdBacklinks.filter((b: any) => b.status === "queued");
-                      for (const bl of queued) {
-                        toast(`⚙️ Processando "${bl.anchor_text}"...`, { duration: 3000 });
+                      toast(`⚙️ Disparando processamento de ${queued.length} backlink${queued.length > 1 ? "s" : ""}...`, { duration: 3000 });
+
+                      const CONCURRENCY = 3;
+                      let ok = 0;
+                      const errors: Array<{ anchor: string; reason: string }> = [];
+
+                      async function processOne(bl: any) {
                         try {
-                          await fetch("/api/admin/process-backlink", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ backlinkId: bl.id }) });
-                        } catch {}
+                          const res = await fetch("/api/admin/process-backlink", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ backlinkId: bl.id }),
+                          });
+                          const body = await res.json().catch(() => ({}));
+                          if (!res.ok || body?.error) {
+                            const reason = body?.error ?? humanizeError(body?.detail ?? `HTTP ${res.status}`).user;
+                            errors.push({ anchor: bl.anchor_text, reason });
+                            console.error(`[fila] backlink ${bl.id} falhou:`, body?.detail ?? body);
+                          } else {
+                            ok++;
+                          }
+                        } catch (e) {
+                          errors.push({ anchor: bl.anchor_text, reason: humanizeError(e).user });
+                          console.error(`[fila] backlink ${bl.id} erro de rede:`, e);
+                        }
                       }
-                      toast.success("Fila processada!");
+
+                      for (let i = 0; i < queued.length; i += CONCURRENCY) {
+                        const batch = queued.slice(i, i + CONCURRENCY);
+                        await Promise.all(batch.map(processOne));
+                      }
+
+                      if (errors.length === 0) {
+                        toast.success(`Fila processada: ${ok} backlink${ok > 1 ? "s" : ""} concluído${ok > 1 ? "s" : ""}`);
+                      } else if (ok === 0) {
+                        toast.error(`Não foi possível processar nenhum dos ${errors.length} backlinks. ${errors[0].reason}`);
+                      } else {
+                        toast.warning(`${ok} concluído${ok > 1 ? "s" : ""}, ${errors.length} com problema. Veja o motivo na coluna Status.`);
+                      }
                     }}>
                       <Play className="w-3 h-3" /> Processar fila ({createdBacklinks.filter((b: any) => b.status === "queued").length})
                     </Button>
@@ -219,11 +252,11 @@ export default function BacklinksPage() {
                               </div>
                             </div>
                           )}
-                          {bl.status === "published" && bl.published_url && (
+                          {bl.status === "published" && (
                             <span className="inline-flex items-center gap-1.5 text-xs text-success"><Check className="w-3.5 h-3.5" /> Publicado</span>
                           )}
-                          {bl.status === "published" && !bl.published_url && (
-                            <span className="inline-flex items-center gap-1.5 text-xs text-primary"><FileText className="w-3.5 h-3.5" /> Pronto</span>
+                          {bl.status === "ready_for_review" && (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-primary"><FileText className="w-3.5 h-3.5" /> Pronto p/ revisar</span>
                           )}
                           {bl.status === "error" && (
                             <div>
@@ -263,11 +296,11 @@ export default function BacklinksPage() {
                         </td>
                         <td className="px-3 py-2.5 text-center">
                           <div className="flex items-center gap-1.5">
-                            {bl.status === "published" && bl.article_content && (
+                            {(bl.status === "published" || bl.status === "ready_for_review") && bl.article_content && (
                               <>
                                 <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1"
                                   onClick={() => router.push(`/backlinks/${bl.id}/review`)}>
-                                  {bl.published_url ? "Revisar" : "Revisar e publicar"}
+                                  {bl.status === "ready_for_review" ? "Revisar e publicar" : "Revisar"}
                                 </Button>
                                 {bl.published_url && (
                                   <a href={bl.published_url} target="_blank" rel="noopener noreferrer">
@@ -282,10 +315,20 @@ export default function BacklinksPage() {
                               <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 text-primary" onClick={async () => {
                                 const supabase = createClient();
                                 await supabase.from("backlinks").update({ status: "queued", error_message: null }).eq("id", bl.id);
-                                toast("Tentando novamente...");
+                                toast(`Reprocessando "${bl.anchor_text}"...`);
                                 try {
-                                  await fetch("/api/admin/process-backlink", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ backlinkId: bl.id }) });
-                                } catch {}
+                                  const res = await fetch("/api/admin/process-backlink", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ backlinkId: bl.id }) });
+                                  const body = await res.json().catch(() => ({}));
+                                  if (!res.ok || body?.error) {
+                                    toast.error(body?.error ?? humanizeError(body?.detail ?? `HTTP ${res.status}`).user);
+                                    console.error("[retry] falhou:", body?.detail ?? body);
+                                  } else {
+                                    toast.success("Reprocessado com sucesso");
+                                  }
+                                } catch (e) {
+                                  toast.error(humanizeError(e).user);
+                                  console.error("[retry] erro de rede:", e);
+                                }
                               }}>
                                 Tentar novamente
                               </Button>

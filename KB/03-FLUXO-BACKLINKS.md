@@ -30,7 +30,7 @@ LIBS:
   /lib/constants.ts                  → Planos, limites, ações
 
 DB TABLES:
-  backlinks                          → status: queued → generating → published → indexed → error
+  backlinks                          → status: queued → generating → ready_for_review → published → indexed → error
   content_calendar                   → Keywords planejadas por site da rede
   network_sites                      → 67 sites da rede (domínio, nicho, DA)
   keywords                           → Keywords do usuário (GSC + descobertas)

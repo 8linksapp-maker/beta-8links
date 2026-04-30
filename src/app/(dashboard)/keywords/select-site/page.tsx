@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { humanizeError } from "@/lib/utils/error-messages";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Suspense } from "react";
 
@@ -221,10 +222,12 @@ function SelectSiteContent() {
       if (result.success) {
         toast.success("✅ Backlink publicado! Artigo gerado com sucesso.", { duration: 6000 });
       } else {
-        toast.error(result.error || "Erro ao processar backlink", { duration: 5000 });
+        toast.error(result.error || humanizeError(result.detail).user, { duration: 5000 });
+        console.error("[backlink] erro:", result.detail ?? result);
       }
-    } catch {
-      toast.error("Erro ao processar backlink");
+    } catch (e) {
+      toast.error(humanizeError(e).user);
+      console.error("[backlink] erro de rede:", e);
     }
     setCreating(false);
   };

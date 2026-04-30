@@ -287,14 +287,18 @@ function OnboardingContent() {
       const { error: updateError } = await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
       if (updateError) {
         console.error("[onboarding] Error updating profile:", updateError);
-        toast.error("Erro ao salvar: " + updateError.message);
+        toast.error("Não conseguimos salvar suas configurações. Verifique sua conexão e tente novamente.");
         setSaving(false);
         return;
       }
       toast.success("Site configurado!");
       router.refresh();
       router.push("/integrations/setup");
-    } catch { toast.error("Erro."); setSaving(false); }
+    } catch (e) {
+      console.error("[onboarding] save failed:", e);
+      toast.error("Não conseguimos finalizar a configuração. Tente novamente em alguns instantes.");
+      setSaving(false);
+    }
   };
 
   return (

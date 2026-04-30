@@ -52,3 +52,12 @@ TODO_FUNCIONAL.md
 .obsidian/
 test_*.mjs
 plan_*.json
+
+# Sentry Config File
+.env.sentry-build-plugin
+
+# Claude Code local settings
+.claude/
+
+# Supabase CLI cache
+supabase/.temp/

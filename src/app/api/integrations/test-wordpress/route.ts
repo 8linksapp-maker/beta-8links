@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   const { wpUrl, wpUsername, wpAppPassword } = await request.json();
 
   if (!wpUrl || !wpUsername || !wpAppPassword) {
-    return NextResponse.json({ error: "wpUrl, wpUsername e wpAppPassword são obrigatórios" }, { status: 400 });
+    return NextResponse.json({ error: "Preencha a URL do WordPress, usuário e senha de aplicativo." }, { status: 400 });
   }
 
   // Normalize URL
@@ -32,7 +32,8 @@ export async function POST(request: Request) {
       if (res.status === 404) {
         return NextResponse.json({ error: "REST API não encontrada. Verifique se a URL do WordPress está correta." });
       }
-      return NextResponse.json({ error: `Erro ${res.status}: ${text.slice(0, 200)}` });
+      console.error(`[test-wordpress] HTTP ${res.status}:`, text.slice(0, 500));
+      return NextResponse.json({ error: "Não conseguimos conectar ao seu WordPress. Verifique a URL e as credenciais." });
     }
 
     const posts = await res.json();
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
       message: `Conexão OK! ${siteName ? `Site: ${siteName}. ` : ""}${posts.length > 0 ? "Posts encontrados." : ""}`,
     });
   } catch (error) {
-    return NextResponse.json({ error: `Não foi possível conectar: ${error instanceof Error ? error.message : String(error)}` });
+    console.error("[test-wordpress] connection failed:", error);
+    return NextResponse.json({ error: "Não foi possível conectar ao seu WordPress. Verifique se o site está no ar e a URL está correta." });
   }
 }

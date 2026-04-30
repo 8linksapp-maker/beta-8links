@@ -10,7 +10,7 @@ import { PLANS, USAGE_LIMIT_MAP, USAGE_PERIOD, type UsageAction } from "@/lib/co
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Sua sessão expirou. Recarregue a página e faça login novamente." }, { status: 401 });
 
   const { data: profile } = await supabase
     .from("profiles")

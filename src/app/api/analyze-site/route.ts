@@ -6,13 +6,13 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   const { url, hasGscKeywords, gscKeywords } = await request.json();
-  if (!url) return NextResponse.json({ error: "url required" }, { status: 400 });
+  if (!url) return NextResponse.json({ error: "Informe o endereço do site (ex: meusite.com.br)." }, { status: 400 });
 
   const domain = url.replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/\/$/, "");
   const fullUrl = url.startsWith("http") ? url : `https://${url}`;
 
   if (!process.env.DATAFORSEO_LOGIN) {
-    return NextResponse.json({ error: "DataForSEO not configured" });
+    return NextResponse.json({ error: "Serviço de análise SEO temporariamente indisponível. Tente novamente em alguns instantes." });
   }
 
   try {

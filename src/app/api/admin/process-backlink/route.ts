@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@supabase/supabase-js";
 import { useActionOrFail } from "@/lib/actions/usage";
+import { fetchWithRetry } from "@/lib/utils/fetch-retry";
+import { humanizeError } from "@/lib/utils/error-messages";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? "";
 
@@ -70,8 +72,9 @@ export async function POST(request: Request) {
     }
 
     if (!networkSite) {
-      await supabase.from("backlinks").update({ status: "error", error_message: "Nenhum site ativo na rede" }).eq("id", backlinkId);
-      return NextResponse.json({ error: "Nenhum site da rede disponível" });
+      const msg = "Nenhum site disponível para publicar este backlink. Tente novamente em alguns minutos.";
+      await supabase.from("backlinks").update({ status: "error", error_message: msg }).eq("id", backlinkId);
+      return NextResponse.json({ error: msg });
     }
 
     const networkCtx = networkSite.site_context ?? {};
@@ -79,7 +82,7 @@ export async function POST(request: Request) {
     // ── Step 3: GPT generates keyword on the fly ──
     // No dependency on content_calendar — GPT creates the best keyword
     // based on anchor text + network site niche
-    const pickRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    const pickRes = await fetchWithRetry("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -106,14 +109,29 @@ REGRAS:
 JSON: {"keyword": "a keyword escolhida", "reason": "por que essa keyword permite o backlink", "articleAngle": "como o artigo vai abordar o tema"}` }],
         response_format: { type: "json_object" },
       }),
-    });
+    }, { label: "process-backlink:keyword-pick", maxRetries: 1 });
 
-    let picked: any;
-    try { picked = JSON.parse((await pickRes.json()).choices[0].message.content); } catch { picked = null; }
+    const pickJson = await pickRes.json().catch((e) => ({ _parseError: String(e) }));
+    let picked: any = null;
+    let pickErrorDetail = "";
+
+    if (!pickRes.ok || pickJson?.error) {
+      // OpenAI returned an error response (rate limit, auth, content policy, etc.)
+      pickErrorDetail = `OpenAI ${pickRes.status}: ${pickJson?.error?.code ?? ""} ${pickJson?.error?.message ?? JSON.stringify(pickJson?.error ?? pickJson)}`.trim();
+    } else {
+      try {
+        picked = JSON.parse(pickJson.choices?.[0]?.message?.content ?? "");
+      } catch (e) {
+        pickErrorDetail = `JSON parse failed: ${e instanceof Error ? e.message : String(e)} | raw: ${(pickJson.choices?.[0]?.message?.content ?? "").slice(0, 200)}`;
+      }
+    }
 
     if (!picked?.keyword) {
-      await supabase.from("backlinks").update({ status: "error", error_message: "GPT não conseguiu gerar keyword" }).eq("id", backlinkId);
-      return NextResponse.json({ error: "Falha ao gerar keyword" });
+      const technical = pickErrorDetail || "GPT não retornou uma keyword válida";
+      const friendly = humanizeError(technical).user;
+      console.error(`[process-backlink] keyword generation failed for backlink ${backlinkId}: ${technical}`);
+      await supabase.from("backlinks").update({ status: "error", error_message: friendly }).eq("id", backlinkId);
+      return NextResponse.json({ error: friendly, detail: technical });
     }
 
     // ── Step 5: Generate article ──
@@ -133,14 +151,19 @@ JSON: {"keyword": "a keyword escolhida", "reason": "por que essa keyword permite
       }),
     });
 
-    const articleData = await articleRes.json();
+    const articleData = await articleRes.json().catch((e) => ({ error: `test-article response parse failed: ${e}` }));
 
     if (!articleData.article) {
+      const technical = articleData.articleError?.message
+        ?? articleData.error
+        ?? `test-article HTTP ${articleRes.status}`;
+      const friendly = humanizeError(technical).user;
+      console.error(`[process-backlink] article generation failed for backlink ${backlinkId}: ${typeof technical === "string" ? technical : JSON.stringify(technical)}`, { keyword: picked.keyword, model: articleData.model, articleError: articleData.articleError });
       await supabase.from("backlinks").update({
         status: "error",
-        error_message: articleData.error ?? "Falha ao gerar artigo",
+        error_message: friendly,
       }).eq("id", backlinkId);
-      return NextResponse.json({ error: "Falha ao gerar artigo", details: articleData.error });
+      return NextResponse.json({ error: friendly, details: articleData.articleError ?? articleData.error });
     }
 
     // ── Step 6: Save and publish ──
@@ -149,25 +172,13 @@ JSON: {"keyword": "a keyword escolhida", "reason": "por que essa keyword permite
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-    const now = new Date().toISOString();
-    const metaDesc = articleData.outline?.metaDescription ?? "";
-    const firstImage = (articleData.article ?? "").match(/!\[[^\]]*\]\(([^)]+)\)/)?.[1] ?? null;
-
-    // Publish to EXTERNAL Supabase (the Astro sites read from here)
-    const networkDb = createServerClient(
-      process.env.NETWORK_SUPABASE_URL!,
-      process.env.NETWORK_SUPABASE_SERVICE_KEY!
-    );
-
-    // Article ready — user will review and publish manually via /backlinks/[id]/review
-    // Don't publish to network_posts yet (user needs to review first)
-
+    // Article ready — user will review and publish manually via /backlinks/[id]/review.
+    // Actual publishing to network_posts happens in /api/admin/publish-post.
     await supabase.from("backlinks").update({
-      status: "published",
+      status: "ready_for_review",
       article_title: title,
       article_content: articleData.article,
-      published_url: null, // Will be set when user clicks "Publicar" in review
-      published_at: now,
+      published_url: null,
       error_message: null,
     }).eq("id", backlinkId);
 
@@ -182,10 +193,13 @@ JSON: {"keyword": "a keyword escolhida", "reason": "por que essa keyword permite
     });
 
   } catch (err) {
+    const { user: friendly, technical } = humanizeError(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error(`[process-backlink] uncaught error for backlink ${backlinkId}: ${technical}`, stack);
     await supabase.from("backlinks").update({
       status: "error",
-      error_message: `Erro interno: ${err instanceof Error ? err.message : String(err)}`,
+      error_message: friendly,
     }).eq("id", backlinkId);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: friendly, detail: technical }, { status: 500 });
   }
 }

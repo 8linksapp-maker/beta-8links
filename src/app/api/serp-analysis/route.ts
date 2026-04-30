@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   const { keyword } = await request.json();
-  if (!keyword) return NextResponse.json({ error: "keyword required" }, { status: 400 });
+  if (!keyword) return NextResponse.json({ error: "Digite uma palavra-chave para analisar." }, { status: 400 });
 
   if (!process.env.DATAFORSEO_LOGIN) {
-    return NextResponse.json({ error: "DataForSEO not configured" });
+    console.error("[serp-analysis] DATAFORSEO_LOGIN not set");
+    return NextResponse.json({ error: "Serviço de análise SEO temporariamente indisponível. Tente novamente em alguns instantes." });
   }
 
   try {

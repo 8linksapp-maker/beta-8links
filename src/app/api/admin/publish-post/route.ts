@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@supabase/supabase-js";
+import { validateBacklinkContent } from "@/lib/utils/link-validation";
 
 export const maxDuration = 30;
 
@@ -14,6 +15,34 @@ export async function POST(request: Request) {
   const { backlinkId, content, title, domain } = await request.json();
   if (!backlinkId || !content || !domain) {
     return NextResponse.json({ error: "backlinkId, content, domain required" }, { status: 400 });
+  }
+
+  const appDb = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: backlink } = await appDb
+    .from("backlinks")
+    .select("target_url")
+    .eq("id", backlinkId)
+    .single();
+
+  if (!backlink?.target_url) {
+    return NextResponse.json({ error: "Backlink não encontrado ou sem URL de destino" }, { status: 404 });
+  }
+
+  const validation = validateBacklinkContent({
+    content,
+    targetUrl: backlink.target_url,
+    publisherDomain: domain,
+  });
+  if (!validation.ok) {
+    console.warn(`[publish-post] validation failed for backlink ${backlinkId}: ${validation.reason}`, validation.offendingLinks);
+    return NextResponse.json(
+      { error: validation.reason, offendingLinks: validation.offendingLinks },
+      { status: 400 }
+    );
   }
 
   const networkDb = createServerClient(
@@ -62,15 +91,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Update backlink published_url
-  const appDb = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
   await appDb.from("backlinks").update({
+    status: "published",
     published_url: `https://${domain}/${slug}`,
     article_content: content,
+    published_at: new Date().toISOString(),
   }).eq("id", backlinkId);
 
   return NextResponse.json({
