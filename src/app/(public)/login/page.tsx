@@ -74,9 +74,17 @@ export default function LoginPage() {
               </div>
             )}
             {error === "migrate" && (
-              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 space-y-2">
+              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 space-y-3">
                 <p className="text-sm font-semibold text-foreground">Migramos para uma nova plataforma!</p>
-                <p className="text-xs text-muted-foreground">Clique em <strong>"Esqueceu?"</strong> ao lado da senha para criar uma nova senha e acessar a nova versão do 8links.</p>
+                <p className="text-xs text-muted-foreground">Crie uma nova senha clicando em <strong>"Esqueceu?"</strong> acima, ou fale com o suporte:</p>
+                <a
+                  href={`https://wa.me/5531997500870?text=${encodeURIComponent(`Oi! Preciso de ajuda para acessar a 8links. Meu email: ${email || "(seu email)"}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-semibold transition-colors"
+                >
+                  Falar com suporte no WhatsApp
+                </a>
               </div>
             )}
 
@@ -128,6 +136,17 @@ export default function LoginPage() {
           <Link href="/register" className="text-primary font-semibold hover:underline">
             Criar conta
           </Link>
+        </p>
+        <p className="text-center text-xs text-muted-foreground/60 mt-3">
+          Problemas para entrar?{" "}
+          <a
+            href={`https://wa.me/5531997500870?text=${encodeURIComponent("Oi! Não consigo entrar na 8links, preciso de ajuda.")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary/70 hover:text-primary hover:underline"
+          >
+            Fale com o suporte
+          </a>
         </p>
       </motion.div>
     </div>
