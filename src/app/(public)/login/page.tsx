@@ -78,7 +78,7 @@ export default function LoginPage() {
                 <p className="text-sm font-semibold text-foreground">Migramos para uma nova plataforma!</p>
                 <p className="text-xs text-muted-foreground">Crie uma nova senha clicando em <strong>"Esqueceu?"</strong> acima, ou fale com o suporte:</p>
                 <a
-                  href={`https://wa.me/5531997500870?text=${encodeURIComponent(`Oi! Preciso de ajuda para acessar a 8links. Meu email: ${email || "(seu email)"}`)}`}
+                  href={`https://wa.me/5511998710302?text=${encodeURIComponent(`Oi! Preciso de ajuda para acessar a 8links. Meu email: ${email || "(seu email)"}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-semibold transition-colors"
@@ -140,7 +140,7 @@ export default function LoginPage() {
         <p className="text-center text-xs text-muted-foreground/60 mt-3">
           Problemas para entrar?{" "}
           <a
-            href={`https://wa.me/5531997500870?text=${encodeURIComponent("Oi! Não consigo entrar na 8links, preciso de ajuda.")}`}
+            href={`https://wa.me/5511998710302?text=${encodeURIComponent("Oi! Não consigo entrar na 8links, preciso de ajuda.")}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary/70 hover:text-primary hover:underline"
