@@ -148,13 +148,44 @@ const rules = [
     frequency: 60,
     environment: ENVIRONMENT,
   },
+  {
+    name: "👥 Bug afetando múltiplos usuários (3+ em 1h)",
+    actionMatch: "all",
+    filterMatch: "all",
+    conditions: [
+      {
+        id: "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition",
+        value: 3,
+        interval: "1h",
+      },
+    ],
+    filters: [envFilter],
+    actions: [slackAction],
+    frequency: 60,
+    environment: ENVIRONMENT,
+  },
 ];
 
-// ─── Step 3: Create rules ────────────────────────────────────────────────────
+// ─── Step 3: List existing rules (idempotent) ────────────────────────────────
+console.log("🔍 Listing existing rules...");
+const existingRes = await api(`/projects/${ORG}/${PROJECT}/rules/`);
+const existingNames = new Set(
+  Array.isArray(existingRes.body) ? existingRes.body.map((r) => r.name) : []
+);
+console.log(`   Found ${existingNames.size} existing rule(s)\n`);
+
+// ─── Step 4: Create rules (skip duplicates) ──────────────────────────────────
 let created = 0;
+let skipped = 0;
 let failed = 0;
 
 for (const rule of rules) {
+  if (existingNames.has(rule.name)) {
+    console.log(`⏭️  Skipping (already exists): ${rule.name}\n`);
+    skipped++;
+    continue;
+  }
+
   console.log(`📝 Creating: ${rule.name}`);
   const res = await api(`/projects/${ORG}/${PROJECT}/rules/`, {
     method: "POST",
@@ -172,7 +203,7 @@ for (const rule of rules) {
 
 // ─── Summary ─────────────────────────────────────────────────────────────────
 console.log("─".repeat(60));
-console.log(`Done. ${created} created, ${failed} failed.`);
+console.log(`Done. ${created} created, ${skipped} skipped, ${failed} failed.`);
 console.log(`View at: https://${ORG}.sentry.io/alerts/rules/`);
 
 if (failed > 0) process.exit(1);

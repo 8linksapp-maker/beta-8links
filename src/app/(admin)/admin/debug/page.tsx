@@ -111,8 +111,12 @@ export default function DebugPage() {
               variant="outline"
               className="h-8 text-xs"
               onClick={() => {
-                const msg = `Sentry client test #${Math.floor(Math.random() * 100000)} em ${new Date().toISOString()}`;
-                Sentry.captureException(new Error(msg));
+                const tag = Math.floor(Math.random() * 100000);
+                const msg = `Sentry client test #${tag} em ${new Date().toISOString()}`;
+                Sentry.withScope((scope) => {
+                  scope.setFingerprint([`sentry-test-client-${tag}`]);
+                  Sentry.captureException(new Error(msg));
+                });
                 toast.success("Erro client-side enviado. Confira no Slack #alerts em ~30s.");
               }}
             >
