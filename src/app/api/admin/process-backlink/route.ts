@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/nextjs";
 import { useActionOrFail } from "@/lib/actions/usage";
 import { fetchWithRetry } from "@/lib/utils/fetch-retry";
 import { humanizeError } from "@/lib/utils/error-messages";
@@ -33,6 +34,13 @@ export async function POST(request: Request) {
 
   if (!backlink) return NextResponse.json({ error: "Backlink não encontrado" }, { status: 404 });
   if (backlink.status !== "queued") return NextResponse.json({ error: "Backlink já processado", status: backlink.status });
+
+  // Attach user to Sentry scope so any exception below is associated with them.
+  if (backlink.user_id) {
+    const { data: profile } = await supabase.from("profiles").select("email").eq("id", backlink.user_id).single();
+    Sentry.setUser({ id: backlink.user_id, email: profile?.email });
+  }
+  Sentry.setTag("backlinkId", backlinkId);
 
   // Check usage limit
   const usage = await useActionOrFail(backlink.user_id, "backlink", backlinkId);

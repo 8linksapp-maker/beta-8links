@@ -10,6 +10,7 @@ import { PLANS } from "@/lib/constants";
 import { SiteProvider } from "@/lib/hooks/use-site";
 import { createClient } from "@/lib/supabase/client";
 import { MigrationBanner } from "@/components/migration-banner";
+import { SentryUserSync } from "@/components/sentry-user-sync";
 
 export default function DashboardLayout({
   children,
@@ -51,6 +52,7 @@ export default function DashboardLayout({
 
   return (
     <SiteProvider>
+    <SentryUserSync />
     <div className="flex h-screen overflow-hidden">
       {mobileOpen && (
         <div

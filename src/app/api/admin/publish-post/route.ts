@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/nextjs";
 import { validateBacklinkContent } from "@/lib/utils/link-validation";
 
 export const maxDuration = 30;
@@ -24,13 +25,19 @@ export async function POST(request: Request) {
 
   const { data: backlink } = await appDb
     .from("backlinks")
-    .select("target_url")
+    .select("target_url, user_id")
     .eq("id", backlinkId)
     .single();
 
   if (!backlink?.target_url) {
     return NextResponse.json({ error: "Backlink não encontrado ou sem URL de destino" }, { status: 404 });
   }
+
+  if (backlink.user_id) {
+    const { data: profile } = await appDb.from("profiles").select("email").eq("id", backlink.user_id).single();
+    Sentry.setUser({ id: backlink.user_id, email: profile?.email });
+  }
+  Sentry.setTag("backlinkId", backlinkId);
 
   const validation = validateBacklinkContent({
     content,

@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { SentryUserSync } from "@/components/sentry-user-sync";
 
 const adminNav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -33,6 +34,7 @@ export default function AdminLayout({
 
   return (
     <div className="flex h-screen overflow-hidden">
+      <SentryUserSync />
       {/* Admin Sidebar */}
       <aside className="w-56 bg-[hsl(20,12%,5%)] border-r border-border flex flex-col shrink-0">
         <div className="flex items-center gap-3 px-4 py-5 border-b border-border">
