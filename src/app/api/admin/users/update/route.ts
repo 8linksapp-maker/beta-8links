@@ -7,9 +7,16 @@ export async function PATCH(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const { id, name, plan_id, subscription_status, role, email } = await request.json();
+  const { id, name, plan_id, subscription_status, role, email, password } = await request.json();
 
   if (!id) return NextResponse.json({ error: "ID obrigatorio" }, { status: 400 });
+
+  // Password reset via admin
+  if (password) {
+    const { error } = await supabase.auth.admin.updateUserById(id, { password });
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ success: true, action: "password_reset" });
+  }
 
   const updates: Record<string, any> = {};
   if (name !== undefined) updates.name = name;

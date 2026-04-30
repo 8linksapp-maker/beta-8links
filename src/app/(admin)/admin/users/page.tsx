@@ -10,6 +10,7 @@ import {
   Eye,
   Pencil,
   Loader2,
+  KeyRound,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,7 @@ export default function UsersPage() {
   const [editUser, setEditUser] = useState<any>(null);
   const [editForm, setEditForm] = useState({ name: "", email: "", plan_id: "", subscription_status: "", role: "" });
   const [savingEdit, setSavingEdit] = useState(false);
+  const [resettingPw, setResettingPw] = useState(false);
 
   // Create User state
   const [createOpen, setCreateOpen] = useState(false);
@@ -95,6 +97,33 @@ export default function UsersPage() {
       toast.error(err.message || "Erro ao salvar");
     } finally {
       setSavingEdit(false);
+    }
+  }
+
+  async function handleResetPassword() {
+    if (!editUser) return;
+    const tempPw = "8links" + Math.random().toString(36).slice(2, 6);
+    setResettingPw(true);
+    try {
+      const res = await fetch("/api/admin/users/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editUser.id, password: tempPw }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao resetar");
+      toast.success(
+        <div>
+          <p className="font-bold">Senha resetada!</p>
+          <p className="text-xs mt-1 font-mono select-all">{tempPw}</p>
+          <p className="text-xs text-muted-foreground mt-1">Copie e envie pro usuario</p>
+        </div>,
+        { duration: 15000 }
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao resetar senha");
+    } finally {
+      setResettingPw(false);
     }
   }
 
@@ -396,12 +425,18 @@ export default function UsersPage() {
               </select>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSaveEdit} disabled={savingEdit} className="min-w-[120px]">
-              {savingEdit ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Salvando...</> : "Salvar"}
+          <div className="flex items-center justify-between pt-2 border-t border-border">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs text-muted-foreground" onClick={handleResetPassword} disabled={resettingPw}>
+              {resettingPw ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />}
+              Resetar Senha
             </Button>
-          </DialogFooter>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSaveEdit} disabled={savingEdit} className="min-w-[120px]">
+                {savingEdit ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Salvando...</> : "Salvar"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
