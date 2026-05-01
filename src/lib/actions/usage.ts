@@ -85,6 +85,47 @@ export async function trackUsage(
 }
 
 /**
+ * Record real cost for a usage event after the underlying API calls finish.
+ *
+ * `useActionOrFail` inserts a row up-front (so we can enforce limits before
+ * any work happens). This UPDATEs that row with the actual tokens/cost once
+ * the OpenAI/Claude response is in. Matches by (user_id, action, reference_id)
+ * — pass the same referenceId you used at trackUsage time.
+ *
+ * Silent failure: if the row isn't found we just log; we never want cost
+ * tracking to break the user-facing flow.
+ */
+export async function recordUsageCost(
+  userId: string,
+  action: UsageAction,
+  referenceId: string,
+  payload: {
+    tokensInput?: number;
+    tokensOutput?: number;
+    costUsd?: number;
+    model?: string;
+  }
+): Promise<void> {
+  if (!referenceId) return;
+  const admin = getAdmin();
+  const { error } = await admin
+    .from("usage_tracking")
+    .update({
+      tokens_input: payload.tokensInput ?? null,
+      tokens_output: payload.tokensOutput ?? null,
+      cost_usd: payload.costUsd ?? null,
+      model: payload.model ?? null,
+    })
+    .eq("user_id", userId)
+    .eq("action", action)
+    .eq("reference_id", referenceId);
+
+  if (error) {
+    console.error(`[recordUsageCost] failed for ${action}/${referenceId}: ${error.message}`);
+  }
+}
+
+/**
  * Check limit + track in one call.
  * Returns error string if limit exceeded, null if OK.
  */

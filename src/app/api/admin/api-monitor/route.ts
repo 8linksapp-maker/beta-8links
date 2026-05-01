@@ -48,17 +48,33 @@ export async function GET(request: Request) {
   // ── Usage tracking ──
   const { data: usageRows } = await supabase
     .from("usage_tracking")
-    .select("action, created_at, user_id")
+    .select("action, created_at, user_id, cost_usd, tokens_input, tokens_output")
     .gte("created_at", periodStart)
     .lte("created_at", periodEnd);
 
-  const usageByAction: Record<string, { period: number; today: number }> = {};
+  const usageByAction: Record<string, {
+    period: number;
+    today: number;
+    realCalls: number;
+    realCostUsd: number;
+    realTokensInput: number;
+    realTokensOutput: number;
+  }> = {};
   const uniqueUsers = new Set<string>();
 
   for (const row of usageRows ?? []) {
-    if (!usageByAction[row.action]) usageByAction[row.action] = { period: 0, today: 0 };
-    usageByAction[row.action].period++;
-    if (row.created_at >= todayStart) usageByAction[row.action].today++;
+    if (!usageByAction[row.action]) {
+      usageByAction[row.action] = { period: 0, today: 0, realCalls: 0, realCostUsd: 0, realTokensInput: 0, realTokensOutput: 0 };
+    }
+    const bucket = usageByAction[row.action];
+    bucket.period++;
+    if (row.created_at >= todayStart) bucket.today++;
+    if (row.cost_usd != null) {
+      bucket.realCalls++;
+      bucket.realCostUsd += Number(row.cost_usd);
+      bucket.realTokensInput += row.tokens_input ?? 0;
+      bucket.realTokensOutput += row.tokens_output ?? 0;
+    }
     uniqueUsers.add(row.user_id);
   }
 
@@ -179,21 +195,53 @@ export async function GET(request: Request) {
     article:         { dataforseo: 0.002, openai: 0.011, label: "Artigo avulso" },
   };
 
-  const costBreakdown: Record<string, { calls: number; dataforseo: number; openai: number; total: number }> = {};
+  const costBreakdown: Record<string, {
+    calls: number;
+    dataforseo: number;
+    openai: number;
+    total: number;
+    realCalls: number;
+    realCostUsd: number;
+    estimatedCalls: number;
+  }> = {};
   let totalDataForSEO = 0;
   let totalOpenAI = 0;
+  let totalRealCalls = 0;
+  let totalEstimatedCalls = 0;
 
   for (const [action, unit] of Object.entries(COST_PER_ACTION)) {
-    const calls = usageByAction[action]?.period ?? 0;
+    const bucket = usageByAction[action];
+    const calls = bucket?.period ?? 0;
+    const realCalls = bucket?.realCalls ?? 0;
+    const realCost = bucket?.realCostUsd ?? 0;
+    const estimatedCalls = calls - realCalls;
+
+    // DataForSEO is fixed per call (no per-call tracking — every call costs the same).
     const df = calls * unit.dataforseo;
-    const ai = calls * unit.openai;
-    costBreakdown[action] = { calls, dataforseo: df, openai: ai, total: df + ai };
+    // OpenAI: real cost where we have it, estimated for the rest.
+    const ai = realCost + (estimatedCalls * unit.openai);
+
+    costBreakdown[action] = {
+      calls,
+      dataforseo: df,
+      openai: ai,
+      total: df + ai,
+      realCalls,
+      realCostUsd: realCost,
+      estimatedCalls,
+    };
     totalDataForSEO += df;
     totalOpenAI += ai;
+    totalRealCalls += realCalls;
+    totalEstimatedCalls += estimatedCalls;
   }
 
   const totalUSD = totalDataForSEO + totalOpenAI;
   const usdBrlRate = getUsdBrlRate();
+  const totalTrackedCalls = totalRealCalls + totalEstimatedCalls;
+  const accuracyPct = totalTrackedCalls > 0
+    ? Math.round((totalRealCalls / totalTrackedCalls) * 100)
+    : 0;
   const costs = {
     perAction: COST_PER_ACTION,
     breakdown: costBreakdown,
@@ -202,6 +250,9 @@ export async function GET(request: Request) {
     totalUSD,
     totalBRL: totalUSD * usdBrlRate,
     usdBrlRate,
+    realCalls: totalRealCalls,
+    estimatedCalls: totalEstimatedCalls,
+    accuracyPct,
   };
 
   return NextResponse.json({

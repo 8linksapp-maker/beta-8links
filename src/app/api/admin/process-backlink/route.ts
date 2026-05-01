@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@supabase/supabase-js";
 import * as Sentry from "@sentry/nextjs";
-import { useActionOrFail } from "@/lib/actions/usage";
+import { useActionOrFail, recordUsageCost } from "@/lib/actions/usage";
 import { fetchWithRetry } from "@/lib/utils/fetch-retry";
 import { humanizeError } from "@/lib/utils/error-messages";
+
+// gpt-4.1-mini pricing per 1M tokens (used for the keyword-pick call below).
+const PICK_INPUT_USD_PER_M = 0.40;
+const PICK_OUTPUT_USD_PER_M = 1.60;
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? "";
 
@@ -122,6 +126,9 @@ JSON: {"keyword": "a keyword escolhida", "reason": "por que essa keyword permite
     const pickJson = await pickRes.json().catch((e) => ({ _parseError: String(e) }));
     let picked: any = null;
     let pickErrorDetail = "";
+    const pickInputTokens = pickJson?.usage?.prompt_tokens ?? 0;
+    const pickOutputTokens = pickJson?.usage?.completion_tokens ?? 0;
+    const pickCostUsd = (pickInputTokens * PICK_INPUT_USD_PER_M + pickOutputTokens * PICK_OUTPUT_USD_PER_M) / 1_000_000;
 
     if (!pickRes.ok || pickJson?.error) {
       // OpenAI returned an error response (rate limit, auth, content policy, etc.)
@@ -189,6 +196,18 @@ JSON: {"keyword": "a keyword escolhida", "reason": "por que essa keyword permite
       published_url: null,
       error_message: null,
     }).eq("id", backlinkId);
+
+    // Record the real cost for this backlink (keyword-pick + outline + write article).
+    // DataForSEO ($0.002 SERP) is fixed and not counted here — only OpenAI tokens.
+    const articleCostUsd = articleData.stats?.costUsd ?? 0;
+    const articleInputTokens = articleData.stats?.inputTokens ?? 0;
+    const articleOutputTokens = articleData.stats?.outputTokens ?? 0;
+    await recordUsageCost(backlink.user_id, "backlink", backlinkId, {
+      tokensInput: pickInputTokens + articleInputTokens,
+      tokensOutput: pickOutputTokens + articleOutputTokens,
+      costUsd: pickCostUsd + articleCostUsd,
+      model: articleData.stats?.model ?? "gpt-4.1-mini",
+    });
 
     return NextResponse.json({
       success: true,

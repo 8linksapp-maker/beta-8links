@@ -121,7 +121,18 @@ export default function ApiMonitorPage() {
       {/* Usage table — from real data */}
       <Card>
         <CardContent className="p-5">
-          <h2 className="text-sm font-bold mb-4 flex items-center gap-2"><Activity className="w-4 h-4 text-primary" /> Uso de APIs — dados reais</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold flex items-center gap-2"><Activity className="w-4 h-4 text-primary" /> Uso de APIs — dados reais</h2>
+            {(costs.realCalls ?? 0) + (costs.estimatedCalls ?? 0) > 0 && (
+              <span className={`text-[10px] font-mono px-2 py-1 rounded ${
+                (costs.accuracyPct ?? 0) >= 90 ? "bg-success-light text-success" :
+                (costs.accuracyPct ?? 0) >= 50 ? "bg-warning-light text-warning" :
+                "bg-muted text-muted-foreground"
+              }`}>
+                {costs.accuracyPct ?? 0}% custo real · {costs.realCalls ?? 0}/{(costs.realCalls ?? 0) + (costs.estimatedCalls ?? 0)} chamadas
+              </span>
+            )}
+          </div>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/30">

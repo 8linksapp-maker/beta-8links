@@ -135,6 +135,8 @@ O wordCountTarget deve ser ${targetWordCount} (média dos concorrentes ${avgComp
 Não use "..." ou comentários dentro do JSON. Retorne o JSON completo e válido.`;
 
   let outline: any = null;
+  let outlineInputTokens = 0;
+  let outlineOutputTokens = 0;
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const outlineRes = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -147,7 +149,9 @@ Não use "..." ou comentários dentro do JSON. Retorne o JSON completo e válido
       let content = outlineData.choices[0].message.content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       content = content.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
       outline = JSON.parse(content);
-      steps.push({ step: "3. Consolidate outline", duration: Date.now() - s3, data: { headingsCount: outline.outline?.length, title: outline.title, attempt } });
+      outlineInputTokens = outlineData.usage?.prompt_tokens ?? 0;
+      outlineOutputTokens = outlineData.usage?.completion_tokens ?? 0;
+      steps.push({ step: "3. Consolidate outline", duration: Date.now() - s3, data: { headingsCount: outline.outline?.length, title: outline.title, attempt, inputTokens: outlineInputTokens, outputTokens: outlineOutputTokens } });
       break;
     } catch (e) {
       if (attempt === 2) {
@@ -331,14 +335,19 @@ REGRAS DE ESCRITA:
 
   steps.push({ step: "5. Find images", duration: Date.now() - s5, data: { articleWords: articleWordCount, imagesNeeded: imageCount, found: imageResults.length, images: imageResults.map(i => ({ heading: i.heading, source: i.source })) } });
 
-  // Cost calculation
+  // Cost calculation — outline call (always gpt-4.1-mini) + write article (usedModel)
   const pricing: Record<string, { input: number; output: number }> = {
     "gpt-4.1-nano": { input: 0.10, output: 0.40 },
     "gpt-4.1-mini": { input: 0.40, output: 1.60 },
     "gpt-4.1": { input: 2.00, output: 8.00 },
   };
-  const p = pricing[usedModel] ?? { input: 1, output: 4 };
-  const cost = (inputTokens * p.input / 1_000_000) + (outputTokens * p.output / 1_000_000);
+  const writePricing = pricing[usedModel] ?? { input: 1, output: 4 };
+  const outlinePricing = pricing["gpt-4.1-mini"];
+  const writeCost = (inputTokens * writePricing.input + outputTokens * writePricing.output) / 1_000_000;
+  const outlineCost = (outlineInputTokens * outlinePricing.input + outlineOutputTokens * outlinePricing.output) / 1_000_000;
+  const cost = writeCost + outlineCost;
+  const totalInputTokens = inputTokens + outlineInputTokens;
+  const totalOutputTokens = outputTokens + outlineOutputTokens;
 
   // Check if backlink was inserted
   const backlinkInserted = backlink?.url ? article.includes(backlink.url) : false;
@@ -361,8 +370,13 @@ REGRAS DE ESCRITA:
     stats: {
       wordCount: article.split(/\s+/).length,
       competitorsAnalyzed: competitorOutlines.length,
-      inputTokens,
-      outputTokens,
+      inputTokens: totalInputTokens,
+      outputTokens: totalOutputTokens,
+      writeInputTokens: inputTokens,
+      writeOutputTokens: outputTokens,
+      outlineInputTokens,
+      outlineOutputTokens,
+      costUsd: cost,
       cost: `$${cost.toFixed(4)}`,
       costBRL: `R$ ${(cost * getUsdBrlRate()).toFixed(2)}`,
       totalDuration: `${((Date.now() - startTotal) / 1000).toFixed(1)}s`,
