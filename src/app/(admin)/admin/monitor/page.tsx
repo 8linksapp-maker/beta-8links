@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Activity, DollarSign, Zap, AlertTriangle, Database,
   FileText, Search, Target, Link as LinkIcon, RefreshCw,
-  Check, Clock, XCircle, Users, Calendar,
+  Check, Clock, XCircle, Users, Calendar, TrendingUp, UserX,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,10 +87,35 @@ export default function ApiMonitorPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <KPI icon={DollarSign} label="Custo total" value={`R$ ${costs.totalBRL?.toFixed(2) ?? "0.00"}`} sub={`$${costs.totalUSD?.toFixed(3) ?? "0"}`} color="text-primary" />
-        <KPI icon={Zap} label="Backlinks" value={bl.published ?? 0} sub={`${bl.errors ?? 0} erros · ${bl.queued ?? 0} fila`} color="text-success" />
+        <KPI icon={Zap} label="Backlinks" value={bl.published ?? 0} sub={`${bl.errorsPeriod ?? 0} erros · ${bl.queued ?? 0} fila`} color="text-success" />
         <KPI icon={FileText} label="Artigos" value={data?.articles?.count ?? 0} color="text-info" />
         <KPI icon={Users} label="Usuários ativos" value={data?.uniqueUsers ?? 0} color="text-foreground" />
         <KPI icon={Database} label="Cache keywords" value={data?.cache?.keywordSeeds ?? 0} sub="Seeds salvos" color="text-muted-foreground" />
+      </div>
+
+      {/* Health KPIs (success rate, inactive users, article funnel) */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <KPI
+          icon={TrendingUp}
+          label="Taxa de sucesso (backlinks)"
+          value={bl.successRate != null ? `${bl.successRate}%` : "—"}
+          sub={`${bl.published ?? 0} publicados / ${bl.errorsPeriod ?? 0} erros`}
+          color={bl.successRate == null ? "text-muted-foreground" : bl.successRate >= 80 ? "text-success" : bl.successRate >= 50 ? "text-warning" : "text-destructive"}
+        />
+        <KPI
+          icon={UserX}
+          label="Usuários inativos (14d)"
+          value={data?.health?.inactive14d ?? 0}
+          sub={`${data?.health?.recentlyActive ?? 0} de ${data?.health?.activeProfiles ?? 0} usaram a plataforma`}
+          color={(data?.health?.inactive14d ?? 0) > 0 ? "text-warning" : "text-success"}
+        />
+        <KPI
+          icon={FileText}
+          label="Artigos por status"
+          value={data?.articles?.count ?? 0}
+          sub={Object.entries(data?.articles?.byStatus ?? {}).map(([s, n]) => `${s}: ${n}`).join(" · ") || "Nenhum no período"}
+          color="text-info"
+        />
       </div>
 
       {/* Usage table — from real data */}
@@ -269,13 +294,14 @@ export default function ApiMonitorPage() {
       </Card>
 
       {/* Alerts */}
-      {(bl.errors > 0 || bl.queued > 3) && (
+      {(bl.errors > 0 || bl.queued > 3 || (data?.health?.inactive14d ?? 0) > 0) && (
         <Card className="border-warning/30">
           <CardContent className="p-5">
             <h2 className="text-sm font-bold mb-2 flex items-center gap-2 text-warning"><AlertTriangle className="w-4 h-4" /> Alertas</h2>
             <div className="space-y-1 text-xs">
-              {bl.errors > 0 && <p className="text-destructive">{bl.errors} backlink(s) com erro</p>}
+              {bl.errors > 0 && <p className="text-destructive">{bl.errors} backlink(s) com erro (total acumulado)</p>}
               {bl.queued > 3 && <p className="text-warning">{bl.queued} backlinks na fila</p>}
+              {(data?.health?.inactive14d ?? 0) > 0 && <p className="text-warning">{data.health.inactive14d} usuário(s) ativo(s) sem uso há 14+ dias</p>}
             </div>
           </CardContent>
         </Card>

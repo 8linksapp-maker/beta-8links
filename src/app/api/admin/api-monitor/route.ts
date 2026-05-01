@@ -83,6 +83,39 @@ export async function GET(request: Request) {
     .from("articles").select("id", { count: "exact", head: true })
     .gte("created_at", periodStart).lte("created_at", periodEnd);
 
+  // ── Article status breakdown for period ──
+  const { data: articleStatuses } = await supabase
+    .from("articles").select("status, created_at, published_at")
+    .gte("created_at", periodStart).lte("created_at", periodEnd);
+
+  const articleByStatus: Record<string, number> = {};
+  for (const a of articleStatuses ?? []) {
+    articleByStatus[a.status] = (articleByStatus[a.status] ?? 0) + 1;
+  }
+
+  // ── Backlink success rate (period) ──
+  const { count: errorBacklinksPeriod } = await supabase
+    .from("backlinks").select("id", { count: "exact", head: true })
+    .eq("status", "error").gte("created_at", periodStart).lte("created_at", periodEnd);
+
+  const successDenominator = (publishedBacklinks ?? 0) + (errorBacklinksPeriod ?? 0);
+  const successRate = successDenominator > 0
+    ? Math.round(((publishedBacklinks ?? 0) / successDenominator) * 100)
+    : null;
+
+  // ── Inactive users (no usage in last 14 days) ──
+  const fourteenDaysAgo = new Date(now);
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+  const { data: recentActiveRows } = await supabase
+    .from("usage_tracking").select("user_id")
+    .gte("created_at", fourteenDaysAgo.toISOString());
+  const recentlyActiveIds = new Set((recentActiveRows ?? []).map(r => r.user_id));
+
+  const { data: allProfiles } = await supabase
+    .from("profiles").select("id, subscription_status").in("subscription_status", ["active", "trialing"]);
+  const totalActiveProfiles = (allProfiles ?? []).length;
+  const inactiveCount = (allProfiles ?? []).filter(p => !recentlyActiveIds.has(p.id)).length;
+
   // ── Cache stats ──
   const { count: cachedSeeds } = await supabase
     .from("keyword_suggestions_cache").select("id", { count: "exact", head: true });
@@ -172,8 +205,20 @@ export async function GET(request: Request) {
     period: { label: periodLabel, start: periodStart, end: periodEnd, type: period },
     usage: usageByAction,
     uniqueUsers: uniqueUsers.size,
-    backlinks: { total: totalBacklinks ?? 0, published: publishedBacklinks ?? 0, errors: errorBacklinks ?? 0, queued: queuedBacklinks ?? 0 },
-    articles: { count: articlesCount ?? 0 },
+    backlinks: {
+      total: totalBacklinks ?? 0,
+      published: publishedBacklinks ?? 0,
+      errors: errorBacklinks ?? 0,
+      errorsPeriod: errorBacklinksPeriod ?? 0,
+      queued: queuedBacklinks ?? 0,
+      successRate,
+    },
+    articles: { count: articlesCount ?? 0, byStatus: articleByStatus },
+    health: {
+      activeProfiles: totalActiveProfiles,
+      inactive14d: inactiveCount,
+      recentlyActive: recentlyActiveIds.size,
+    },
     cache: { keywordSeeds: cachedSeeds ?? 0 },
     costs,
     dailyBreakdown,
