@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { humanizeError } from "@/lib/utils/error-messages";
+import { normalizeUrl } from "@/lib/utils/url";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Suspense } from "react";
 
@@ -193,7 +194,7 @@ function SelectSiteContent() {
       user_id: user.id,
       client_site_id: activeSiteId,
       network_site_id: selectedSite,
-      target_url: targetUrl,
+      target_url: normalizeUrl(targetUrl),
       anchor_text: anchor,
       anchor_type: "partial",
       status: "queued",

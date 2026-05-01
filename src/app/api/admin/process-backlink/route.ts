@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 import { useActionOrFail, recordUsageCost } from "@/lib/actions/usage";
 import { fetchWithRetry } from "@/lib/utils/fetch-retry";
 import { humanizeError } from "@/lib/utils/error-messages";
+import { normalizeUrl } from "@/lib/utils/url";
 
 // gpt-4.1-mini pricing per 1M tokens (used for the keyword-pick call below).
 const PICK_INPUT_USD_PER_M = 0.40;
@@ -38,6 +39,14 @@ export async function POST(request: Request) {
 
   if (!backlink) return NextResponse.json({ error: "Backlink não encontrado" }, { status: 404 });
   if (backlink.status !== "queued") return NextResponse.json({ error: "Backlink já processado", status: backlink.status });
+
+  // Sanitize target_url: legacy rows may have double slashes (https://site.com//path).
+  // Normalize before generating the article so the GPT inserts the clean URL.
+  const cleanTargetUrl = normalizeUrl(backlink.target_url);
+  if (cleanTargetUrl !== backlink.target_url) {
+    await supabase.from("backlinks").update({ target_url: cleanTargetUrl }).eq("id", backlinkId);
+    backlink.target_url = cleanTargetUrl;
+  }
 
   // Attach user to Sentry scope so any exception below is associated with them.
   if (backlink.user_id) {

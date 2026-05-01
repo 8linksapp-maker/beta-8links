@@ -24,6 +24,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSite } from "@/lib/hooks/use-site";
 import { createClient } from "@/lib/supabase/client";
+import { joinUrl, normalizeUrl } from "@/lib/utils/url";
 
 // ─── Types ──────────────────────────────────────────
 interface GscKeyword {
@@ -250,7 +251,7 @@ export default function KeywordsPage() {
     const { data: inserted, error } = await supabase.from("backlinks").insert({
       user_id: user.id,
       client_site_id: activeSiteId,
-      target_url: blUrl,
+      target_url: normalizeUrl(blUrl),
       anchor_text: blAnchor,
       anchor_type: "partial",
       status: "queued",
@@ -796,7 +797,7 @@ export default function KeywordsPage() {
                         return (
                           <>
                             {pageItems.map((page, i) => {
-                              const fullUrl = page.url.startsWith("http") ? page.url : `${activeSite?.url}${page.url}`;
+                              const fullUrl = page.url.startsWith("http") ? page.url : joinUrl(activeSite?.url ?? "", page.url);
                               return (
                                 <tr key={i} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
                                   <td className="px-4 py-2.5">
