@@ -11,6 +11,7 @@ import { SiteProvider } from "@/lib/hooks/use-site";
 import { createClient } from "@/lib/supabase/client";
 import { MigrationBanner } from "@/components/migration-banner";
 import { SentryUserSync } from "@/components/sentry-user-sync";
+import { WhatsAppFab } from "@/components/whatsapp-fab";
 
 export default function DashboardLayout({
   children,
@@ -88,6 +89,7 @@ export default function DashboardLayout({
       </div>
 
       <CommandPalette />
+      <WhatsAppFab />
     </div>
     </SiteProvider>
   );

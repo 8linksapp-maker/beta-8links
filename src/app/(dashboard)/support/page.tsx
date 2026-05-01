@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/client";
+import { humanizeError } from "@/lib/utils/error-messages";
 import {
   MessageSquare, Send, Search, HelpCircle, ChevronRight,
   Bug, Lightbulb, CircleHelp, Clock,
@@ -91,43 +93,77 @@ export default function SupportPage() {
     setSending(true);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setSending(false); return; }
+    if (!user) { toast.error("Sessão expirada — faça login novamente"); setSending(false); return; }
 
-    // Create conversation
+    // Step 1: Create conversation
     const { data: conv, error: convErr } = await supabase
       .from("conversations")
       .insert({ client_id: user.id, channel: "platform", category, subject, status: "open" })
       .select().single();
-    if (convErr || !conv) { toast.error("Erro ao criar ticket"); setSending(false); return; }
 
-    // Upload screenshots
+    if (convErr || !conv) {
+      const technical = convErr?.message ?? "Resposta vazia ao criar ticket";
+      console.error("[support] failed to create conversation:", convErr);
+      Sentry.captureException(new Error(`Ticket creation failed: ${technical}`), {
+        tags: { feature: "support" },
+        extra: { userId: user.id, category, subject: subject.slice(0, 80) },
+      });
+      toast.error(humanizeError(technical).user);
+      setSending(false);
+      return;
+    }
+
+    // Step 2: Upload screenshots (non-fatal — ticket is already created)
     const uploadedUrls: string[] = [];
+    const failedUploads: string[] = [];
     for (const file of screenshots) {
       const ext = file.name.split(".").pop() ?? "png";
       const path = `tickets/${conv.id}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("support").upload(path, file);
-      if (!upErr) {
+      if (upErr) {
+        failedUploads.push(file.name);
+        console.error(`[support] screenshot upload failed (${file.name}):`, upErr);
+      } else {
         const { data: urlData } = supabase.storage.from("support").getPublicUrl(path);
         uploadedUrls.push(urlData.publicUrl);
       }
     }
 
-    // Build message content with screenshot URLs
+    if (failedUploads.length > 0) {
+      Sentry.captureMessage(`Screenshot upload failed (${failedUploads.length}/${screenshots.length})`, {
+        level: "warning",
+        tags: { feature: "support" },
+        extra: { conversationId: conv.id, failedUploads },
+      });
+    }
+
+    // Step 3: Save the first message
     let content = description;
     if (uploadedUrls.length > 0) {
       content += "\n\n---\nScreenshots:\n" + uploadedUrls.map((u, i) => `${i + 1}. ${u}`).join("\n");
     }
 
-    // Save message
-    await supabase.from("messages").insert({
+    const { error: msgErr } = await supabase.from("messages").insert({
       conversation_id: conv.id, sender_type: "client", sender_id: user.id,
       content, screenshot_url: uploadedUrls[0] ?? null,
     });
 
-    toast.success("Ticket criado! Responderemos em breve.");
+    if (msgErr) {
+      console.error("[support] failed to save first message:", msgErr);
+      Sentry.captureException(new Error(`Ticket message save failed: ${msgErr.message}`), {
+        tags: { feature: "support" },
+        extra: { conversationId: conv.id },
+      });
+      toast.error("Ticket criado mas a mensagem não foi salva. Nossa equipe vai entrar em contato.");
+    } else if (failedUploads.length > 0) {
+      toast.warning(`Ticket criado, mas ${failedUploads.length} imagem(ns) não puderam ser anexadas.`);
+    } else {
+      toast.success("Ticket criado! Responderemos em breve.");
+    }
+
     setTickets(prev => [{
       id: conv.id, subject, category, status: "open",
-      date: new Date().toISOString(), messages: 1,
+      date: new Date().toISOString(), messages: msgErr ? 0 : 1,
     }, ...prev]);
     setSubject(""); setDescription(""); setCategory("bug");
     setScreenshots([]); setScreenshotPreviews([]); setCreateOpen(false);
