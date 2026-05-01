@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { analyzeSERP } from "@/lib/apis/dataforseo";
 import { normalizeArticle } from "@/lib/utils/normalize-article";
 import { fetchWithRetry } from "@/lib/utils/fetch-retry";
+import { getUsdBrlRate } from "@/lib/utils/exchange-rate";
 
 /**
  * POST /api/admin/test-article
@@ -363,7 +364,7 @@ REGRAS DE ESCRITA:
       inputTokens,
       outputTokens,
       cost: `$${cost.toFixed(4)}`,
-      costBRL: `R$ ${(cost * 5.7).toFixed(2)}`,
+      costBRL: `R$ ${(cost * getUsdBrlRate()).toFixed(2)}`,
       totalDuration: `${((Date.now() - startTotal) / 1000).toFixed(1)}s`,
       model: usedModel,
     },

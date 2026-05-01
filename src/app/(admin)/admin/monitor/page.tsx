@@ -154,7 +154,7 @@ export default function ApiMonitorPage() {
                     <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">${(bd?.dataforseo ?? 0).toFixed(3)}</td>
                     <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">${(bd?.openai ?? 0).toFixed(3)}</td>
                     <td className="px-3 py-2.5 text-right font-mono text-xs font-bold">${(bd?.total ?? 0).toFixed(3)}</td>
-                    <td className="px-3 py-2.5 text-right font-mono text-xs font-bold">R${((bd?.total ?? 0) * 5.7).toFixed(2)}</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-xs font-bold">R${((bd?.total ?? 0) * (costs.usdBrlRate ?? 5.7)).toFixed(2)}</td>
                   </tr>
                 );
               })}
@@ -213,14 +213,14 @@ export default function ApiMonitorPage() {
                       {unit.dataforseo > 0 && <span className="text-muted-foreground/60">DF ${unit.dataforseo}</span>}
                       {unit.openai > 0 && <span className="text-muted-foreground/60">GPT ${unit.openai}</span>}
                       <span className="font-bold">${totalUnit.toFixed(3)}</span>
-                      <span className="text-primary font-bold">R${(totalUnit * 5.7).toFixed(2)}</span>
+                      <span className="text-primary font-bold">R${(totalUnit * (costs.usdBrlRate ?? 5.7)).toFixed(2)}</span>
                     </div>
                   </div>
                 );
               })}
             </div>
             <div className="mt-3 pt-3 border-t text-[10px] text-muted-foreground">
-              <p>Câmbio: $1 = R$5.70 · Modelo primário: gpt-4.1-mini</p>
+              <p>Câmbio: $1 = R${(costs.usdBrlRate ?? 5.7).toFixed(2)} · Modelo primário: gpt-4.1-mini</p>
               <p>Fallback: gpt-4.1-nano (mais barato que primário)</p>
             </div>
           </CardContent>

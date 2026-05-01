@@ -1,4 +1,4 @@
-# 8links — Custos por Ação (Atualizado 2026-04-24)
+# 8links — Custos por Ação (Atualizado 2026-05-01)
 
 ## Preços das APIs externas
 
@@ -17,7 +17,7 @@
 | Modelo | Input | Output |
 |--------|-------|--------|
 | gpt-4.1-mini (primário) | $0.40 | $1.60 |
-| gpt-5.4-mini (fallback) | $0.75 | $4.50 |
+| gpt-4.1-nano (fallback) | $0.10 | $0.40 |
 
 ### Outras APIs
 | API | Custo |

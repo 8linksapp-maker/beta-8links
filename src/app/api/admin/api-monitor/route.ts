@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getUsdBrlRate } from "@/lib/utils/exchange-rate";
 
 /**
  * GET /api/admin/api-monitor?period=month|week|today|custom&from=ISO&to=ISO
@@ -168,14 +169,14 @@ export async function GET(request: Request) {
     ...userUsage[id],
   }));
 
-  // ── Costs (real unit costs from KB/07-CUSTOS-DATAFORSEO.md) ──
+  // ── Costs (estimated unit costs — see KB/07-CUSTOS-DATAFORSEO.md) ──
+  // Only includes actions that are actually tracked in usage_tracking.
+  // Backlink/article costs vary by article size; values here are upper-bound estimates.
   const COST_PER_ACTION: Record<string, { dataforseo: number; openai: number; label: string }> = {
     keyword_search:  { dataforseo: 0.012, openai: 0,     label: "Pesquisa keyword" },
     keyword_plan:    { dataforseo: 0.120, openai: 0.007, label: "Descoberta automática" },
-    backlink:        { dataforseo: 0.002, openai: 0.019, label: "Backlink (SERP+artigo)" },
-    article:         { dataforseo: 0.002, openai: 0.017, label: "Artigo avulso" },
-    diagnostic:      { dataforseo: 0.001, openai: 0.005, label: "Diagnóstico" },
-    onboarding:      { dataforseo: 0.030, openai: 0,     label: "Onboarding (1x/site)" },
+    backlink:        { dataforseo: 0.002, openai: 0.013, label: "Backlink (SERP+artigo)" },
+    article:         { dataforseo: 0.002, openai: 0.011, label: "Artigo avulso" },
   };
 
   const costBreakdown: Record<string, { calls: number; dataforseo: number; openai: number; total: number }> = {};
@@ -192,13 +193,15 @@ export async function GET(request: Request) {
   }
 
   const totalUSD = totalDataForSEO + totalOpenAI;
+  const usdBrlRate = getUsdBrlRate();
   const costs = {
     perAction: COST_PER_ACTION,
     breakdown: costBreakdown,
     dataforseoTotal: totalDataForSEO,
     openaiTotal: totalOpenAI,
     totalUSD,
-    totalBRL: totalUSD * 5.7,
+    totalBRL: totalUSD * usdBrlRate,
+    usdBrlRate,
   };
 
   return NextResponse.json({
