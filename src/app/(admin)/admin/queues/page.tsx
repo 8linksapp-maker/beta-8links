@@ -6,82 +6,87 @@ import { motion } from "motion/react";
 import {
   Link as LinkIcon,
   FileText,
-  Clock,
-  Loader2,
-  Send,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusTag } from "@/components/ui/status-tag";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const BACKLINK_QUEUE = [
-  { id: 1, user: "Maria Santos", site: "floricultura.com", target: "portalrural.com.br", status: "processing" as const, statusLabel: "Gerando", created: "13 Abr, 14:32" },
-  { id: 2, user: "Pedro Lima", site: "techstart.io", target: "vidadigital.com", status: "pending" as const, statusLabel: "Na Fila", created: "13 Abr, 13:15" },
-  { id: 3, user: "Ana Costa", site: "yogazen.com.br", target: "fitnessbr.com", status: "pending" as const, statusLabel: "Na Fila", created: "13 Abr, 12:48" },
-  { id: 4, user: "Lucas Souza", site: "gamesbr.com", target: "techblog.com.br", status: "active" as const, statusLabel: "Publicando", created: "13 Abr, 11:20" },
-  { id: 5, user: "Juliana Ferreira", site: "petshopbr.com", target: "saudeanimal.vet.br", status: "processing" as const, statusLabel: "Gerando", created: "13 Abr, 10:05" },
-];
+type QueueItem = {
+  id: string;
+  user: string;
+  site: string;
+  target?: string;
+  title?: string;
+  status: "pending" | "processing" | "active";
+  statusLabel: string;
+  created: string;
+};
 
-const ARTICLE_QUEUE = [
-  { id: 1, user: "Carla Dias", site: "modafem.com", title: "Tendencias Moda Inverno 2026", status: "processing" as const, statusLabel: "Gerando", created: "13 Abr, 14:50" },
-  { id: 2, user: "Rafael Oliveira", site: "construtora.eng.br", title: "Reformas Sustentaveis em 2026", status: "active" as const, statusLabel: "Publicando", created: "13 Abr, 14:10" },
-  { id: 3, user: "Maria Santos", site: "floricultura.com", title: "Plantas Resistentes ao Frio", status: "pending" as const, statusLabel: "Na Fila", created: "13 Abr, 13:30" },
-  { id: 4, user: "Marcos Almeida", site: "advocacia.adv.br", title: "Direitos do Consumidor Online", status: "pending" as const, statusLabel: "Na Fila", created: "13 Abr, 12:00" },
-  { id: 5, user: "Ana Costa", site: "yogazen.com.br", title: "Meditacao para Iniciantes", status: "processing" as const, statusLabel: "Gerando", created: "13 Abr, 11:45" },
-];
+const BACKLINK_STATUS_MAP: Record<string, { ui: QueueItem["status"]; label: string }> = {
+  queued: { ui: "pending", label: "Na Fila" },
+  generating: { ui: "processing", label: "Gerando" },
+  ready_for_review: { ui: "active", label: "Aguardando aprovação" },
+};
 
-function QueueIcon({ status }: { status: string }) {
-  if (status === "processing") return <Loader2 className="w-3.5 h-3.5 animate-spin text-info" />;
-  if (status === "active") return <Send className="w-3.5 h-3.5 text-success" />;
-  return <Clock className="w-3.5 h-3.5 text-warning" />;
-}
+const ARTICLE_STATUS_MAP: Record<string, { ui: QueueItem["status"]; label: string }> = {
+  draft: { ui: "pending", label: "Rascunho" },
+  optimizing: { ui: "processing", label: "Gerando" },
+  ready: { ui: "active", label: "Pronto p/ publicar" },
+  scheduled: { ui: "active", label: "Agendado" },
+};
 
 export default function QueuesPage() {
-  const [dbBacklinks, setDbBacklinks] = useState<any[]>([]);
-  const [dbArticles, setDbArticles] = useState<any[]>([]);
+  const [backlinkQueue, setBacklinkQueue] = useState<QueueItem[]>([]);
+  const [articleQueue, setArticleQueue] = useState<QueueItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: blData } = await supabase
-        .from("backlinks")
-        .select("*, profiles(name, email), client_sites(url)")
-        .in("status", ["queued", "generating"])
-        .order("created_at");
-      if (blData && blData.length > 0) {
-        setDbBacklinks(blData.map((d: any) => ({
+      const [{ data: blData }, { data: artData }] = await Promise.all([
+        supabase
+          .from("backlinks")
+          .select("id, status, target_url, created_at, anchor_text, profiles(name, email), client_sites(url)")
+          .in("status", Object.keys(BACKLINK_STATUS_MAP))
+          .order("created_at"),
+        supabase
+          .from("articles")
+          .select("id, status, title, created_at, profiles(name, email), client_sites(url)")
+          .in("status", Object.keys(ARTICLE_STATUS_MAP))
+          .order("created_at"),
+      ]);
+
+      setBacklinkQueue((blData ?? []).map((d: any) => {
+        const map = BACKLINK_STATUS_MAP[d.status];
+        return {
           id: d.id,
           user: d.profiles?.name || d.profiles?.email || "Desconhecido",
           site: d.client_sites?.url || "",
-          target: d.target_domain || "",
-          status: d.status === "generating" ? "processing" as const : "pending" as const,
-          statusLabel: d.status === "generating" ? "Gerando" : "Na Fila",
+          target: d.target_url || d.anchor_text || "",
+          status: map.ui,
+          statusLabel: map.label,
           created: new Date(d.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
-        })));
-      }
-      const { data: artData } = await supabase
-        .from("articles")
-        .select("*, profiles(name, email), client_sites(url)")
-        .in("status", ["draft", "optimizing"])
-        .order("created_at");
-      if (artData && artData.length > 0) {
-        setDbArticles(artData.map((d: any) => ({
+        };
+      }));
+
+      setArticleQueue((artData ?? []).map((d: any) => {
+        const map = ARTICLE_STATUS_MAP[d.status];
+        return {
           id: d.id,
           user: d.profiles?.name || d.profiles?.email || "Desconhecido",
           site: d.client_sites?.url || "",
-          title: d.title || "Sem titulo",
-          status: d.status === "optimizing" ? "processing" as const : "pending" as const,
-          statusLabel: d.status === "optimizing" ? "Gerando" : "Na Fila",
+          title: d.title || "Sem título",
+          status: map.ui,
+          statusLabel: map.label,
           created: new Date(d.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
-        })));
-      }
+        };
+      }));
+
+      setLoading(false);
     }
     load();
   }, []);
-
-  const backlinkQueue = dbBacklinks.length > 0 ? dbBacklinks : BACKLINK_QUEUE;
-  const articleQueue = dbArticles.length > 0 ? dbArticles : ARTICLE_QUEUE;
 
   return (
     <div className="space-y-6">
@@ -116,6 +121,9 @@ export default function QueuesPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-2">
+              {!loading && backlinkQueue.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-8">Nenhum backlink em processamento</p>
+              )}
               {backlinkQueue.map((item, i) => (
                 <motion.div
                   key={item.id}
@@ -126,11 +134,11 @@ export default function QueuesPage() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <Avatar size="sm">
-                      <AvatarFallback>{item.user.split(" ").map((n: string) => n[0]).join("")}</AvatarFallback>
+                      <AvatarFallback>{item.user.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold truncate">{item.user}</p>
-                      <p className="text-xs font-mono text-muted-foreground truncate">{item.site} → {item.target}</p>
+                      <p className="text-xs font-mono text-muted-foreground truncate">{item.site}{item.target ? ` → ${item.target}` : ""}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
@@ -160,6 +168,9 @@ export default function QueuesPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-2">
+              {!loading && articleQueue.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-8">Nenhum artigo em processamento</p>
+              )}
               {articleQueue.map((item, i) => (
                 <motion.div
                   key={item.id}
@@ -170,11 +181,11 @@ export default function QueuesPage() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <Avatar size="sm">
-                      <AvatarFallback>{item.user.split(" ").map((n: string) => n[0]).join("")}</AvatarFallback>
+                      <AvatarFallback>{item.user.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold truncate">{item.title}</p>
-                      <p className="text-xs font-mono text-muted-foreground truncate">{item.user} - {item.site}</p>
+                      <p className="text-xs font-mono text-muted-foreground truncate">{item.user} — {item.site}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
