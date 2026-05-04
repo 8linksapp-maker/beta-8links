@@ -49,11 +49,15 @@ export function SiteProvider({ children }: { children: ReactNode }) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("client_sites")
       .select("id, url, niche_primary, da_current, seo_score, phase, autopilot_active, google_refresh_token, gsc_site_url, ga_property_id, github_token, github_repo, wp_url, avg_cpc")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("[useSite] failed to load sites:", error);
+    }
 
     const sitesList = data ?? [];
     setSites(sitesList);

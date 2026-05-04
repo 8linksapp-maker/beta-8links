@@ -105,8 +105,9 @@ function OnboardingContent() {
       }
 
       toast.success("Pronto! Vamos começar.");
-      router.refresh();
-      router.push("/dashboard");
+      // Hard reload so SiteProvider remounts and picks up the new site.
+      // router.push doesn't remount providers in the same layout.
+      window.location.href = "/dashboard";
     } catch (e) {
       console.error("[onboarding] exception:", e);
       toast.error("Algo deu errado. Tente novamente em alguns instantes.");
