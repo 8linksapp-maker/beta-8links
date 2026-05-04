@@ -208,11 +208,11 @@ export const ACHIEVEMENTS = [
 
 export const NAV_ITEMS = {
   main: [
-    { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
+    { href: "/dashboard", label: "Início", icon: "LayoutDashboard" },
+    { href: "/palavras", label: "Palavras", icon: "Search" },
+    { href: "/backlinks", label: "Indicações", icon: "Link" },
+    { href: "/articles", label: "Artigos", icon: "FileText" },
     { href: "/sites", label: "Meus Sites", icon: "Globe" },
-    { href: "/keywords", label: "Keywords", icon: "Search" },
-    { href: "/backlinks", label: "Backlinks", icon: "Link" },
-    { href: "/articles", label: "Artigos IA", icon: "FileText" },
   ],
   intelligence: [
     { href: "/content-audit", label: "Auditoria", icon: "ClipboardCheck", soon: true },
