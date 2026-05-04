@@ -11,6 +11,7 @@ import { SiteProvider } from "@/lib/hooks/use-site";
 import { createClient } from "@/lib/supabase/client";
 import { MigrationBanner } from "@/components/migration-banner";
 import { SentryUserSync } from "@/components/sentry-user-sync";
+import { SimpleModeBanner } from "@/components/simple-mode-banner";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
 
 export default function DashboardLayout({
@@ -81,6 +82,7 @@ export default function DashboardLayout({
           planName={plan?.name ?? "Starter"}
         />
         <MigrationBanner />
+        <SimpleModeBanner />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-[1400px] p-6">
             {children}

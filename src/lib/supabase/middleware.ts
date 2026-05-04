@@ -37,6 +37,10 @@ export async function updateSession(request: NextRequest) {
   const isApiPath = pathname.startsWith("/api/");
   const isAuthCallback = pathname.startsWith("/auth/callback");
   const isOnboarding = pathname === "/onboarding";
+  // Always-allowed dashboard paths even when onboarding is incomplete
+  // (so users can change password / log out without finishing onboarding).
+  const isOnboardingBypass =
+    pathname.startsWith("/settings") || pathname === "/logout";
 
   // Skip auth checks for callback routes to avoid interfering with recovery flow
   if (isAuthCallback) {
@@ -82,8 +86,8 @@ export async function updateSession(request: NextRequest) {
     }
 
     // Onboarding check — redirect to onboarding if not completed
-    // Skip if already on onboarding page or admin
-    if (profile && !profile.onboarding_completed && !isOnboarding && !pathname.startsWith("/admin")) {
+    // Skip if already on onboarding page, admin, or in the always-allowed bypass list
+    if (profile && !profile.onboarding_completed && !isOnboarding && !pathname.startsWith("/admin") && !isOnboardingBypass) {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
       return NextResponse.redirect(url);

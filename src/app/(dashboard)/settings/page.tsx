@@ -10,8 +10,9 @@ import { Loader2 } from "lucide-react";
 import {
   User, CreditCard, Plug, Bell, Palette, Shield,
   Save, ExternalLink, Check, ChevronRight,
-  Link as LinkIcon, Globe, Zap,
+  Link as LinkIcon, Globe, Zap, Layers, Sparkles,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,8 +47,12 @@ export default function SettingsPage() {
     }
   }, [profile]);
 
+  const router = useRouter();
+
   // Site data for integrations
   const [siteData, setSiteData] = useState<any>(null);
+  const [onboardingMode, setOnboardingMode] = useState<"simple" | "full" | null>(null);
+  const [upgradingMode, setUpgradingMode] = useState(false);
 
   // WordPress state
   const [wpDialogOpen, setWpDialogOpen] = useState(false);
@@ -58,17 +63,39 @@ export default function SettingsPage() {
   const [wpSaving, setWpSaving] = useState(false);
   const [wpTestResult, setWpTestResult] = useState<any>(null);
 
-  // Load site data for integrations tab
+  // Load site data for integrations tab + onboarding mode
   useEffect(() => {
     async function loadSite() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("client_sites").select("id, url, ga_property_id, gsc_site_url, google_refresh_token, wp_url, wp_username, github_username, github_repo").eq("user_id", user.id).limit(1);
-      if (data?.[0]) setSiteData(data[0]);
+      const [{ data: site }, { data: prof }] = await Promise.all([
+        supabase.from("client_sites").select("id, url, ga_property_id, gsc_site_url, google_refresh_token, wp_url, wp_username, github_username, github_repo").eq("user_id", user.id).limit(1),
+        supabase.from("profiles").select("onboarding_mode").eq("id", user.id).single(),
+      ]);
+      if (site?.[0]) setSiteData(site[0]);
+      if (prof?.onboarding_mode) setOnboardingMode(prof.onboarding_mode);
     }
     loadSite();
   }, []);
+
+  const upgradeToFullOnboarding = async () => {
+    setUpgradingMode(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setUpgradingMode(false); return; }
+    const { error } = await supabase
+      .from("profiles")
+      .update({ onboarding_completed: false })
+      .eq("id", user.id);
+    if (error) {
+      console.error("[settings] failed to reopen onboarding:", error);
+      toast.error("Não conseguimos abrir a configuração. Tente novamente.");
+      setUpgradingMode(false);
+      return;
+    }
+    router.push("/onboarding");
+  };
 
   const testWordPress = async () => {
     setWpTesting(true);
@@ -262,6 +289,31 @@ export default function SettingsPage() {
           {/* Integrations */}
           {activeTab === "integrations" && (
             <div className="space-y-4">
+              {/* Simple → Full upgrade card (only when in simple mode) */}
+              {onboardingMode === "simple" && (
+                <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                        <Layers className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold flex items-center gap-2 mb-1">
+                          Ativar análise completa
+                          <Badge className="text-[9px]">Recomendado</Badge>
+                        </p>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Conectar Google, escanear seu site e configurar tracking de keywords desbloqueia o monitoramento e a brand voice automática. Leva uns 5 min.
+                        </p>
+                        <Button size="sm" className="gap-2" onClick={upgradeToFullOnboarding} disabled={upgradingMode}>
+                          {upgradingMode ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Abrindo...</> : <><Sparkles className="w-3.5 h-3.5" /> Configurar agora</>}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Google Analytics + Search Console (same OAuth) */}
               <Card className="card-interactive">
                 <CardContent className="p-5">

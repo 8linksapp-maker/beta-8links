@@ -8,6 +8,7 @@ import {
   Globe, Search, ArrowRight, ArrowLeft, Check, Zap, Loader2,
   Link as LinkIcon, TrendingUp, Sparkles, Target, Plus,
   BarChart3, Shield, Eye, FileText, MessageSquare, Pen,
+  Rocket, Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,7 @@ const CONTENT_TYPE_OPTIONS = [
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [flowMode, setFlowMode] = useState<"choose" | "simple" | "full">("choose");
   const [step, setStep] = useState(0);
   const [siteUrl, setSiteUrl] = useState("");
   const [saving, setSaving] = useState(false);
@@ -113,6 +115,7 @@ function OnboardingContent() {
     const success = searchParams.get("success");
     if (success === "google_connected") {
       setGoogleConnected(true);
+      setFlowMode("full");
       toast.success("Google conectado!");
       setStep(2);
       setTimeout(() => loadGscSites(), 300);
@@ -127,6 +130,49 @@ function OnboardingContent() {
     const { data } = await supabase.from("client_sites").insert({ user_id: user.id, url, phase: "planting", autopilot_active: true, seo_score: 0, da_current: 0 }).select().single();
     if (data) { setSiteId(data.id); setStep(1); }
     else toast.error("Erro ao criar site");
+  };
+
+  /** Quick path: creates the site and finishes onboarding in simple mode. */
+  const finishSimple = async () => {
+    if (!siteUrl.trim()) { toast.error("Informe a URL do seu site"); return; }
+    setSaving(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setSaving(false); return; }
+      const url = siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`;
+
+      // Create site if user doesn't already have one (returning to onboarding from OAuth, etc.)
+      let createdSiteId = siteId;
+      if (!createdSiteId) {
+        const { data, error } = await supabase
+          .from("client_sites")
+          .insert({ user_id: user.id, url, phase: "planting", autopilot_active: true, seo_score: 0, da_current: 0 })
+          .select().single();
+        if (error || !data) { toast.error("Não conseguimos cadastrar seu site. Tente novamente."); setSaving(false); return; }
+        createdSiteId = data.id;
+        setSiteId(createdSiteId);
+      }
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ onboarding_completed: true, onboarding_mode: "simple" })
+        .eq("id", user.id);
+      if (profileError) {
+        console.error("[onboarding] simple finish failed:", profileError);
+        toast.error("Não conseguimos finalizar. Verifique sua conexão e tente novamente.");
+        setSaving(false);
+        return;
+      }
+
+      toast.success("Pronto! Você já pode enviar backlinks.");
+      router.refresh();
+      router.push("/backlinks");
+    } catch (e) {
+      console.error("[onboarding] simple finish exception:", e);
+      toast.error("Não conseguimos finalizar. Tente novamente em alguns instantes.");
+      setSaving(false);
+    }
   };
 
   const loadGscSites = async () => {
@@ -284,7 +330,7 @@ function OnboardingContent() {
         try { await supabase.from("competitors").insert(competitors.map(c => ({ client_site_id: siteId, domain: c.domain, da: 0, detected_automatically: true }))); } catch {}
       }
 
-      const { error: updateError } = await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
+      const { error: updateError } = await supabase.from("profiles").update({ onboarding_completed: true, onboarding_mode: "full" }).eq("id", user.id);
       if (updateError) {
         console.error("[onboarding] Error updating profile:", updateError);
         toast.error("Não conseguimos salvar suas configurações. Verifique sua conexão e tente novamente.");
@@ -301,6 +347,114 @@ function OnboardingContent() {
     }
   };
 
+  // ── Step 0: choose flow ──
+  if (flowMode === "choose") {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="w-full max-w-3xl">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 ring-1 ring-primary/30 flex items-center justify-center mx-auto mb-5 shadow-[0_0_32px_hsl(24_100%_55%/0.15)]">
+              <Sparkles className="w-7 h-7 text-primary" />
+            </div>
+            <h1 className="text-3xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">Bem-vindo à 8links!</h1>
+            <p className="text-muted-foreground">Como você quer começar?</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <motion.button
+              type="button"
+              onClick={() => setFlowMode("simple")}
+              whileHover={{ y: -4 }}
+              className="text-left card-beam rounded-2xl border bg-card p-6 hover:border-primary/50 transition-colors cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                <Rocket className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-bold mb-1">Começar rápido</h3>
+              <p className="text-sm text-muted-foreground mb-4">Só vou enviar backlinks. Sem conectar Google nem análise.</p>
+              <ul className="space-y-1.5 text-xs text-muted-foreground mb-5">
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary" /> URL do site e pronto</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary" /> Envie backlinks na hora</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary" /> Cerca de 30 segundos</li>
+              </ul>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                Escolher esta opção <ArrowRight className="w-3.5 h-3.5" />
+              </div>
+            </motion.button>
+
+            <motion.button
+              type="button"
+              onClick={() => setFlowMode("full")}
+              whileHover={{ y: -4 }}
+              className="text-left card-beam rounded-2xl border bg-card p-6 hover:border-primary/50 transition-colors cursor-pointer relative"
+            >
+              <Badge className="absolute top-4 right-4 text-[9px]">Recomendado</Badge>
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                <Layers className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-bold mb-1">Análise completa</h3>
+              <p className="text-sm text-muted-foreground mb-4">Conectar Google, escanear o site e configurar tudo.</p>
+              <ul className="space-y-1.5 text-xs text-muted-foreground mb-5">
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary" /> Tracking de keywords no Google</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary" /> Análise de concorrentes e DA</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary" /> Brand voice personalizada</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary" /> Cerca de 5 minutos</li>
+              </ul>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                Configurar análise completa <ArrowRight className="w-3.5 h-3.5" />
+              </div>
+            </motion.button>
+          </div>
+
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            Você pode mudar de modo a qualquer momento em <span className="text-foreground font-semibold">Configurações</span>.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Simple mode: just the URL ──
+  if (flowMode === "simple") {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="w-full max-w-xl">
+          <button
+            type="button"
+            onClick={() => setFlowMode("choose")}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-6 cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Voltar
+          </button>
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 ring-1 ring-primary/30 flex items-center justify-center mx-auto mb-5 shadow-[0_0_32px_hsl(24_100%_55%/0.15)]">
+              <Globe className="w-7 h-7 text-primary" />
+            </div>
+            <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">Qual é o seu site?</h1>
+            <p className="text-muted-foreground">A URL pra onde os backlinks vão apontar.</p>
+          </div>
+          <div className="card-beam rounded-2xl border bg-card p-8 relative overflow-hidden">
+            <Input
+              placeholder="https://meusite.com.br"
+              value={siteUrl}
+              onChange={(e) => setSiteUrl(e.target.value)}
+              className="h-12 text-base mb-4"
+              onKeyDown={(e) => e.key === "Enter" && siteUrl.trim() && !saving && finishSimple()}
+              autoFocus
+            />
+            <Button size="xl" className="w-full" disabled={!siteUrl.trim() || saving} onClick={finishSimple}>
+              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Cadastrando...</> : <>Concluir <ArrowRight className="w-4 h-4" /></>}
+            </Button>
+            <p className="text-[10px] text-muted-foreground text-center mt-4">
+              Você poderá conectar Google e ativar análise completa depois em Configurações.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Full mode: original 9-step flow ──
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
       <div className="w-full max-w-2xl">
