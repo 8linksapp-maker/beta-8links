@@ -86,13 +86,13 @@ export default function DashboardPage() {
   const isEmpty = stats.keywords === 0 && stats.backlinks === 0 && stats.articles === 0;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-8 max-w-5xl mx-auto">
       {/* Greeting */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl sm:text-3xl font-black font-[family-name:var(--font-display)] tracking-tight">
+        <h1 className="text-3xl sm:text-4xl font-black font-[family-name:var(--font-display)] tracking-tight">
           {getGreeting()}{userName ? `, ${userName}` : ""}!
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-base text-muted-foreground mt-2 leading-relaxed">
           {isEmpty
             ? "Vamos posicionar seu site no Google."
             : "Aqui está como o seu site está indo."}
@@ -102,25 +102,25 @@ export default function DashboardPage() {
       {/* Hero — primary CTA */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
         <Card className="card-beam relative overflow-hidden border-primary/20">
-          <CardContent className="p-6 sm:p-8">
+          <CardContent className="p-8 sm:p-10">
             <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
             <div className="relative flex flex-col sm:flex-row sm:items-center gap-6">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] flex items-center justify-center shrink-0 shadow-[0_0_32px_hsl(24_100%_55%/0.3)]">
-                <Sparkles className="w-7 h-7 text-white" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] flex items-center justify-center shrink-0 shadow-[0_0_32px_hsl(24_100%_55%/0.3)]">
+                <Sparkles className="w-8 h-8 text-white" />
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-black font-[family-name:var(--font-display)] tracking-tight mb-1">
+                <h2 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">
                   {isEmpty ? "Adicione sua primeira palavra" : "Posicione mais palavras"}
                 </h2>
-                <p className="text-sm text-muted-foreground mb-4 sm:mb-0">
+                <p className="text-base text-muted-foreground mb-5 sm:mb-0 leading-relaxed">
                   {isEmpty
-                    ? "As palavras que você quer aparecer no Google. Depois você cria indicações e artigos pra cada uma."
+                    ? "As palavras que você quer aparecer no Google. Depois você cria backlinks e artigos pra cada uma."
                     : "Quanto mais palavras no seu plano, mais oportunidades de aparecer no Google."}
                 </p>
               </div>
               <Link href="/palavras">
-                <Button size="lg" className="shrink-0 gap-2 w-full sm:w-auto">
-                  <Plus className="w-4 h-4" /> {isEmpty ? "Adicionar palavra" : "Adicionar mais"}
+                <Button size="xl" className="shrink-0 gap-2 w-full sm:w-auto">
+                  <Plus className="w-5 h-5" /> {isEmpty ? "Adicionar palavra" : "Adicionar mais"}
                 </Button>
               </Link>
             </div>
@@ -149,28 +149,28 @@ export default function DashboardPage() {
           className="lg:col-span-2"
         >
           <Card>
-            <CardContent className="p-5 sm:p-6">
-              <h3 className="text-sm font-bold mb-4">Atividade recente</h3>
+            <CardContent className="p-6 sm:p-8">
+              <h3 className="text-base font-bold mb-5">Atividade recente</h3>
               {recent.length === 0 ? (
-                <div className="text-center py-10">
-                  <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                    <Zap className="w-5 h-5 text-muted-foreground" />
+                <div className="text-center py-12">
+                  <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                    <Zap className="w-6 h-6 text-muted-foreground" />
                   </div>
-                  <p className="text-sm text-muted-foreground mb-1">Nada por aqui ainda</p>
-                  <p className="text-xs text-muted-foreground">As indicações e artigos que você criar aparecem aqui.</p>
+                  <p className="text-base text-muted-foreground mb-1">Nada por aqui ainda</p>
+                  <p className="text-sm text-muted-foreground">Os backlinks e artigos que você criar aparecem aqui.</p>
                 </div>
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {recent.map((item) => (
-                    <div key={`${item.type}-${item.id}`} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/30">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                    <div key={`${item.type}-${item.id}`} className="flex items-center gap-4 px-3 py-3 rounded-lg hover:bg-muted/30">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                         item.type === "backlink" ? "bg-info-light text-info" : "bg-success-light text-success"
                       }`}>
-                        {item.type === "backlink" ? <LinkIcon className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
+                        {item.type === "backlink" ? <LinkIcon className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{item.title}</p>
-                        <p className="text-[10px] text-muted-foreground font-mono">
+                        <p className="text-sm font-semibold truncate">{item.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {item.type === "backlink" ? "Backlink" : "Artigo"} · {translateStatus(item.status)} · {timeAgo(item.created_at)}
                         </p>
                       </div>
@@ -188,9 +188,9 @@ export default function DashboardPage() {
           transition={{ delay: 0.2 }}
         >
           <Card>
-            <CardContent className="p-5 sm:p-6">
-              <h3 className="text-sm font-bold mb-4">Próximos passos</h3>
-              <div className="space-y-2">
+            <CardContent className="p-6 sm:p-8">
+              <h3 className="text-base font-bold mb-5">Próximos passos</h3>
+              <div className="space-y-2.5">
                 <ChecklistItem
                   done={sites.length > 0}
                   label="Site cadastrado"
@@ -225,12 +225,12 @@ function KpiCard({ icon: Icon, label, value, href, color }: {
   return (
     <Link href={href}>
       <Card className="card-interactive hover:border-primary/30 transition-colors cursor-pointer">
-        <CardContent className="p-4 sm:p-5">
-          <div className="flex items-center gap-2 mb-2">
-            <Icon className={`w-4 h-4 ${color}`} />
-            <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider font-mono">{label}</span>
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Icon className={`w-5 h-5 ${color}`} />
+            <span className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wider font-mono font-semibold">{label}</span>
           </div>
-          <p className={`text-2xl sm:text-3xl font-black font-[family-name:var(--font-display)] ${color}`}>{value}</p>
+          <p className={`text-3xl sm:text-4xl font-black font-[family-name:var(--font-display)] ${color}`}>{value}</p>
         </CardContent>
       </Card>
     </Link>
@@ -239,16 +239,16 @@ function KpiCard({ icon: Icon, label, value, href, color }: {
 
 function ChecklistItem({ done, label, href }: { done: boolean; label: string; href?: string }) {
   const inner = (
-    <div className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${href && !done ? "hover:bg-muted/30 cursor-pointer" : ""}`}>
-      <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+    <div className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors ${href && !done ? "hover:bg-muted/30 cursor-pointer" : ""}`}>
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
         done ? "bg-success/15 text-success" : "border-2 border-border"
       }`}>
-        {done && <Check className="w-3 h-3" />}
+        {done && <Check className="w-3.5 h-3.5" />}
       </div>
-      <span className={`text-xs flex-1 ${done ? "text-muted-foreground line-through" : "font-medium"}`}>
+      <span className={`text-sm flex-1 ${done ? "text-muted-foreground line-through" : "font-medium"}`}>
         {label}
       </span>
-      {!done && href && <ArrowRight className="w-3 h-3 text-muted-foreground" />}
+      {!done && href && <ArrowRight className="w-4 h-4 text-muted-foreground" />}
     </div>
   );
   return href && !done ? <Link href={href}>{inner}</Link> : inner;
