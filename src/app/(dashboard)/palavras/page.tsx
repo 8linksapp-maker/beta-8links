@@ -234,7 +234,7 @@ export default function PalavrasPage() {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-2xl sm:text-3xl font-black font-[family-name:var(--font-display)] tracking-tight">Suas palavras</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          As palavras que você quer aparecer no Google. Pra cada uma, você cria indicações ou escreve artigos.
+          As palavras que você quer aparecer no Google. Pra cada uma, você cria backlinks ou escreve artigos.
         </p>
       </motion.div>
 
@@ -315,7 +315,7 @@ export default function PalavrasPage() {
                   </div>
                   <h3 className="text-lg font-bold mb-2">Seu plano está vazio</h3>
                   <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-                    Adicione palavras que você quer ver aparecer no Google. Pra cada palavra você pode criar indicações ou escrever artigos.
+                    Adicione palavras que você quer ver aparecer no Google. Pra cada palavra você pode criar backlinks ou escrever artigos.
                   </p>
                   <Button onClick={() => setTab("buscar")} className="gap-2">
                     <Search className="w-4 h-4" /> Pesquisar primeira palavra
@@ -351,7 +351,7 @@ export default function PalavrasPage() {
                           className="flex-1 gap-1.5"
                           onClick={() => createIndicacao(kw.keyword)}
                         >
-                          <LinkIcon className="w-3.5 h-3.5" /> Criar indicação
+                          <LinkIcon className="w-3.5 h-3.5" /> Criar backlink
                         </Button>
                         <Button
                           size="sm"

@@ -210,7 +210,7 @@ export const NAV_ITEMS = {
   main: [
     { href: "/dashboard", label: "Início", icon: "LayoutDashboard" },
     { href: "/palavras", label: "Palavras", icon: "Search" },
-    { href: "/backlinks", label: "Indicações", icon: "Link" },
+    { href: "/backlinks", label: "Backlinks", icon: "Link" },
     { href: "/articles", label: "Artigos", icon: "FileText" },
     { href: "/sites", label: "Meus Sites", icon: "Globe" },
   ],

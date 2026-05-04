@@ -136,7 +136,7 @@ export default function DashboardPage() {
         className="grid grid-cols-3 gap-4"
       >
         <KpiCard icon={Search} label="Palavras no plano" value={stats.keywords} href="/palavras" color="text-primary" />
-        <KpiCard icon={LinkIcon} label="Indicações" value={stats.backlinks} href="/backlinks" color="text-info" />
+        <KpiCard icon={LinkIcon} label="Backlinks" value={stats.backlinks} href="/backlinks" color="text-info" />
         <KpiCard icon={FileText} label="Artigos" value={stats.articles} href="/articles" color="text-success" />
       </motion.div>
 
@@ -171,7 +171,7 @@ export default function DashboardPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{item.title}</p>
                         <p className="text-[10px] text-muted-foreground font-mono">
-                          {item.type === "backlink" ? "Indicação" : "Artigo"} · {translateStatus(item.status)} · {timeAgo(item.created_at)}
+                          {item.type === "backlink" ? "Backlink" : "Artigo"} · {translateStatus(item.status)} · {timeAgo(item.created_at)}
                         </p>
                       </div>
                     </div>
@@ -202,7 +202,7 @@ export default function DashboardPage() {
                 />
                 <ChecklistItem
                   done={stats.backlinks > 0}
-                  label="Criar primeira indicação"
+                  label="Criar primeiro backlink"
                   href={stats.backlinks > 0 ? undefined : "/palavras"}
                 />
                 <ChecklistItem
