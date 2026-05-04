@@ -36,7 +36,7 @@ export async function updateSession(request: NextRequest) {
   const isPublicPath = publicPaths.some((path) => pathname === path) || pathname.startsWith("/report/");
   const isApiPath = pathname.startsWith("/api/");
   const isAuthCallback = pathname.startsWith("/auth/callback");
-  const isOnboarding = pathname === "/onboarding";
+  const isOnboarding = pathname === "/onboarding" || pathname.startsWith("/onboarding/");
   // Always-allowed dashboard paths even when onboarding is incomplete
   // (so users can change password / log out without finishing onboarding).
   const isOnboardingBypass =

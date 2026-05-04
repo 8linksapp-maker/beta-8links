@@ -94,7 +94,7 @@ export default function SettingsPage() {
       setUpgradingMode(false);
       return;
     }
-    router.push("/onboarding");
+    router.push("/onboarding/full");
   };
 
   const testWordPress = async () => {
