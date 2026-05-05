@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PublishArticleButton } from "@/components/articles/publish-button";
 
 export default function ArticlesPage() {
   const router = useRouter();
@@ -108,21 +109,23 @@ export default function ArticlesPage() {
     .filter(a => !search || a.title.toLowerCase().includes(search.toLowerCase()) || a.keyword?.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-5xl mx-auto">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold font-[family-name:var(--font-display)] tracking-tight">Artigos IA</h1>
-          <p className="text-sm text-muted-foreground mt-1">Crie conteúdo otimizado para o seu site</p>
+          <h1 className="text-3xl sm:text-4xl font-black font-[family-name:var(--font-display)] tracking-tight">Artigos</h1>
+          <p className="text-base text-muted-foreground mt-2 leading-relaxed">
+            Conteúdo escrito por IA pra subir seu site no Google.
+          </p>
         </div>
-        <Button className="gap-2" onClick={() => setCreateOpen(true)}>
-          <Plus className="w-4 h-4" /> Criar Artigo
+        <Button size="lg" className="gap-2" onClick={() => setCreateOpen(true)}>
+          <Plus className="w-5 h-5" /> Criar artigo
         </Button>
       </motion.div>
 
       {/* KPIs */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
         className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard label="Total" value={total} icon={FileText} />
         <MetricCard label="Rascunhos" value={drafts} icon={Clock} />
@@ -131,23 +134,23 @@ export default function ArticlesPage() {
       </motion.div>
 
       {/* Filters */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex gap-1 p-1 bg-muted/50 rounded-lg">
+        <div className="flex gap-1 p-1 bg-muted/30 rounded-xl">
           {[
             { id: "all", label: "Todos" },
             { id: "draft", label: "Rascunhos" },
             { id: "published", label: "Publicados" },
           ].map(f => (
             <button key={f.id} onClick={() => setFilter(f.id)}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${filter === f.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${filter === f.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
               {f.label}
             </button>
           ))}
         </div>
-        <div className="relative max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input placeholder="Buscar artigo..." className="pl-9 h-8 text-xs" value={search} onChange={e => setSearch(e.target.value)} />
+        <div className="relative max-w-xs flex-1 sm:flex-initial">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Buscar artigo..." className="pl-10 h-11 text-sm" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </motion.div>
 
@@ -159,61 +162,75 @@ export default function ArticlesPage() {
           description="Crie seu primeiro artigo com IA — basta digitar uma keyword"
           action={{ label: "Criar Artigo", onClick: () => setCreateOpen(true) }} />
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {filtered.map((article, i) => (
             <motion.div key={article.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 + i * 0.03 }}>
-              <Card className="hover:border-border-strong transition-colors">
-                <CardContent className="p-4">
+              <Card className="hover:border-primary/30 transition-colors">
+                <CardContent className="p-5">
                   <div className="flex items-center gap-4">
                     {/* Status indicator */}
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                      article.status === "published" ? "bg-success/10" : "bg-muted/50"
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                      article.status === "published" ? "bg-success/10" : article.wordCount > 0 ? "bg-info-light" : "bg-muted/50"
                     }`}>
                       {article.status === "published" ? (
-                        <CheckCircle2 className="w-5 h-5 text-success" />
+                        <CheckCircle2 className="w-6 h-6 text-success" />
                       ) : article.wordCount > 0 ? (
-                        <FileText className="w-5 h-5 text-primary" />
+                        <FileText className="w-6 h-6 text-info" />
                       ) : (
-                        <Clock className="w-5 h-5 text-muted-foreground" />
+                        <Clock className="w-6 h-6 text-muted-foreground" />
                       )}
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-bold truncate">{article.title}</h3>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        <Badge variant="outline" className="text-[10px]">{article.keyword}</Badge>
+                      <h3 className="text-base font-bold truncate">{article.title}</h3>
+                      <div className="flex items-center gap-2.5 mt-1.5 flex-wrap">
+                        <Badge variant="outline" className="text-xs">{article.keyword}</Badge>
                         {article.wordCount > 0 && (
-                          <span className="text-[10px] font-mono text-muted-foreground">{article.wordCount.toLocaleString()} palavras</span>
+                          <span className="text-xs font-mono text-muted-foreground">{article.wordCount.toLocaleString()} palavras</span>
                         )}
-                        <span className={`text-[10px] font-semibold ${article.status === "published" ? "text-success" : "text-muted-foreground"}`}>
+                        <span className={`text-xs font-semibold ${article.status === "published" ? "text-success" : "text-muted-foreground"}`}>
                           {article.status === "published" ? "Publicado" : article.wordCount > 0 ? "Rascunho" : "Pendente"}
                         </span>
                         {article.publishedUrl && (
                           <a href={article.publishedUrl} target="_blank" rel="noopener noreferrer"
-                            className="text-[9px] font-mono text-primary hover:underline flex items-center gap-0.5">
-                            <ExternalLink className="w-2 h-2" /> Ver
+                            className="text-xs font-mono text-primary hover:underline flex items-center gap-1">
+                            <ExternalLink className="w-3 h-3" /> Ver
                           </a>
                         )}
                       </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {article.wordCount === 0 ? (
-                        <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1"
+                        <Button variant="outline" size="sm" className="gap-1.5"
                           onClick={() => router.push(`/articles/write?keyword=${encodeURIComponent(article.keyword)}`)}>
-                          <Sparkles className="w-3 h-3" /> Gerar com IA
+                          <Sparkles className="w-3.5 h-3.5" /> Gerar com IA
                         </Button>
                       ) : (
-                        <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1"
-                          onClick={() => router.push(`/articles/${article.id}/edit`)}>
-                          <Eye className="w-3 h-3" /> {article.status === "draft" ? "Editar" : "Ver"}
-                        </Button>
+                        <>
+                          <Button variant="outline" size="sm" className="gap-1.5"
+                            onClick={() => router.push(`/articles/${article.id}/edit`)}>
+                            <Eye className="w-3.5 h-3.5" /> {article.status === "draft" ? "Editar" : "Ver"}
+                          </Button>
+                          {article.status !== "published" && (
+                            <PublishArticleButton
+                              articleId={article.id}
+                              size="sm"
+                              onPublished={({ publishedUrl }) => {
+                                setArticles(prev => prev.map(a => a.id === article.id
+                                  ? { ...a, status: "published", publishedUrl }
+                                  : a));
+                              }}
+                            />
+                          )}
+                        </>
                       )}
                       <button onClick={() => setDeleteId(article.id)}
-                        className="text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer p-1.5">
-                        <Trash2 className="w-3.5 h-3.5" />
+                        className="text-muted-foreground/40 hover:text-destructive transition-colors cursor-pointer p-2"
+                        aria-label="Excluir artigo">
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

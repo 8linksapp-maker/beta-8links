@@ -3,33 +3,40 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * POST /api/integrations/save-wordpress
- * Save WordPress credentials after successful test.
+ * Save WordPress credentials. The wp_url is ALWAYS the registered site URL —
+ * we ignore any wp_url from the request body to prevent users from connecting
+ * a site they don't own.
  */
 export async function POST(request: Request) {
-  const { siteId, wpUrl, wpUsername, wpAppPassword } = await request.json();
+  const { siteId, wpUsername, wpAppPassword } = await request.json();
 
-  if (!siteId || !wpUrl || !wpUsername || !wpAppPassword) {
-    return NextResponse.json({ error: "All fields required" }, { status: 400 });
+  if (!siteId || !wpUsername || !wpAppPassword) {
+    return NextResponse.json({ error: "Preencha usuário e senha de aplicativo." }, { status: 400 });
   }
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  // Verify the site belongs to the user
+  // Verify ownership AND pull the site's registered URL — that's what we save.
   const { data: site } = await supabase
     .from("client_sites")
-    .select("id")
+    .select("id, url")
     .eq("id", siteId)
     .eq("user_id", user.id)
     .single();
 
-  if (!site) return NextResponse.json({ error: "Site not found" }, { status: 404 });
+  if (!site) return NextResponse.json({ error: "Site não encontrado" }, { status: 404 });
+
+  const wpUrl = (site.url ?? "").replace(/\/+$/, "");
+  if (!wpUrl) {
+    return NextResponse.json({ error: "Esse site não tem URL cadastrada." }, { status: 400 });
+  }
 
   const { error } = await supabase
     .from("client_sites")
     .update({
-      wp_url: wpUrl.replace(/\/+$/, ""),
+      wp_url: wpUrl,
       wp_username: wpUsername,
       wp_app_password: wpAppPassword, // TODO: encrypt before storing
     })

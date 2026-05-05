@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
+import { PublishArticleButton } from "@/components/articles/publish-button";
 
 export default function ArticleEditPage() {
   const params = useParams();
@@ -124,9 +125,26 @@ export default function ArticleEditPage() {
           <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={copyHtml}>
             {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />} {copied ? "Copiado!" : "Copiar"}
           </Button>
-          <Button size="sm" className="gap-1.5 text-xs h-8" onClick={saveContent} disabled={saving}>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={saveContent} disabled={saving}>
             {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} Salvar
           </Button>
+          <PublishArticleButton
+            articleId={articleId}
+            size="sm"
+            className="gap-1.5 text-xs h-8"
+            label={article.status === "published" ? "Republicar" : "Publicar"}
+            beforePublish={async () => {
+              if (!editorRef.current) return;
+              const supabase = createClient();
+              await supabase.from("articles").update({
+                content: editorRef.current.innerHTML,
+                word_count: wordCount,
+              }).eq("id", articleId);
+            }}
+            onPublished={({ publishedUrl }) => {
+              setArticle((prev: any) => ({ ...prev, status: "published", published_url: publishedUrl }));
+            }}
+          />
         </div>
       </div>
 

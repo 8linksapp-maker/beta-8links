@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   LayoutDashboard, Globe, Search, Link as LinkIcon, FileText, Wand,
   ClipboardCheck, Map, Bot, Users, HeartPulse,
-  Briefcase, BarChart3, Radio,
+  Briefcase, BarChart3, Radio, Plug,
   MessageSquare, Settings, LogOut, ChevronLeft,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, Globe, Search, Link: LinkIcon, FileText, Wand,
   ClipboardCheck, Map, Bot, Users, HeartPulse,
-  Briefcase, BarChart3, Radio,
+  Briefcase, BarChart3, Radio, Plug,
   MessageSquare, Settings,
 };
 

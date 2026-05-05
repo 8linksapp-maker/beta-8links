@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import {
@@ -18,6 +19,11 @@ import {
 import { useSite } from "@/lib/hooks/use-site";
 import { createClient } from "@/lib/supabase/client";
 import { humanizeError } from "@/lib/utils/error-messages";
+// Heavy create dialog only loads when the user opens it.
+const CreateBacklinkDialog = dynamic(
+  () => import("@/components/backlinks/create-backlink-dialog").then(m => ({ default: m.CreateBacklinkDialog })),
+  { ssr: false }
+);
 
 type Status = "queued" | "generating" | "ready_for_review" | "published" | "indexed" | "error";
 
@@ -37,7 +43,7 @@ type Backlink = {
 const STATUS_LABELS: Record<Status, string> = {
   queued: "Na fila",
   generating: "Gerando",
-  ready_for_review: "Pronto para revisar",
+  ready_for_review: "Pendente",
   published: "Publicado",
   indexed: "Publicado",
   error: "Erro",
@@ -47,7 +53,7 @@ const STATUS_FILTERS: { value: "all" | Status; label: string }[] = [
   { value: "all", label: "Todos" },
   { value: "queued", label: "Na fila" },
   { value: "generating", label: "Gerando" },
-  { value: "ready_for_review", label: "Para revisar" },
+  { value: "ready_for_review", label: "Pendentes" },
   { value: "published", label: "Publicados" },
   { value: "error", label: "Com erro" },
 ];
@@ -72,6 +78,7 @@ export default function BacklinksPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
   const [periodFilter, setPeriodFilter] = useState<"all" | "today" | "7d" | "30d">("all");
   const [search, setSearch] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     if (siteLoading || !activeSiteId) {
@@ -79,9 +86,10 @@ export default function BacklinksPage() {
       return;
     }
 
+    const supabase = createClient();
     let cancelled = false;
+
     async function load() {
-      const supabase = createClient();
       const { data, error } = await supabase
         .from("backlinks")
         .select("id, anchor_text, target_url, status, error_message, article_title, article_content, published_url, created_at, network_sites(domain, niche)")
@@ -94,8 +102,26 @@ export default function BacklinksPage() {
       }
     }
     load();
-    const interval = setInterval(load, 5000);
-    return () => { cancelled = true; clearInterval(interval); };
+
+    // Realtime — refetch whenever a backlink for this site changes. Replaces
+    // the old 5-second poll for users who keep this tab open.
+    const channel = supabase
+      .channel(`backlinks:${activeSiteId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "backlinks", filter: `client_site_id=eq.${activeSiteId}` },
+        () => { if (!cancelled) load(); }
+      )
+      .subscribe();
+
+    // Slow safety-net poll if realtime publication is disabled in this env.
+    const interval = setInterval(load, 30000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, [activeSiteId, siteLoading]);
 
   // Apply filters
@@ -127,44 +153,112 @@ export default function BacklinksPage() {
   }, [items, statusFilter, periodFilter, search]);
 
   const queuedCount = items.filter(b => b.status === "queued").length;
+  const readyCount = items.filter(b => b.status === "ready_for_review").length;
+  const pendingCount = queuedCount + readyCount;
   const publishedCount = items.filter(b => b.status === "published" || b.status === "indexed").length;
 
-  const processQueue = async () => {
-    const queued = items.filter(b => b.status === "queued");
-    if (queued.length === 0) return;
+  /**
+   * End-to-end pipeline: generates articles for queued backlinks, then
+   * publishes everything that's ready_for_review. Always reads fresh state
+   * from the DB so it works right after creation (before the 5s poll catches up).
+   */
+  const publishPending = async () => {
+    if (!activeSiteId) return;
     setProcessingFila(true);
-    toast(`Processando ${queued.length} backlink${queued.length > 1 ? "s" : ""}...`);
 
-    const CONCURRENCY = 3;
-    let ok = 0;
+    const supabase = createClient();
+    const fetchPending = async () => {
+      const { data } = await supabase
+        .from("backlinks")
+        .select("id, anchor_text, status, article_title, article_content, network_sites(domain)")
+        .eq("client_site_id", activeSiteId)
+        .in("status", ["queued", "ready_for_review"]);
+      return (data ?? []) as unknown as Array<{
+        id: string;
+        anchor_text: string;
+        status: Status;
+        article_title: string | null;
+        article_content: string | null;
+        network_sites: { domain: string } | null;
+      }>;
+    };
+
+    let pending = await fetchPending();
+    const queued = pending.filter(b => b.status === "queued");
     const errors: { anchor: string; reason: string }[] = [];
 
-    async function processOne(bl: Backlink) {
-      try {
-        const res = await fetch("/api/admin/process-backlink", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ backlinkId: bl.id }),
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok || body?.error) {
-          errors.push({
-            anchor: bl.anchor_text,
-            reason: body?.error ?? humanizeError(body?.detail ?? `HTTP ${res.status}`).user,
-          });
-        } else ok++;
-      } catch (e) {
-        errors.push({ anchor: bl.anchor_text, reason: humanizeError(e).user });
+    // Phase 1 — generate articles for queued backlinks
+    if (queued.length > 0) {
+      toast(`Gerando ${queued.length} artigo${queued.length > 1 ? "s" : ""}...`);
+      const CONCURRENCY = 3;
+      for (let i = 0; i < queued.length; i += CONCURRENCY) {
+        await Promise.all(queued.slice(i, i + CONCURRENCY).map(async (bl) => {
+          try {
+            const res = await fetch("/api/admin/process-backlink", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ backlinkId: bl.id }),
+            });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok || body?.error) {
+              errors.push({
+                anchor: bl.anchor_text,
+                reason: body?.error ?? humanizeError(body?.detail ?? `HTTP ${res.status}`).user,
+              });
+            }
+          } catch (e) {
+            errors.push({ anchor: bl.anchor_text, reason: humanizeError(e).user });
+          }
+        }));
+      }
+      pending = await fetchPending();
+    }
+
+    // Phase 2 — publish everything that ended up ready_for_review
+    const ready = pending.filter(b =>
+      b.status === "ready_for_review" && b.article_content && b.network_sites?.domain
+    );
+    let publishedOk = 0;
+
+    if (ready.length > 0) {
+      toast(`Publicando ${ready.length} backlink${ready.length > 1 ? "s" : ""}...`);
+      const CONCURRENCY = 2;
+      for (let i = 0; i < ready.length; i += CONCURRENCY) {
+        await Promise.all(ready.slice(i, i + CONCURRENCY).map(async (bl) => {
+          try {
+            const res = await fetch("/api/admin/publish-post", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                backlinkId: bl.id,
+                content: bl.article_content,
+                title: bl.article_title,
+                domain: bl.network_sites!.domain,
+              }),
+            });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok || body?.error) {
+              errors.push({
+                anchor: bl.anchor_text,
+                reason: body?.error ?? humanizeError(`HTTP ${res.status}`).user,
+              });
+            } else publishedOk++;
+          } catch (e) {
+            errors.push({ anchor: bl.anchor_text, reason: humanizeError(e).user });
+          }
+        }));
       }
     }
 
-    for (let i = 0; i < queued.length; i += CONCURRENCY) {
-      await Promise.all(queued.slice(i, i + CONCURRENCY).map(processOne));
+    if (queued.length === 0 && ready.length === 0) {
+      toast("Nenhum backlink pendente.");
+    } else if (errors.length === 0 && publishedOk > 0) {
+      toast.success(`${publishedOk} backlink${publishedOk > 1 ? "s publicados" : " publicado"}`);
+    } else if (publishedOk === 0 && errors.length > 0) {
+      toast.error(`Não foi possível publicar. ${errors[0].reason}`);
+    } else {
+      toast.warning(`${publishedOk} publicado(s), ${errors.length} com problema. Veja na lista.`);
     }
-
-    if (errors.length === 0) toast.success(`${ok} backlink${ok > 1 ? "s" : ""} concluído${ok > 1 ? "s" : ""}`);
-    else if (ok === 0) toast.error(`Não foi possível processar. ${errors[0].reason}`);
-    else toast.warning(`${ok} concluído(s), ${errors.length} com problema. Veja na lista.`);
 
     setProcessingFila(false);
   };
@@ -215,7 +309,7 @@ export default function BacklinksPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-8 max-w-7xl mx-auto">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
@@ -225,17 +319,15 @@ export default function BacklinksPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {queuedCount > 0 && (
-            <Button variant="outline" size="lg" onClick={processQueue} disabled={processingFila} className="gap-2">
+          {pendingCount > 0 && (
+            <Button variant="outline" size="lg" onClick={publishPending} disabled={processingFila} className="gap-2">
               {processingFila ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-              Processar fila ({queuedCount})
+              Publicar backlinks pendentes ({pendingCount})
             </Button>
           )}
-          <Link href="/palavras">
-            <Button size="lg" className="gap-2">
-              <Plus className="w-5 h-5" /> Criar backlink
-            </Button>
-          </Link>
+          <Button size="lg" className="gap-2" onClick={() => setCreateOpen(true)}>
+            <Plus className="w-5 h-5" /> Criar backlink
+          </Button>
         </div>
       </motion.div>
 
@@ -252,11 +344,9 @@ export default function BacklinksPage() {
                 Backlinks são links de outros sites apontando pro seu — quanto mais você tem, mais o Google confia.
                 Comece criando o primeiro a partir de uma palavra do seu plano.
               </p>
-              <Link href="/palavras">
-                <Button size="lg" className="gap-2">
-                  <Plus className="w-5 h-5" /> Criar primeiro backlink
-                </Button>
-              </Link>
+              <Button size="lg" className="gap-2" onClick={() => setCreateOpen(true)}>
+                <Plus className="w-5 h-5" /> Criar primeiro backlink
+              </Button>
             </CardContent>
           </Card>
         </motion.div>
@@ -339,7 +429,7 @@ export default function BacklinksPage() {
                           )}
                         </td>
                         <td className="px-4 py-4 text-sm text-muted-foreground">
-                          <span className="font-mono truncate block max-w-[200px]" title={bl.target_url}>
+                          <span className="font-mono truncate block max-w-[180px]" title={bl.target_url}>
                             {bl.target_url.replace(/^https?:\/\//, "")}
                           </span>
                         </td>
@@ -349,7 +439,7 @@ export default function BacklinksPage() {
                         <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                           {timeAgo(bl.created_at)}
                         </td>
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-4 text-right whitespace-nowrap">
                           <RowActions
                             bl={bl}
                             onReview={() => router.push(`/backlinks/${bl.id}/review`)}
@@ -413,6 +503,26 @@ export default function BacklinksPage() {
         </>
       )}
 
+      {/* Create backlink dialog */}
+      <CreateBacklinkDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={() => {
+          // Refresh and kick off the publish pipeline so the user doesn't
+          // need to come back and click "Publicar pendentes" manually.
+          if (activeSiteId) {
+            const supabase = createClient();
+            supabase
+              .from("backlinks")
+              .select("id, anchor_text, target_url, status, error_message, article_title, article_content, published_url, created_at, network_sites(domain, niche)")
+              .eq("client_site_id", activeSiteId)
+              .order("created_at", { ascending: false })
+              .then(({ data }) => setItems((data ?? []) as any));
+          }
+          publishPending();
+        }}
+      />
+
       {/* Delete confirmation */}
       <Dialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)}>
         <DialogContent className="max-w-sm">
@@ -452,10 +562,10 @@ function RowActions({ bl, onReview, onRetry, onDelete }: {
   const isError = bl.status === "error";
 
   return (
-    <div className="flex items-center gap-2 justify-end">
+    <div className="flex items-center gap-2 justify-end whitespace-nowrap">
       {(isReady || isPublished) && bl.article_content && (
-        <Button size="sm" variant="outline" onClick={onReview}>
-          <FileText className="w-3.5 h-3.5" /> {isReady ? "Revisar" : "Ver"}
+        <Button size="sm" variant="outline" onClick={onReview} className="shrink-0">
+          <FileText className="w-3.5 h-3.5" /> {isReady ? "Publicar" : "Ver"}
         </Button>
       )}
       {isPublished && bl.published_url && (

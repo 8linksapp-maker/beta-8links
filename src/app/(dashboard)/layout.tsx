@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopBar } from "@/components/layout/top-bar";
-import { CommandPalette } from "@/components/layout/command-palette";
 import { useUser } from "@/lib/hooks/use-user";
 import { cn } from "@/lib/utils";
 import { PLANS } from "@/lib/constants";
@@ -13,6 +13,13 @@ import { MigrationBanner } from "@/components/migration-banner";
 import { SentryUserSync } from "@/components/sentry-user-sync";
 import { SimpleModeBanner } from "@/components/simple-mode-banner";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
+
+// Command palette ships cmdk (~30 KB) and only opens on Ctrl/Cmd+K. Defer
+// the bundle until the user actually triggers it.
+const CommandPalette = dynamic(
+  () => import("@/components/layout/command-palette").then(m => ({ default: m.CommandPalette })),
+  { ssr: false }
+);
 
 export default function DashboardLayout({
   children,

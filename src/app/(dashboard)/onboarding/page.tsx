@@ -5,47 +5,18 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import {
-  Globe, ArrowRight, ArrowLeft, Check, Loader2, Sparkles,
-  Cpu, HeartPulse, Banknote, GraduationCap, ShoppingCart,
-  Megaphone, Scale, Home, Utensils, Car, Shirt, Palette,
-  PawPrint, Plane, Trophy, Gamepad2, Baby, Wheat, HardHat, Leaf,
-} from "lucide-react";
+import { Globe, ArrowRight, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-const NICHE_OPTIONS = [
-  { value: "Tecnologia", icon: Cpu, color: "text-sky-400" },
-  { value: "Saúde", icon: HeartPulse, color: "text-red-400" },
-  { value: "Finanças", icon: Banknote, color: "text-emerald-400" },
-  { value: "Educação", icon: GraduationCap, color: "text-amber-400" },
-  { value: "E-commerce", icon: ShoppingCart, color: "text-orange-400" },
-  { value: "Marketing", icon: Megaphone, color: "text-pink-400" },
-  { value: "Jurídico", icon: Scale, color: "text-slate-300" },
-  { value: "Imobiliário", icon: Home, color: "text-yellow-500" },
-  { value: "Alimentação", icon: Utensils, color: "text-orange-300" },
-  { value: "Automotivo", icon: Car, color: "text-blue-400" },
-  { value: "Moda", icon: Shirt, color: "text-fuchsia-400" },
-  { value: "Beleza", icon: Palette, color: "text-rose-400" },
-  { value: "Pets", icon: PawPrint, color: "text-amber-300" },
-  { value: "Viagem", icon: Plane, color: "text-cyan-400" },
-  { value: "Esportes", icon: Trophy, color: "text-yellow-400" },
-  { value: "Jogos", icon: Gamepad2, color: "text-violet-400" },
-  { value: "Infantil", icon: Baby, color: "text-pink-300" },
-  { value: "Agronegócio", icon: Wheat, color: "text-yellow-600" },
-  { value: "Construção", icon: HardHat, color: "text-orange-500" },
-  { value: "Sustentabilidade", icon: Leaf, color: "text-green-400" },
-] as const;
-
-type Step = "url" | "description" | "niche";
+type Step = "url" | "description";
 
 function OnboardingContent() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("url");
   const [siteUrl, setSiteUrl] = useState("");
   const [description, setDescription] = useState("");
-  const [niche, setNiche] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const goToDescription = () => {
@@ -53,10 +24,7 @@ function OnboardingContent() {
     setStep("description");
   };
 
-  const goToNiche = () => setStep("niche");
-
   const finish = async () => {
-    if (!niche) { toast.error("Escolha um nicho"); return; }
     setSaving(true);
     try {
       const supabase = createClient();
@@ -69,13 +37,12 @@ function OnboardingContent() {
         ? { gptSummary: description.trim(), source: "user-onboarding" }
         : null;
 
-      // Create site
+      // Create site (no niche — user defines later in /sites via auto-detect)
       const { data: site, error: siteError } = await supabase
         .from("client_sites")
         .insert({
           user_id: user.id,
           url,
-          niche_primary: niche,
           phase: "planting",
           autopilot_active: true,
           seo_score: 0,
@@ -115,14 +82,14 @@ function OnboardingContent() {
     }
   };
 
-  const stepIndex = step === "url" ? 0 : step === "description" ? 1 : 2;
+  const stepIndex = step === "url" ? 0 : 1;
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="w-full max-w-2xl">
         {/* Progress */}
         <div className="flex items-center justify-center gap-2 mb-10">
-          {[0, 1, 2].map((i) => (
+          {[0, 1].map((i) => (
             <div key={i} className={`h-1.5 rounded-full transition-all ${
               i < stepIndex ? "w-8 bg-primary" :
               i === stepIndex ? "w-12 bg-primary" :
@@ -215,93 +182,25 @@ function OnboardingContent() {
                     variant="ghost"
                     size="xl"
                     className="sm:flex-1"
-                    onClick={goToNiche}
+                    disabled={saving}
+                    onClick={finish}
                   >
                     Pular
                   </Button>
                   <Button
                     size="xl"
                     className="sm:flex-1"
-                    onClick={goToNiche}
+                    disabled={saving}
+                    onClick={finish}
                   >
-                    Continuar <ArrowRight className="w-4 h-4" />
+                    {saving ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Cadastrando...</>
+                    ) : (
+                      <>Pronto, vamos começar! <ArrowRight className="w-4 h-4" /></>
+                    )}
                   </Button>
                 </div>
               </div>
-            </motion.div>
-          )}
-
-          {step === "niche" && (
-            <motion.div
-              key="niche"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.25 }}
-            >
-              <button
-                type="button"
-                onClick={() => setStep("description")}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-6 cursor-pointer"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" /> Voltar
-              </button>
-
-              <div className="text-center mb-8">
-                <h1 className="text-3xl sm:text-4xl font-black font-[family-name:var(--font-display)] tracking-tight mb-3">
-                  Qual nicho descreve seu site?
-                </h1>
-                <p className="text-base text-muted-foreground">
-                  Pra gente sugerir as melhores palavras pra você posicionar.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
-                {NICHE_OPTIONS.map(({ value, icon: Icon, color }) => {
-                  const selected = niche === value;
-                  return (
-                    <motion.button
-                      key={value}
-                      type="button"
-                      onClick={() => setNiche(value)}
-                      whileHover={{ y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`relative flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-colors cursor-pointer ${
-                        selected
-                          ? "border-primary bg-primary/5"
-                          : "border-border bg-card hover:border-primary/30"
-                      }`}
-                    >
-                      {selected && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
-                        >
-                          <Check className="w-3 h-3 text-primary-foreground" />
-                        </motion.div>
-                      )}
-                      <Icon className={`w-7 h-7 ${selected ? "text-primary" : color}`} />
-                      <span className={`text-xs font-semibold text-center ${selected ? "text-primary" : ""}`}>
-                        {value}
-                      </span>
-                    </motion.button>
-                  );
-                })}
-              </div>
-
-              <Button
-                size="xl"
-                className="w-full"
-                disabled={!niche || saving}
-                onClick={finish}
-              >
-                {saving ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Cadastrando...</>
-                ) : (
-                  <>Pronto, vamos começar! <ArrowRight className="w-4 h-4" /></>
-                )}
-              </Button>
             </motion.div>
           )}
         </AnimatePresence>

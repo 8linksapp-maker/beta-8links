@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { useSite } from "@/lib/hooks/use-site";
 import { motion } from "motion/react";
@@ -24,16 +25,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { StatusTag } from "@/components/ui/status-tag";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+
+// Recharts is heavy (~100 KB). Lazy-load so it stays out of the initial bundle.
+const CompetitorDaBar = dynamic(() => import("@/components/charts/competitor-da-bar"), { ssr: false });
 
 // ---------------------------------------------------------------------------
 // Types
@@ -174,59 +168,11 @@ export default function CompetitorsPage() {
           </CardHeader>
           <CardContent>
             <div className="h-[220px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  layout="vertical"
-                  margin={{ top: 0, right: 20, left: 10, bottom: 0 }}
-                  barCategoryGap="28%"
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="hsl(220, 10%, 18%)"
-                    horizontal={false}
-                  />
-                  <XAxis
-                    type="number"
-                    domain={[0, 70]}
-                    tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 12 }}
-                    axisLine={{ stroke: "hsl(220, 10%, 20%)" }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    width={120}
-                    tick={{ fill: "hsl(220, 10%, 65%)", fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <RechartsTooltip
-                    contentStyle={{
-                      background: "hsl(220, 15%, 12%)",
-                      border: "1px solid hsl(220, 10%, 20%)",
-                      borderRadius: "8px",
-                      color: "hsl(220, 10%, 85%)",
-                      fontSize: "13px",
-                    }}
-                    formatter={(value) => [`AP ${value}`, ""]}
-                    cursor={{ fill: "hsl(220, 10%, 15%)" }}
-                  />
-                  <Bar dataKey="da" radius={[0, 6, 6, 0]} barSize={28}>
-                    {chartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={
-                          entry.isUser
-                            ? CHART_COLORS.user
-                            : CHART_COLORS.competitor
-                        }
-                        opacity={entry.isUser ? 1 : 0.6}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <CompetitorDaBar
+                data={chartData}
+                userColor={CHART_COLORS.user}
+                competitorColor={CHART_COLORS.competitor}
+              />
             </div>
             <p className="text-xs text-muted-foreground mt-3">
               <span className="inline-block w-2.5 h-2.5 rounded-sm mr-1.5 align-middle" style={{ background: CHART_COLORS.user }} />

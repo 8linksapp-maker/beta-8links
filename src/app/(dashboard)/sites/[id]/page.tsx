@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -22,11 +23,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip as RechartsTooltip, ResponsiveContainer,
-  BarChart, Bar, Cell, PieChart, Pie,
-} from "recharts";
+
+// Recharts is heavy (~100 KB). Lazy-load each chart so it stays out of the
+// initial bundle for users who don't open this page.
+const DaEvolutionChart = dynamic(() => import("@/components/charts/da-evolution-chart"), { ssr: false });
+const DofollowPie = dynamic(() => import("@/components/charts/dofollow-pie"), { ssr: false });
+const DaRangesChart = dynamic(() => import("@/components/charts/da-ranges-chart"), { ssr: false });
 
 // siteData is loaded from realSite (DB) — see useEffect below
 
@@ -327,21 +329,7 @@ export default function SiteDetailPage() {
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm">Evolução da Autoridade</CardTitle></CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <AreaChart data={siteData.daHistory}>
-                      <defs>
-                        <linearGradient id="gradDa" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="hsl(24, 100%, 55%)" stopOpacity={0.25} />
-                          <stop offset="100%" stopColor="hsl(24, 100%, 55%)" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(20, 10%, 12%)" vertical={false} />
-                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: 'hsl(20, 8%, 50%)', fontSize: 11, fontFamily: 'var(--font-mono)' }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fill: 'hsl(20, 8%, 50%)', fontSize: 11, fontFamily: 'var(--font-mono)' }} />
-                      <RechartsTooltip contentStyle={{ background: 'hsl(20, 12%, 7%)', border: '1px solid hsl(20, 10%, 18%)', borderRadius: '10px', fontSize: '12px' }} />
-                      <Area type="monotone" dataKey="da" stroke="hsl(24, 100%, 55%)" strokeWidth={2.5} fill="url(#gradDa)" name="DA" dot={false} activeDot={{ r: 4, fill: 'hsl(24, 100%, 55%)', stroke: 'hsl(20, 12%, 7%)', strokeWidth: 2 }} />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  <DaEvolutionChart data={siteData.daHistory} />
                 </CardContent>
               </Card>
 
@@ -535,13 +523,7 @@ export default function SiteDetailPage() {
                       <Card>
                         <CardHeader className="pb-2"><CardTitle className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Dofollow vs Nofollow</CardTitle></CardHeader>
                         <CardContent className="flex items-center justify-center gap-6">
-                          <ResponsiveContainer width={120} height={120}>
-                            <PieChart>
-                              <Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={35} outerRadius={55} strokeWidth={0}>
-                                {pieData.map((entry, idx) => <Cell key={idx} fill={entry.fill} />)}
-                              </Pie>
-                            </PieChart>
-                          </ResponsiveContainer>
+                          <DofollowPie data={pieData} />
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <div className="w-2.5 h-2.5 rounded-full bg-primary" />
@@ -563,16 +545,7 @@ export default function SiteDetailPage() {
                       <Card>
                         <CardHeader className="pb-2"><CardTitle className="text-xs font-mono uppercase tracking-wider text-muted-foreground">DA — Distribuição</CardTitle></CardHeader>
                         <CardContent>
-                          <ResponsiveContainer width="100%" height={120}>
-                            <BarChart data={ranges} layout="vertical">
-                              <XAxis type="number" hide />
-                              <YAxis type="category" dataKey="range" axisLine={false} tickLine={false} width={55} tick={{ fill: 'hsl(20, 8%, 50%)', fontSize: 10, fontFamily: 'var(--font-mono)' }} />
-                              <RechartsTooltip contentStyle={{ background: 'hsl(20, 12%, 7%)', border: '1px solid hsl(20, 10%, 18%)', borderRadius: '8px', fontSize: '11px' }} formatter={(value) => [`${value} domínios`, ""]} />
-                              <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={14}>
-                                {ranges.map((_, idx) => <Cell key={idx} fill={idx >= 3 ? 'hsl(140, 70%, 45%)' : idx >= 2 ? 'hsl(24, 100%, 55%)' : 'hsl(20, 10%, 30%)'} />)}
-                              </Bar>
-                            </BarChart>
-                          </ResponsiveContainer>
+                          <DaRangesChart data={ranges} />
                         </CardContent>
                       </Card>
 

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSite } from "@/lib/hooks/use-site";
 import { createClient } from "@/lib/supabase/client";
+import { PublishArticleButton } from "@/components/articles/publish-button";
 
 type Step = "idle" | "serp" | "outline" | "writing" | "images" | "done" | "error";
 
@@ -172,7 +173,7 @@ export default function WriteArticlePage() {
           </h1>
           <p className="text-xs text-muted-foreground truncate">
             Keyword: <span className="text-foreground font-semibold">{keyword}</span>
-            {stats && <span className="ml-3 text-muted-foreground/60">({stats.totalDuration} · {stats.cost})</span>}
+            {stats && <span className="ml-3 text-muted-foreground/60">({stats.totalDuration})</span>}
           </p>
         </div>
         {step === "done" && (
@@ -184,9 +185,17 @@ export default function WriteArticlePage() {
               {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />} {copied ? "Copiado!" : "Copiar"}
             </Button>
             {savedId && (
-              <Button size="sm" className="gap-1.5 text-xs h-8" onClick={saveCurrentContent} disabled={saving}>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={saveCurrentContent} disabled={saving}>
                 {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} Salvar
               </Button>
+            )}
+            {savedId && (
+              <PublishArticleButton
+                articleId={savedId}
+                size="sm"
+                className="gap-1.5 text-xs h-8"
+                beforePublish={saveCurrentContent}
+              />
             )}
           </div>
         )}

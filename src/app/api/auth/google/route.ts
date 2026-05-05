@@ -20,8 +20,8 @@ export async function GET(request: Request) {
   ].join(" ");
 
   // Keep state short to avoid Google 500 error
-  // d = site detail page (redirect to /sites/[siteId])
-  const redirectCode = redirect.startsWith("/sites/") ? "d" : redirect === "/integrations/setup" ? "i" : redirect === "/onboarding" ? "o" : "s";
+  // d = site detail, l = sites list, p = palavras, n = integracoes, i = integrations setup, o = onboarding, s = settings
+  const redirectCode = redirect === "/sites" ? "l" : redirect.startsWith("/sites/") ? "d" : redirect === "/palavras" ? "p" : redirect === "/integracoes" ? "n" : redirect === "/integrations/setup" ? "i" : redirect === "/onboarding" ? "o" : "s";
   const state = `${user.id}|${siteId}|${redirectCode}`;
 
   const params = new URLSearchParams({

@@ -17,6 +17,12 @@ interface SiteData {
   github_token: string | null;
   github_repo: string | null;
   wp_url: string | null;
+  // Optional fields — only present after migrations 024/025 are applied
+  gsc_clicks_28d?: number | null;
+  gsc_impressions_28d?: number | null;
+  gsc_avg_position?: number | null;
+  last_synced_at?: string | null;
+  external_backlinks_total?: number | null;
 }
 
 interface SiteContextType {
@@ -49,14 +55,23 @@ export function SiteProvider({ children }: { children: ReactNode }) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
-    const { data, error } = await supabase
+    // Try with the new GSC/backlinks columns first; fall back to the legacy SELECT
+    // if migrations 024/025 haven't been applied yet (otherwise Postgres rejects the whole query).
+    let { data, error } = await supabase
       .from("client_sites")
-      .select("id, url, niche_primary, da_current, seo_score, phase, autopilot_active, google_refresh_token, gsc_site_url, ga_property_id, github_token, github_repo, wp_url, avg_cpc")
+      .select("id, url, niche_primary, da_current, seo_score, phase, autopilot_active, google_refresh_token, gsc_site_url, ga_property_id, github_token, github_repo, wp_url, avg_cpc, gsc_clicks_28d, gsc_impressions_28d, gsc_avg_position, last_synced_at, external_backlinks_total")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("[useSite] failed to load sites:", error);
+      console.warn("[useSite] sync columns missing — falling back to legacy SELECT. Run migrations 024/025 to enable GSC metrics.", error);
+      const fallback = await supabase
+        .from("client_sites")
+        .select("id, url, niche_primary, da_current, seo_score, phase, autopilot_active, google_refresh_token, gsc_site_url, ga_property_id, github_token, github_repo, wp_url, avg_cpc")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      data = fallback.data as typeof data;
+      if (fallback.error) console.error("[useSite] failed to load sites:", fallback.error);
     }
 
     const sitesList = data ?? [];

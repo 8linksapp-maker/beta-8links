@@ -213,6 +213,7 @@ export const NAV_ITEMS = {
     { href: "/backlinks", label: "Backlinks", icon: "Link" },
     { href: "/articles", label: "Artigos", icon: "FileText" },
     { href: "/sites", label: "Meus Sites", icon: "Globe" },
+    { href: "/integracoes", label: "Integrações", icon: "Plug" },
   ],
   intelligence: [
     { href: "/content-audit", label: "Auditoria", icon: "ClipboardCheck", soon: true },

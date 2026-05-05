@@ -2,18 +2,25 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import {
-  Plus, Search, TrendingUp, Loader2, Check, X,
-  FileText, Link as LinkIcon, Sparkles, ArrowRight,
-  Trash2, MapPin, Pencil,
+  Plus, Search, Loader2, Check, X,
+  FileText, Link as LinkIcon, Sparkles,
+  Trash2, MapPin, Pencil, LayoutGrid, List,
+  Trophy, BookmarkCheck, Plug,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { PageMetrics, countSince } from "@/components/ui/page-metrics";
+const CreateBacklinkDialog = dynamic(
+  () => import("@/components/backlinks/create-backlink-dialog").then(m => ({ default: m.CreateBacklinkDialog })),
+  { ssr: false }
+);
 import { useSite } from "@/lib/hooks/use-site";
 import { createClient } from "@/lib/supabase/client";
 
@@ -37,6 +44,7 @@ type SearchedKeyword = {
 };
 
 type Tab = "plano" | "buscar";
+type ViewMode = "cards" | "list";
 
 const SEARCH_LIMIT_DAILY = 10;
 
@@ -44,6 +52,7 @@ export default function PalavrasPage() {
   const router = useRouter();
   const { activeSite, loading: siteLoading } = useSite();
   const [tab, setTab] = useState<Tab>("plano");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   // Plano
   const [savedKeywords, setSavedKeywords] = useState<SavedKeyword[]>([]);
@@ -125,9 +134,25 @@ export default function PalavrasPage() {
     setManualAdding(false);
   };
 
+  // Show only "domain.com/" — protocol stripped, no trailing path
+  const domainPrefix = (() => {
+    const base = (activeSite?.url ?? "").replace(/\/+$/, "");
+    return base.replace(/^https?:\/\//i, "");
+  })();
+
+  // Strip the site domain from a saved target_url, leaving only the path slug
+  const pathFromTarget = (url: string | null): string => {
+    if (!url) return "";
+    const base = (activeSite?.url ?? "").replace(/\/+$/, "");
+    if (base && url.startsWith(base)) {
+      return url.slice(base.length).replace(/^\/+/, "");
+    }
+    return url.replace(/^https?:\/\/[^/]+\/?/i, "");
+  };
+
   const startEditTarget = (kw: SavedKeyword) => {
     setEditingTargetId(kw.id);
-    setEditingTargetValue(kw.target_url ?? "");
+    setEditingTargetValue(pathFromTarget(kw.target_url));
   };
 
   const cancelEditTarget = () => {
@@ -137,10 +162,22 @@ export default function PalavrasPage() {
 
   const saveTarget = async (id: string) => {
     setSavingTarget(true);
-    const value = editingTargetValue.trim();
-    const finalValue = value
-      ? (value.startsWith("http") ? value : `https://${value}`)
-      : null;
+    // Path is always relative to the active site domain
+    const path = editingTargetValue.trim().replace(/^\/+/, "");
+    const base = (activeSite?.url ?? "").replace(/\/+$/, "");
+    const finalValue: string | null = base ? (path ? `${base}/${path}` : base) : null;
+
+    // Cada página só pode ter 1 palavra apontada pra ela.
+    // Conferir antes de salvar pra dar mensagem amigável (banco também tem unique index como rede de proteção).
+    if (finalValue) {
+      const conflict = savedKeywords.find(k => k.id !== id && k.target_url === finalValue);
+      if (conflict) {
+        toast.error(`Essa página já está direcionada para a palavra "${conflict.keyword}". Cada página só pode ter uma palavra apontando pra ela.`);
+        setSavingTarget(false);
+        return;
+      }
+    }
+
     const supabase = createClient();
     const { error } = await supabase
       .from("keywords")
@@ -148,7 +185,13 @@ export default function PalavrasPage() {
       .eq("id", id);
     if (error) {
       console.error("[palavras] failed to save target_url:", error);
-      toast.error("Não conseguimos salvar. Tente de novo.");
+      // Postgres unique violation = race condition (alguém em outra aba salvou primeiro)
+      if (error.code === "23505") {
+        toast.error("Essa página já está direcionada para outra palavra. Atualize a lista.");
+        await loadSaved();
+      } else {
+        toast.error("Não conseguimos salvar. Tente de novo.");
+      }
     } else {
       setSavedKeywords(prev => prev.map(k => k.id === id ? { ...k, target_url: finalValue } : k));
       cancelEditTarget();
@@ -240,10 +283,11 @@ export default function PalavrasPage() {
     setBulkAdding(false);
   };
 
+  const [createBacklinkKwId, setCreateBacklinkKwId] = useState<string | null>(null);
+
   const createIndicacao = (kw: SavedKeyword) => {
     if (!activeSite) return;
-    const targetUrl = kw.target_url || activeSite.url;
-    router.push(`/keywords/select-site?keyword=${encodeURIComponent(kw.keyword)}&url=${encodeURIComponent(targetUrl)}&anchor=${encodeURIComponent(kw.keyword)}`);
+    setCreateBacklinkKwId(kw.id);
   };
 
   const escreverArtigo = (keyword: string) => {
@@ -263,6 +307,17 @@ export default function PalavrasPage() {
     );
   }
 
+  // Compute KPI values from saved keywords
+  const totalKeywords = savedKeywords.length;
+  const withTarget = savedKeywords.filter(k => !!k.target_url).length;
+  const positioned = savedKeywords.filter(k => k.position_current !== null && k.position_current > 0 && k.position_current <= 100).length;
+  const newThisWeek = countSince(savedKeywords, 7);
+  const hasGoogle = !!(activeSite as any)?.google_refresh_token;
+  const connectGoogle = () => {
+    if (!activeSite) return;
+    window.location.href = `/api/auth/google?siteId=${activeSite.id}&redirect=/palavras`;
+  };
+
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       {/* Header */}
@@ -272,6 +327,37 @@ export default function PalavrasPage() {
           As palavras que você quer aparecer no Google. Pra cada uma, você cria backlinks ou escreve artigos.
         </p>
       </motion.div>
+
+      {/* KPIs */}
+      <PageMetrics
+        loading={planLoading}
+        items={[
+          {
+            label: "Palavras no plano",
+            value: totalKeywords,
+            icon: Search,
+            accent: true,
+            trend: totalKeywords > 0 ? { delta: newThisWeek, label: "esta semana" } : undefined,
+          },
+          {
+            label: "Com página definida",
+            value: withTarget,
+            icon: BookmarkCheck,
+            hint: totalKeywords > 0 && withTarget < totalKeywords
+              ? `${totalKeywords - withTarget} ainda sem página alvo`
+              : undefined,
+          },
+          {
+            label: "Já no Google",
+            value: positioned,
+            icon: Trophy,
+            hint: hasGoogle
+              ? (positioned > 0 ? "rankeando entre top 100" : "nada na top 100 ainda")
+              : "Conecte o Google pra ver suas posições reais",
+            action: hasGoogle ? undefined : { label: "Conectar Google", onClick: connectGoogle, icon: Plug },
+          },
+        ]}
+      />
 
       {/* Tabs */}
       <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/30 w-fit">
@@ -291,7 +377,7 @@ export default function PalavrasPage() {
             tab === "buscar" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Buscar palavra
+          Keyword Planner
         </button>
       </div>
 
@@ -335,7 +421,7 @@ export default function PalavrasPage() {
                     onClick={() => setTab("buscar")}
                     className="h-12 gap-2"
                   >
-                    <Search className="w-4 h-4" /> Buscar com dados
+                    <Search className="w-4 h-4" /> Keyword Planner
                   </Button>
                 </div>
               </CardContent>
@@ -355,11 +441,135 @@ export default function PalavrasPage() {
                     Adicione palavras que você quer ver aparecer no Google. Pra cada palavra você pode criar backlinks ou escrever artigos.
                   </p>
                   <Button size="lg" onClick={() => setTab("buscar")} className="gap-2">
-                    <Search className="w-5 h-5" /> Pesquisar primeira palavra
+                    <Search className="w-5 h-5" /> Abrir Keyword Planner
                   </Button>
                 </CardContent>
               </Card>
             ) : (
+              <>
+                {/* View mode toggle */}
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-semibold text-foreground">{savedKeywords.length}</span> {savedKeywords.length === 1 ? "palavra no plano" : "palavras no plano"}
+                  </p>
+                  <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/30">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("cards")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                        viewMode === "cards" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      aria-label="Ver como cards"
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" /> Cards
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("list")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                        viewMode === "list" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      aria-label="Ver como lista"
+                    >
+                      <List className="w-3.5 h-3.5" /> Lista
+                    </button>
+                  </div>
+                </div>
+
+                {viewMode === "list" ? (
+                  <Card className="overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b bg-muted/30 text-left">
+                            <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Palavra</th>
+                            <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Página alvo</th>
+                            <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground text-right">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {savedKeywords.map((kw, idx) => {
+                            const isEditing = editingTargetId === kw.id;
+                            const targetDisplay = kw.target_url
+                              ? kw.target_url.replace(/^https?:\/\//, "")
+                              : null;
+                            return (
+                              <tr key={kw.id} className={`border-b last:border-0 hover:bg-muted/20 transition-colors group ${idx % 2 === 0 ? "" : "bg-muted/5"}`}>
+                                <td className="px-4 py-3">
+                                  <p className="text-sm font-semibold">{kw.keyword}</p>
+                                  {(kw.search_volume > 0 || kw.position_current) && (
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                      {kw.search_volume > 0 && <span>{kw.search_volume.toLocaleString("pt-BR")}/mês</span>}
+                                      {kw.position_current && <span>Pos. {kw.position_current}</span>}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 max-w-xs">
+                                  {isEditing ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="flex items-center flex-1 min-w-0 h-7 rounded-md border border-input bg-background overflow-hidden">
+                                        <span className="px-2 text-[11px] font-mono text-muted-foreground bg-muted/40 h-full flex items-center whitespace-nowrap select-none border-r border-input">
+                                          {domainPrefix}/
+                                        </span>
+                                        <input
+                                          type="text"
+                                          value={editingTargetValue}
+                                          onChange={(e) => setEditingTargetValue(e.target.value.replace(/^\/+/, ""))}
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") saveTarget(kw.id);
+                                            if (e.key === "Escape") cancelEditTarget();
+                                          }}
+                                          placeholder="pagina-alvo"
+                                          className="flex-1 min-w-0 h-full px-2 text-xs bg-transparent outline-none"
+                                          autoFocus
+                                        />
+                                      </div>
+                                      <button onClick={() => saveTarget(kw.id)} disabled={savingTarget} className="text-success hover:text-success/80 p-1">
+                                        {savingTarget ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                      </button>
+                                      <button onClick={cancelEditTarget} className="text-muted-foreground hover:text-foreground p-1">
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => startEditTarget(kw)}
+                                      className="flex items-center gap-1.5 text-xs hover:text-foreground transition-colors cursor-pointer w-full text-left"
+                                    >
+                                      <MapPin className={`w-3 h-3 shrink-0 ${targetDisplay ? "text-primary" : "text-muted-foreground"}`} />
+                                      <span className={`truncate ${targetDisplay ? "text-foreground font-medium" : "text-muted-foreground italic"}`}>
+                                        {targetDisplay ?? "Definir página"}
+                                      </span>
+                                      <Pencil className="w-3 h-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                    </button>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-1.5 justify-end">
+                                    <Button size="sm" onClick={() => createIndicacao(kw)} className="h-8 gap-1">
+                                      <LinkIcon className="w-3 h-3" /> Backlink
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={() => escreverArtigo(kw.keyword)} className="h-8 gap-1">
+                                      <FileText className="w-3 h-3" /> Artigo
+                                    </Button>
+                                    <button
+                                      onClick={() => removeKeyword(kw.id)}
+                                      className="text-muted-foreground/40 hover:text-destructive transition-colors cursor-pointer p-1.5"
+                                      aria-label="Remover"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {savedKeywords.map((kw) => {
                   const isEditing = editingTargetId === kw.id;
@@ -393,17 +603,23 @@ export default function PalavrasPage() {
                           {isEditing ? (
                             <div className="flex items-center gap-2">
                               <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-                              <Input
-                                placeholder="https://meusite.com.br/produtos/..."
-                                value={editingTargetValue}
-                                onChange={(e) => setEditingTargetValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") saveTarget(kw.id);
-                                  if (e.key === "Escape") cancelEditTarget();
-                                }}
-                                className="h-8 text-xs flex-1"
-                                autoFocus
-                              />
+                              <div className="flex items-center flex-1 min-w-0 h-8 rounded-md border border-input bg-background overflow-hidden">
+                                <span className="px-2.5 text-[11px] font-mono text-muted-foreground bg-muted/40 h-full flex items-center whitespace-nowrap select-none border-r border-input">
+                                  {domainPrefix}/
+                                </span>
+                                <input
+                                  type="text"
+                                  placeholder="produtos/cosmetico-natural"
+                                  value={editingTargetValue}
+                                  onChange={(e) => setEditingTargetValue(e.target.value.replace(/^\/+/, ""))}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") saveTarget(kw.id);
+                                    if (e.key === "Escape") cancelEditTarget();
+                                  }}
+                                  className="flex-1 min-w-0 h-full px-2.5 text-xs bg-transparent outline-none"
+                                  autoFocus
+                                />
+                              </div>
                               <Button size="sm" onClick={() => saveTarget(kw.id)} disabled={savingTarget} className="h-8 px-3">
                                 {savingTarget ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                               </Button>
@@ -446,6 +662,8 @@ export default function PalavrasPage() {
                   );
                 })}
               </div>
+                )}
+              </>
             )}
           </motion.div>
         )}
@@ -573,6 +791,14 @@ export default function PalavrasPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Create backlink dialog */}
+      <CreateBacklinkDialog
+        open={!!createBacklinkKwId}
+        onClose={() => setCreateBacklinkKwId(null)}
+        initialKeywordId={createBacklinkKwId ?? undefined}
+        onCreated={() => setCreateBacklinkKwId(null)}
+      />
     </div>
   );
 }

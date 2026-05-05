@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   const userId = parts[0];
   const siteId = parts[1] || "";
   const redirectCode = parts[2] || "s";
-  const redirectPath = redirectCode === "d" && siteId ? `/sites/${siteId}` : redirectCode === "i" ? "/integrations/setup" : redirectCode === "o" ? "/onboarding" : "/settings";
+  const redirectPath = redirectCode === "d" && siteId ? `/sites/${siteId}` : redirectCode === "l" ? `/sites${siteId ? `?siteId=${siteId}` : ""}` : redirectCode === "p" ? `/palavras${siteId ? `?siteId=${siteId}` : ""}` : redirectCode === "n" ? "/integracoes" : redirectCode === "i" ? "/integrations/setup" : redirectCode === "o" ? "/onboarding" : "/settings";
 
   try {
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {

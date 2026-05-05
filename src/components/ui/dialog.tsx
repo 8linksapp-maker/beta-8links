@@ -1,4 +1,5 @@
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
 import { AnimatePresence, motion } from "motion/react"
 
@@ -9,16 +10,30 @@ interface DialogProps {
 }
 
 function Dialog({ open, onOpenChange, children }: DialogProps) {
+  // Lock body scroll while open + handle Escape
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onOpenChange(false) }
-    if (open) document.addEventListener("keydown", handler)
-    return () => document.removeEventListener("keydown", handler)
+    if (open) {
+      document.addEventListener("keydown", handler)
+      const prev = document.body.style.overflow
+      document.body.style.overflow = "hidden"
+      return () => {
+        document.removeEventListener("keydown", handler)
+        document.body.style.overflow = prev
+      }
+    }
   }, [open, onOpenChange])
 
-  return (
+  // Render into document.body via portal so ancestor transforms (motion.div, etc)
+  // don't break `position: fixed`.
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => { setMounted(true) }, [])
+  if (!mounted) return null
+
+  return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 sm:p-10">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -32,20 +47,21 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-50"
+            className="relative z-50 w-full flex justify-center"
           >
             {children}
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
 
 function DialogContent({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={cn(
-      "w-full max-w-lg rounded-2xl border border-border-strong bg-card p-6 shadow-[0_32px_80px_rgba(0,0,0,0.5)]",
+      "w-full max-w-lg rounded-2xl border border-border-strong bg-card p-7 sm:p-8 shadow-[0_32px_80px_rgba(0,0,0,0.5)] max-h-[88vh] overflow-y-auto",
       className
     )}>
       {children}
