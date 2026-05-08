@@ -154,105 +154,127 @@ export default function BacklinksPage() {
 
   const queuedCount = items.filter(b => b.status === "queued").length;
   const readyCount = items.filter(b => b.status === "ready_for_review").length;
-  const pendingCount = queuedCount + readyCount;
   const publishedCount = items.filter(b => b.status === "published" || b.status === "indexed").length;
 
   /**
-   * End-to-end pipeline: generates articles for queued backlinks, then
-   * publishes everything that's ready_for_review. Always reads fresh state
-   * from the DB so it works right after creation (before the 5s poll catches up).
+   * Fase 1 — gera artigos pros backlinks que estão na fila (status=queued).
+   * Usa após "Criar backlinks": dispara automaticamente pra ela revisar/publicar depois.
+   * Não publica nada — apenas gera o conteúdo.
    */
-  const publishPending = async () => {
+  const generatePendingArticles = async (): Promise<void> => {
     if (!activeSiteId) return;
     setProcessingFila(true);
 
     const supabase = createClient();
-    const fetchPending = async () => {
-      const { data } = await supabase
-        .from("backlinks")
-        .select("id, anchor_text, status, article_title, article_content, network_sites(domain)")
-        .eq("client_site_id", activeSiteId)
-        .in("status", ["queued", "ready_for_review"]);
-      return (data ?? []) as unknown as Array<{
-        id: string;
-        anchor_text: string;
-        status: Status;
-        article_title: string | null;
-        article_content: string | null;
-        network_sites: { domain: string } | null;
-      }>;
-    };
+    const { data } = await supabase
+      .from("backlinks")
+      .select("id, anchor_text")
+      .eq("client_site_id", activeSiteId)
+      .eq("status", "queued");
+    const queued = (data ?? []) as Array<{ id: string; anchor_text: string }>;
 
-    let pending = await fetchPending();
-    const queued = pending.filter(b => b.status === "queued");
+    if (queued.length === 0) {
+      setProcessingFila(false);
+      return;
+    }
+
+    toast(`Gerando ${queued.length} artigo${queued.length > 1 ? "s" : ""}...`);
+
     const errors: { anchor: string; reason: string }[] = [];
-
-    // Phase 1 — generate articles for queued backlinks
-    if (queued.length > 0) {
-      toast(`Gerando ${queued.length} artigo${queued.length > 1 ? "s" : ""}...`);
-      const CONCURRENCY = 3;
-      for (let i = 0; i < queued.length; i += CONCURRENCY) {
-        await Promise.all(queued.slice(i, i + CONCURRENCY).map(async (bl) => {
-          try {
-            const res = await fetch("/api/admin/process-backlink", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ backlinkId: bl.id }),
+    const CONCURRENCY = 3;
+    for (let i = 0; i < queued.length; i += CONCURRENCY) {
+      await Promise.all(queued.slice(i, i + CONCURRENCY).map(async (bl) => {
+        try {
+          const res = await fetch("/api/admin/process-backlink", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ backlinkId: bl.id }),
+          });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || body?.error) {
+            errors.push({
+              anchor: bl.anchor_text,
+              reason: body?.error ?? humanizeError(body?.detail ?? `HTTP ${res.status}`).user,
             });
-            const body = await res.json().catch(() => ({}));
-            if (!res.ok || body?.error) {
-              errors.push({
-                anchor: bl.anchor_text,
-                reason: body?.error ?? humanizeError(body?.detail ?? `HTTP ${res.status}`).user,
-              });
-            }
-          } catch (e) {
-            errors.push({ anchor: bl.anchor_text, reason: humanizeError(e).user });
           }
-        }));
-      }
-      pending = await fetchPending();
+        } catch (e) {
+          errors.push({ anchor: bl.anchor_text, reason: humanizeError(e).user });
+        }
+      }));
     }
 
-    // Phase 2 — publish everything that ended up ready_for_review
-    const ready = pending.filter(b =>
-      b.status === "ready_for_review" && b.article_content && b.network_sites?.domain
-    );
+    const okCount = queued.length - errors.length;
+    if (errors.length === 0) {
+      toast.success(`${okCount} backlink${okCount > 1 ? "s prontos" : " pronto"} pra publicar`);
+    } else if (okCount === 0) {
+      toast.error(`Não foi possível gerar os artigos. ${errors[0].reason}`);
+    } else {
+      toast.warning(`${okCount} prontos, ${errors.length} com problema. Veja na lista.`);
+    }
+
+    setProcessingFila(false);
+  };
+
+  /**
+   * Fase 2 — publica os backlinks que já estão prontos pra revisão (ready_for_review).
+   * Disparado pelo botão "Publicar todos" no header.
+   */
+  const publishReadyBacklinks = async (): Promise<void> => {
+    if (!activeSiteId) return;
+    setProcessingFila(true);
+
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("backlinks")
+      .select("id, anchor_text, article_title, article_content, network_sites(domain)")
+      .eq("client_site_id", activeSiteId)
+      .eq("status", "ready_for_review");
+    const ready = ((data ?? []) as unknown as Array<{
+      id: string;
+      anchor_text: string;
+      article_title: string | null;
+      article_content: string | null;
+      network_sites: { domain: string } | null;
+    }>).filter(b => b.article_content && b.network_sites?.domain);
+
+    if (ready.length === 0) {
+      toast("Nenhum backlink pronto pra publicar.");
+      setProcessingFila(false);
+      return;
+    }
+
+    toast(`Publicando ${ready.length} backlink${ready.length > 1 ? "s" : ""}...`);
+
+    const errors: { anchor: string; reason: string }[] = [];
     let publishedOk = 0;
-
-    if (ready.length > 0) {
-      toast(`Publicando ${ready.length} backlink${ready.length > 1 ? "s" : ""}...`);
-      const CONCURRENCY = 2;
-      for (let i = 0; i < ready.length; i += CONCURRENCY) {
-        await Promise.all(ready.slice(i, i + CONCURRENCY).map(async (bl) => {
-          try {
-            const res = await fetch("/api/admin/publish-post", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                backlinkId: bl.id,
-                content: bl.article_content,
-                title: bl.article_title,
-                domain: bl.network_sites!.domain,
-              }),
+    const CONCURRENCY = 2;
+    for (let i = 0; i < ready.length; i += CONCURRENCY) {
+      await Promise.all(ready.slice(i, i + CONCURRENCY).map(async (bl) => {
+        try {
+          const res = await fetch("/api/admin/publish-post", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              backlinkId: bl.id,
+              content: bl.article_content,
+              title: bl.article_title,
+              domain: bl.network_sites!.domain,
+            }),
+          });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || body?.error) {
+            errors.push({
+              anchor: bl.anchor_text,
+              reason: body?.error ?? humanizeError(`HTTP ${res.status}`).user,
             });
-            const body = await res.json().catch(() => ({}));
-            if (!res.ok || body?.error) {
-              errors.push({
-                anchor: bl.anchor_text,
-                reason: body?.error ?? humanizeError(`HTTP ${res.status}`).user,
-              });
-            } else publishedOk++;
-          } catch (e) {
-            errors.push({ anchor: bl.anchor_text, reason: humanizeError(e).user });
-          }
-        }));
-      }
+          } else publishedOk++;
+        } catch (e) {
+          errors.push({ anchor: bl.anchor_text, reason: humanizeError(e).user });
+        }
+      }));
     }
 
-    if (queued.length === 0 && ready.length === 0) {
-      toast("Nenhum backlink pendente.");
-    } else if (errors.length === 0 && publishedOk > 0) {
+    if (errors.length === 0 && publishedOk > 0) {
       toast.success(`${publishedOk} backlink${publishedOk > 1 ? "s publicados" : " publicado"}`);
     } else if (publishedOk === 0 && errors.length > 0) {
       toast.error(`Não foi possível publicar. ${errors[0].reason}`);
@@ -319,10 +341,16 @@ export default function BacklinksPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {pendingCount > 0 && (
-            <Button variant="outline" size="lg" onClick={publishPending} disabled={processingFila} className="gap-2">
+          {queuedCount > 0 && processingFila && (
+            <span className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Gerando {queuedCount} artigo{queuedCount > 1 ? "s" : ""}...
+            </span>
+          )}
+          {readyCount > 0 && (
+            <Button variant="outline" size="lg" onClick={publishReadyBacklinks} disabled={processingFila} className="gap-2">
               {processingFila ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-              Publicar backlinks pendentes ({pendingCount})
+              Publicar todos ({readyCount})
             </Button>
           )}
           <Button size="lg" className="gap-2" onClick={() => setCreateOpen(true)}>
@@ -379,7 +407,7 @@ export default function BacklinksPage() {
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por palavra, página ou site..."
+                  placeholder="Buscar por âncora, página ou site..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-12 h-11 text-base"
@@ -411,7 +439,7 @@ export default function BacklinksPage() {
                   <thead>
                     <tr className="border-b bg-muted/30 text-left">
                       <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Status</th>
-                      <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Palavra</th>
+                      <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Âncora</th>
                       <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Página de destino</th>
                       <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Site parceiro</th>
                       <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Quando</th>
@@ -508,8 +536,9 @@ export default function BacklinksPage() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={() => {
-          // Refresh and kick off the publish pipeline so the user doesn't
-          // need to come back and click "Publicar pendentes" manually.
+          // Refresh local list e dispara geração do artigo automaticamente.
+          // O usuário NÃO publica nada ainda — fica em "ready_for_review" pra
+          // ele revisar individualmente OU clicar em "Publicar todos".
           if (activeSiteId) {
             const supabase = createClient();
             supabase
@@ -519,7 +548,7 @@ export default function BacklinksPage() {
               .order("created_at", { ascending: false })
               .then(({ data }) => setItems((data ?? []) as any));
           }
-          publishPending();
+          generatePendingArticles();
         }}
       />
 

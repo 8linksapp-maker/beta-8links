@@ -13,7 +13,11 @@ export default async function SiteListPage({ params }: Props) {
   const { domain } = await params;
   const decodedDomain = decodeURIComponent(domain);
 
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  // network_posts vive no Supabase da REDE (PBN), não do app principal
+  const supabase = createClient(
+    process.env.NETWORK_SUPABASE_URL!,
+    process.env.NETWORK_SUPABASE_SERVICE_KEY!,
+  );
   const { data: posts } = await supabase
     .from("network_posts")
     .select("id, slug, title, meta_description, featured_image, published_at")

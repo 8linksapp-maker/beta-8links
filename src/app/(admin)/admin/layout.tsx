@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, Globe, Layers, MessageSquare, Search,
-  Zap, Key, ScrollText, Link as LinkIcon, ArrowLeft, Activity, Ticket,
+  Zap, Key, ScrollText, Link as LinkIcon, ArrowLeft, Activity, Ticket, Stethoscope,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ const adminNav = [
   { href: "/admin/searches", label: "Pesquisas", icon: Search },
   { href: "/admin/content-planner", label: "Planejamento", icon: LinkIcon },
   { href: "/admin/monitor", label: "Monitor APIs", icon: Activity },
+  { href: "/admin/diagnostics", label: "Diagnostics", icon: Stethoscope },
 ];
 
 export default function AdminLayout({

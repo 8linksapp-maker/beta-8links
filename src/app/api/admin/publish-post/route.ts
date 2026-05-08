@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@supabase/supabase-js";
 import * as Sentry from "@sentry/nextjs";
 import { validateBacklinkContent } from "@/lib/utils/link-validation";
+import { buildSlug, extractFirstImage } from "@/lib/utils/slug";
 
 export const maxDuration = 30;
 
@@ -68,17 +69,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Site ${domain} não encontrado na rede` }, { status: 404 });
   }
 
-  const slug = (title ?? "post")
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const slug = buildSlug(title ?? "post");
 
-  // Extract first image as featured
-  const firstImage = content.match(/!\[[^\]]*\]\(([^)]+)\)/)?.[1] ??
-    content.match(/src="([^"]+)"/)?.[1] ?? null;
+  // Extract first image as featured AND remove it from content (avoid duplicate render
+  // on sites that show featured_image as hero on top of the article).
+  const { content: cleanContent, image: firstImage } = extractFirstImage(content);
 
   // Extract meta description from first paragraph text
-  const metaDesc = content
+  const metaDesc = cleanContent
     .replace(/<[^>]+>/g, " ").replace(/[#*\[\]!()]/g, "")
     .replace(/\s+/g, " ").trim().slice(0, 160);
 
@@ -88,7 +86,7 @@ export async function POST(request: Request) {
     domain,
     slug,
     title: title ?? slug,
-    content,
+    content: cleanContent,
     meta_description: metaDesc,
     featured_image: firstImage,
     published_at: new Date().toISOString(),

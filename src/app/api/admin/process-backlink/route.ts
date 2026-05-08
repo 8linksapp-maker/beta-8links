@@ -192,9 +192,6 @@ JSON: {"keyword": "a keyword escolhida", "reason": "por que essa keyword permite
 
     // ── Step 6: Save and publish ──
     const title = articleData.outline?.title ?? picked.keyword;
-    const slug = title.toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
     // Article ready — user will review and publish manually via /backlinks/[id]/review.
     // Actual publishing to network_posts happens in /api/admin/publish-post.

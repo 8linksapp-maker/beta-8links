@@ -23,6 +23,13 @@ type SavedKeyword = {
   target_url: string | null;
 };
 
+type NetworkSiteOption = {
+  id: string;
+  domain: string;
+  niche: string | null;
+  da: number | null;
+};
+
 type Mode = "keyword" | "url";
 
 type Props = {
@@ -34,7 +41,46 @@ type Props = {
   onCreated?: (count: number) => void;
 };
 
-const QUANTITY_OPTIONS = [1, 5, 10] as const;
+const NICHE_COMPAT: Record<string, string[]> = {
+  "Tecnologia": ["Marketing", "Jogos", "E-commerce", "Educação", "Finanças"],
+  "Saúde": ["Esportes", "Alimentação", "Beleza", "Sustentabilidade", "Infantil"],
+  "Finanças": ["E-commerce", "Marketing", "Educação", "Jurídico", "Tecnologia", "Imobiliário", "Contabilidade"],
+  "Contabilidade": ["Finanças", "Jurídico", "E-commerce"],
+  "Educação": ["Tecnologia", "Marketing", "Finanças", "Infantil"],
+  "E-commerce": ["Marketing", "Tecnologia", "Moda", "Finanças", "Beleza"],
+  "Marketing": ["Tecnologia", "E-commerce", "Educação", "Finanças"],
+  "Jurídico": ["Finanças", "Imobiliário", "Educação", "Contabilidade"],
+  "Imobiliário": ["Construção", "Finanças", "Jurídico"],
+  "Alimentação": ["Saúde", "Sustentabilidade", "Agronegócio", "Viagem"],
+  "Automotivo": ["Tecnologia", "E-commerce", "Esportes", "Finanças"],
+  "Moda": ["Beleza", "E-commerce", "Sustentabilidade", "Viagem"],
+  "Beleza": ["Saúde", "Moda", "E-commerce", "Alimentação"],
+  "Pets": ["Saúde", "E-commerce", "Agronegócio"],
+  "Viagem": ["Alimentação", "Esportes", "Sustentabilidade", "Moda"],
+  "Esportes": ["Saúde", "Alimentação", "Tecnologia"],
+  "Jogos": ["Tecnologia", "Esportes", "E-commerce"],
+  "Infantil": ["Educação", "Saúde", "E-commerce", "Alimentação"],
+  "Agronegócio": ["Alimentação", "Sustentabilidade", "Pets"],
+  "Construção": ["Imobiliário", "Sustentabilidade", "Tecnologia"],
+  "Sustentabilidade": ["Alimentação", "Construção", "Agronegócio", "Tecnologia"],
+};
+
+function scoreSiteClient(site: NetworkSiteOption, userNiche: string | null): number {
+  const da = site.da ?? 0;
+  const daScore = Math.min(30, Math.round(da * 0.6));
+  if (!userNiche || !site.niche) return daScore;
+  const userLower = userNiche.toLowerCase();
+  const netLower = site.niche.toLowerCase();
+  if (netLower === userLower) return 70 + daScore;
+  if (NICHE_COMPAT[userNiche]?.includes(site.niche) || NICHE_COMPAT[site.niche]?.includes(userNiche)) {
+    return 50 + daScore;
+  }
+  const userCompat = new Set(NICHE_COMPAT[userNiche] ?? []);
+  const netCompat = NICHE_COMPAT[site.niche] ?? [];
+  if (netCompat.some(n => userCompat.has(n))) return 35 + daScore;
+  return daScore;
+}
+
 
 function typeBadgeClass(t: AnchorType): string {
   switch (t) {
@@ -64,10 +110,15 @@ export function CreateBacklinkDialog({ open, onClose, initialKeywordId, onCreate
   const [selectedId, setSelectedId] = useState<string | null>(initialKeywordId ?? null);
   const [customPath, setCustomPath] = useState("");
   const [anchor, setAnchor] = useState("");
-  const [quantity, setQuantity] = useState<number>(1);
+  const [networkSites, setNetworkSites] = useState<NetworkSiteOption[]>([]);
+  const [loadingSites, setLoadingSites] = useState(true);
+  const [selectedSiteIds, setSelectedSiteIds] = useState<string[]>([]);
+  const [showAllSites, setShowAllSites] = useState(false);
   const [customMode, setCustomMode] = useState(false);
   const [customAnchors, setCustomAnchors] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
+
+  const quantity = selectedSiteIds.length;
 
   // Load user's keyword plan
   useEffect(() => {
@@ -85,6 +136,28 @@ export function CreateBacklinkDialog({ open, onClose, initialKeywordId, onCreate
       });
   }, [open, activeSiteId]);
 
+  // Load network sites — ordenados por niche match + DA, mas SEM pré-seleção
+  // (a Marina escolhe explicitamente quais quer)
+  useEffect(() => {
+    if (!open) return;
+    setLoadingSites(true);
+    const supabase = createClient();
+    supabase
+      .from("network_sites")
+      .select("id, domain, niche, da")
+      .eq("status", "active")
+      .then(({ data }) => {
+        const sites = (data ?? []) as NetworkSiteOption[];
+        const userNiche = activeSite?.niche_primary ?? null;
+        const ranked = [...sites].sort(
+          (a, b) => scoreSiteClient(b, userNiche) - scoreSiteClient(a, userNiche),
+        );
+        setNetworkSites(ranked);
+        setSelectedSiteIds([]);
+        setLoadingSites(false);
+      });
+  }, [open, activeSite?.niche_primary]);
+
   // Reset state when dialog opens
   useEffect(() => {
     if (!open) return;
@@ -92,7 +165,7 @@ export function CreateBacklinkDialog({ open, onClose, initialKeywordId, onCreate
     setSelectedId(initialKeywordId ?? null);
     setCustomPath("");
     setSearch("");
-    setQuantity(1);
+    setShowAllSites(false);
     setCustomMode(false);
     setCustomAnchors([]);
   }, [open, initialKeywordId]);
@@ -107,6 +180,12 @@ export function CreateBacklinkDialog({ open, onClose, initialKeywordId, onCreate
       setAnchor("");
     }
   }, [selected, mode]);
+
+  // Personaliza âncoras por padrão no modo URL — quem escolhe URL específica
+  // costuma ter texto de âncora em mente. Modo "Por palavra" usa automático.
+  useEffect(() => {
+    setCustomMode(mode === "url");
+  }, [mode]);
 
   const siteUrlClean = (activeSite?.url ?? "").replace(/\/+$/, "");
   const siteDomain = getSiteDomain(siteUrlClean);
@@ -131,7 +210,14 @@ export function CreateBacklinkDialog({ open, onClose, initialKeywordId, onCreate
   const stage2Ready = mode === "keyword" ? !!selected : !!siteDomain;
   const canSubmit = stage2Ready
     && (mode === "keyword" || !!anchor.trim())
+    && selectedSiteIds.length > 0
     && !creating;
+
+  const toggleSite = (id: string) => {
+    setSelectedSiteIds(prev =>
+      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id],
+    );
+  };
 
   const anchorPreview = useMemo(() => {
     if (quantity <= 1 || !stage2Ready) return [];
@@ -178,7 +264,7 @@ export function CreateBacklinkDialog({ open, onClose, initialKeywordId, onCreate
           keyword: finalKeyword,
           targetUrl: finalTargetUrl,
           anchor: anchor.trim() || finalKeyword,
-          count: quantity,
+          networkSiteIds: selectedSiteIds,
           anchors: customMode && customAnchors.length === quantity
             ? customAnchors
             : undefined,
@@ -399,7 +485,7 @@ export function CreateBacklinkDialog({ open, onClose, initialKeywordId, onCreate
             </motion.div>
           )}
 
-          {/* Step 4: quantity */}
+          {/* Step 4: pick network sites */}
           {stage2Ready && (mode === "keyword" || !!anchor.trim()) && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
@@ -407,33 +493,82 @@ export function CreateBacklinkDialog({ open, onClose, initialKeywordId, onCreate
               transition={{ delay: 0.05 }}
               className="space-y-2"
             >
-              <Label className="text-xs uppercase tracking-wider font-mono font-semibold">
-                4. Quantos backlinks criar?
-              </Label>
-              <div className="flex items-center gap-2">
-                {QUANTITY_OPTIONS.map(n => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setQuantity(n)}
-                    className={`flex-1 px-4 py-3 rounded-lg border-2 text-center transition-colors cursor-pointer ${
-                      quantity === n
-                        ? "border-primary bg-primary/5"
-                        : "border-border bg-card hover:border-primary/30"
-                    }`}
-                  >
-                    <p className={`text-2xl font-black font-[family-name:var(--font-display)] ${quantity === n ? "text-primary" : ""}`}>
-                      {n}
-                    </p>
-                    <p className="text-[10px] uppercase tracking-wider font-mono text-muted-foreground mt-0.5">
-                      {n === 1 ? "backlink" : "backlinks"}
-                    </p>
-                  </button>
-                ))}
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs uppercase tracking-wider font-mono font-semibold">
+                  4. Em quais sites parceiros?
+                </Label>
+                <span className="text-[11px] font-mono text-muted-foreground">
+                  {selectedSiteIds.length} de {networkSites.length} selecionado{selectedSiteIds.length === 1 ? "" : "s"}
+                </span>
               </div>
+
+              {loadingSites ? (
+                <div className="flex items-center justify-center py-6 border border-border rounded-lg">
+                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : networkSites.length === 0 ? (
+                <div className="text-center py-6 px-4 rounded-lg border border-dashed border-border text-sm text-muted-foreground">
+                  Nenhum site parceiro disponível agora. Tente em alguns minutos.
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-lg border border-border max-h-[260px] overflow-y-auto">
+                    {(showAllSites ? networkSites : networkSites.slice(0, 8)).map(site => {
+                      const isSelected = selectedSiteIds.includes(site.id);
+                      const userNiche = activeSite?.niche_primary ?? null;
+                      const niceMatch = userNiche && site.niche
+                        && (site.niche.toLowerCase() === userNiche.toLowerCase()
+                          || NICHE_COMPAT[userNiche]?.includes(site.niche));
+                      return (
+                        <button
+                          key={site.id}
+                          type="button"
+                          onClick={() => toggleSite(site.id)}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors cursor-pointer border-b border-border/50 last:border-b-0 ${
+                            isSelected ? "bg-primary/5" : "hover:bg-muted/30"
+                          }`}
+                        >
+                          <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${
+                            isSelected ? "bg-primary border-primary" : "border-border"
+                          }`}>
+                            {isSelected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-mono truncate ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
+                              {site.domain}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {site.niche && (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                  niceMatch ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"
+                                }`}>
+                                  {site.niche}
+                                </span>
+                              )}
+                              <span className="text-[10px] font-mono text-muted-foreground">
+                                AP {site.da ?? 0}
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {networkSites.length > 8 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllSites(s => !s)}
+                      className="text-[11px] text-primary hover:underline cursor-pointer"
+                    >
+                      {showAllSites ? "Mostrar só os melhores" : `Ver todos os ${networkSites.length} sites`}
+                    </button>
+                  )}
+                </>
+              )}
+
               <p className="text-[11px] text-muted-foreground leading-relaxed flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3 text-primary" />
-                A gente escolhe os melhores sites parceiros baseado no seu nicho.
+                Os melhores pro seu nicho ficam no topo. Você pode trocar marcando/desmarcando à vontade.
               </p>
             </motion.div>
           )}
@@ -522,7 +657,9 @@ export function CreateBacklinkDialog({ open, onClose, initialKeywordId, onCreate
             className="gap-1.5 ml-auto"
           >
             {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Criar {quantity} {quantity === 1 ? "backlink" : "backlinks"}
+            {quantity === 0
+              ? "Selecione ao menos 1 site"
+              : `Criar ${quantity} ${quantity === 1 ? "backlink" : "backlinks"}`}
           </Button>
         </DialogFooter>
       </DialogContent>

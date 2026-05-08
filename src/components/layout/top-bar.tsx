@@ -38,7 +38,6 @@ const pathLabels: Record<string, string> = {
   "/support": "Suporte",
   "/settings": "Configurações",
   "/onboarding": "Onboarding",
-  "/debug": "Debug",
 };
 
 export function TopBar({ onMenuClick, userName = "Usuário", planName = "Starter" }: TopBarProps) {

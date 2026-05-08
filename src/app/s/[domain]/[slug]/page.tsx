@@ -7,7 +7,11 @@ interface Props {
 }
 
 function getSupabase() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  // network_posts vive no Supabase da REDE (PBN), não do app principal
+  return createClient(
+    process.env.NETWORK_SUPABASE_URL!,
+    process.env.NETWORK_SUPABASE_SERVICE_KEY!,
+  );
 }
 
 async function getPost(domain: string, slug: string) {

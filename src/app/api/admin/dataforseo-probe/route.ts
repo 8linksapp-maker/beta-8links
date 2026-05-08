@@ -13,8 +13,8 @@ import {
 } from "@/lib/apis/dataforseo";
 
 /**
- * POST /api/debug-dataforseo
- * Proxy to call any DataForSEO function directly from the debug page.
+ * POST /api/admin/dataforseo-probe
+ * Proxy used by /admin/diagnostics to call DataForSEO functions directly.
  * Body: { fn: "functionName", args: [...] }
  */
 export async function POST(request: Request) {
@@ -34,7 +34,10 @@ export async function POST(request: Request) {
   };
 
   if (!fns[fn]) {
-    return NextResponse.json({ error: `Unknown function: ${fn}`, available: Object.keys(fns) }, { status: 400 });
+    return NextResponse.json(
+      { error: `Unknown function: ${fn}`, available: Object.keys(fns) },
+      { status: 400 },
+    );
   }
 
   try {

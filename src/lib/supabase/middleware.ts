@@ -33,7 +33,11 @@ export async function updateSession(request: NextRequest) {
 
   // Public routes
   const publicPaths = ["/", "/pricing", "/checkout", "/login", "/register", "/forgot-password", "/reset-password", "/verificar-nicho"];
-  const isPublicPath = publicPaths.some((path) => pathname === path) || pathname.startsWith("/report/");
+  // Also public: /report/ (shareable reports) and /s/ (network sites — cideb.com.br etc.)
+  const isPublicPath =
+    publicPaths.some((path) => pathname === path)
+    || pathname.startsWith("/report/")
+    || pathname.startsWith("/s/");
   const isApiPath = pathname.startsWith("/api/");
   const isAuthCallback = pathname.startsWith("/auth/callback");
   const isOnboarding = pathname === "/onboarding" || pathname.startsWith("/onboarding/");

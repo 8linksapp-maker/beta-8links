@@ -54,16 +54,22 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const body = await request.json();
-  const { siteId, keyword, targetUrl, anchor, count, anchors: customAnchors } = body as {
+  const { siteId, keyword, targetUrl, anchor, count, anchors: customAnchors, networkSiteIds } = body as {
     siteId?: string; keyword?: string; targetUrl?: string;
     anchor?: string; count?: number; anchors?: string[];
+    networkSiteIds?: string[];
   };
 
   if (!siteId || !keyword || !targetUrl) {
     return NextResponse.json({ error: "Faltam dados pra criar o backlink" }, { status: 400 });
   }
 
-  const requested = Math.max(1, Math.min(50, Number(count) || 1));
+  // Quando o cliente escolhe sites manualmente, eles definem a quantidade.
+  // Caso contrário (modo automático), respeita o `count` passado.
+  const useManualSelection = Array.isArray(networkSiteIds) && networkSiteIds.length > 0;
+  const requested = useManualSelection
+    ? Math.min(50, networkSiteIds!.length)
+    : Math.max(1, Math.min(50, Number(count) || 1));
 
   // Verify ownership
   const { data: site } = await supabase
@@ -103,28 +109,51 @@ export async function POST(request: Request) {
     return { text: override, type: classifyAnchor({ text: override, keyword, targetUrl }) };
   });
 
-  // Load active network sites
-  const { data: networkSites } = await supabase
-    .from("network_sites")
-    .select("id, niche, da")
-    .eq("status", "active");
+  // Modo manual: usa os IDs que o usuário escolheu.
+  // Modo auto: scoring + round-robin entre os melhores.
+  let picked: NetworkSite[];
 
-  if (!networkSites || networkSites.length === 0) {
-    return NextResponse.json({
-      error: "Nenhum site parceiro disponível agora. Tente em alguns minutos.",
-    }, { status: 503 });
-  }
+  if (useManualSelection) {
+    const { data: selected } = await supabase
+      .from("network_sites")
+      .select("id, niche, da")
+      .in("id", networkSiteIds!)
+      .eq("status", "active");
 
-  // Score and pick top N
-  const ranked = (networkSites as NetworkSite[])
-    .map(s => ({ ...s, score: scoreSite(s, site.niche_primary) }))
-    .sort((a, b) => b.score - a.score);
+    if (!selected || selected.length === 0) {
+      return NextResponse.json({
+        error: "Os sites parceiros que você escolheu não estão mais disponíveis.",
+      }, { status: 400 });
+    }
 
-  // Round-robin pick: cycle through the top results to spread the backlinks across different domains
-  const picked: NetworkSite[] = [];
-  const pool = ranked.slice(0, Math.max(requested, Math.min(ranked.length, 10)));
-  for (let i = 0; i < requested; i++) {
-    picked.push(pool[i % pool.length]);
+    if (selected.length !== networkSiteIds!.length) {
+      return NextResponse.json({
+        error: `Alguns sites parceiros não estão mais disponíveis. Atualize a lista e tente de novo.`,
+      }, { status: 400 });
+    }
+
+    picked = selected as NetworkSite[];
+  } else {
+    const { data: networkSites } = await supabase
+      .from("network_sites")
+      .select("id, niche, da")
+      .eq("status", "active");
+
+    if (!networkSites || networkSites.length === 0) {
+      return NextResponse.json({
+        error: "Nenhum site parceiro disponível agora. Tente em alguns minutos.",
+      }, { status: 503 });
+    }
+
+    const ranked = (networkSites as NetworkSite[])
+      .map(s => ({ ...s, score: scoreSite(s, site.niche_primary) }))
+      .sort((a, b) => b.score - a.score);
+
+    const pool = ranked.slice(0, Math.max(requested, Math.min(ranked.length, 10)));
+    picked = [];
+    for (let i = 0; i < requested; i++) {
+      picked.push(pool[i % pool.length]);
+    }
   }
 
   // Build rows — each backlink gets a distinct anchor from the plan to avoid

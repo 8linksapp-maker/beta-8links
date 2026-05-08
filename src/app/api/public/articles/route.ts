@@ -15,9 +15,10 @@ export async function GET(request: Request) {
 
   if (!domain) return NextResponse.json({ error: "domain required" }, { status: 400 });
 
+  // network_posts vive no Supabase da REDE (PBN), não do app principal
   const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.NETWORK_SUPABASE_URL!,
+    process.env.NETWORK_SUPABASE_SERVICE_KEY!,
   );
 
   // Single article

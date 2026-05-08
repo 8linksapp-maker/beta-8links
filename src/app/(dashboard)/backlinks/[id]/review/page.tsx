@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import { validateBacklinkContent } from "@/lib/utils/link-validation";
 import { humanizeError } from "@/lib/utils/error-messages";
+import { ImageActionDialog } from "@/components/editor/image-action-dialog";
 
 export default function BacklinkReviewPage() {
   const router = useRouter();
@@ -29,6 +30,21 @@ export default function BacklinkReviewPage() {
   const editorRef = useRef<HTMLDivElement>(null);
   const [wordCount, setWordCount] = useState(0);
   const [editorContent, setEditorContent] = useState("");
+
+  // --- Imagens ---
+  const [imgDialogOpen, setImgDialogOpen] = useState(false);
+  const [imgDialogMode, setImgDialogMode] = useState<"insert" | "replace">("insert");
+  const replaceTargetRef = useRef<HTMLImageElement | null>(null);
+  const savedRangeRef = useRef<Range | null>(null);
+
+  const usedImageUrls = useMemo(() => {
+    if (!editorContent) return [];
+    const urls = new Set<string>();
+    const re = /<img[^>]+src=["']([^"']+)["']/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(editorContent)) !== null) urls.add(m[1]);
+    return Array.from(urls);
+  }, [editorContent]);
 
   const validationError = useMemo(() => {
     if (!backlink || !editorContent) return null;
@@ -77,6 +93,85 @@ export default function BacklinkReviewPage() {
   const exec = (cmd: string, val?: string) => {
     document.execCommand(cmd, false, val);
     editorRef.current?.focus();
+  };
+
+  // Salva a posição do cursor antes do clique no botão (o foco vai pro dialog).
+  const captureRange = () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && editorRef.current?.contains(sel.anchorNode)) {
+      savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+    } else {
+      savedRangeRef.current = null;
+    }
+  };
+
+  const openImageDialog = (mode: "insert" | "replace", target?: HTMLImageElement) => {
+    if (mode === "replace" && target) {
+      replaceTargetRef.current = target;
+    } else {
+      replaceTargetRef.current = null;
+    }
+    setImgDialogMode(mode);
+    setImgDialogOpen(true);
+  };
+
+  // Click em <img> dentro do editor → abrir em modo "trocar".
+  const handleEditorClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === "IMG") {
+      e.preventDefault();
+      openImageDialog("replace", target as HTMLImageElement);
+    }
+  };
+
+  const insertImageAtCursor = (url: string) => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    // Restaura a posição salva (o foco passou pelo dialog)
+    const sel = window.getSelection();
+    if (savedRangeRef.current && sel) {
+      sel.removeAllRanges();
+      sel.addRange(savedRangeRef.current);
+    }
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = "";
+    img.loading = "lazy";
+
+    const range = sel?.rangeCount ? sel.getRangeAt(0) : null;
+    if (range && editorRef.current.contains(range.commonAncestorContainer)) {
+      range.deleteContents();
+      range.insertNode(img);
+      // Move cursor pra depois da imagem
+      range.setStartAfter(img);
+      range.setEndAfter(img);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    } else {
+      // Cursor não está no editor — anexa no fim
+      editorRef.current.appendChild(img);
+    }
+  };
+
+  const handleImageConfirm = (url: string) => {
+    if (imgDialogMode === "replace" && replaceTargetRef.current) {
+      replaceTargetRef.current.src = url;
+      replaceTargetRef.current.removeAttribute("srcset");
+      replaceTargetRef.current = null;
+    } else {
+      insertImageAtCursor(url);
+    }
+    countWords();
+    setEditorContent(editorRef.current?.innerHTML ?? "");
+  };
+
+  const handleImageRemove = () => {
+    if (replaceTargetRef.current) {
+      replaceTargetRef.current.remove();
+      replaceTargetRef.current = null;
+      countWords();
+      setEditorContent(editorRef.current?.innerHTML ?? "");
+    }
   };
 
   const copyHtml = () => {
@@ -253,7 +348,12 @@ export default function BacklinkReviewPage() {
           <TBtn icon={Type} label="Parágrafo" onClick={() => exec("formatBlock", "p")} />
           <Sep />
           <TBtn icon={List} label="Lista" onClick={() => exec("insertUnorderedList")} />
-          <TBtn icon={ImageIcon} label="Imagem" onClick={() => { const u = prompt("URL da imagem:"); if (u) exec("insertImage", u); }} />
+          <TBtn
+            icon={ImageIcon}
+            label="Adicionar imagem"
+            onMouseDown={() => captureRange()}
+            onClick={() => openImageDialog("insert")}
+          />
           <div className="ml-auto text-[10px] font-mono text-muted-foreground">
             {wordCount.toLocaleString()} palavras
           </div>
@@ -265,6 +365,9 @@ export default function BacklinkReviewPage() {
           contentEditable
           suppressContentEditableWarning
           onInput={countWords}
+          onClick={handleEditorClick}
+          onMouseUp={captureRange}
+          onKeyUp={captureRange}
           className="min-h-[60vh] max-h-[70vh] p-8 bg-card border border-border rounded-b-xl
             focus:outline-none overflow-y-auto leading-relaxed
             [&>h1]:text-2xl [&>h1]:font-black [&>h1]:mb-6 [&>h1]:mt-2 [&>h1]:text-foreground [&>h1]:font-[family-name:var(--font-display)]
@@ -274,17 +377,45 @@ export default function BacklinkReviewPage() {
             [&>ul]:my-3 [&>ul]:pl-6 [&>ul]:space-y-1 [&_li]:text-[14px] [&_li]:leading-relaxed [&_li]:text-muted-foreground
             [&_strong]:text-foreground [&_strong]:font-semibold [&_em]:italic [&_em]:text-foreground/80
             [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2
-            [&_img]:rounded-xl [&_img]:my-6 [&_img]:max-w-full [&_img]:shadow-lg"
+            [&_img]:rounded-xl [&_img]:my-6 [&_img]:max-w-full [&_img]:shadow-lg [&_img]:cursor-pointer [&_img]:transition-all
+            [&_img:hover]:ring-2 [&_img:hover]:ring-primary/40"
         />
+        <p className="text-[10px] text-muted-foreground/70 mt-1.5 text-right">
+          Clique em uma imagem para trocar ou remover
+        </p>
       </motion.div>
+
+      <ImageActionDialog
+        open={imgDialogOpen}
+        onOpenChange={setImgDialogOpen}
+        mode={imgDialogMode}
+        searchContext={backlink?.article_title ?? ""}
+        excludeUrls={usedImageUrls}
+        onConfirm={handleImageConfirm}
+        onRemove={handleImageRemove}
+      />
     </div>
   );
 }
 
-function TBtn({ icon: Icon, label, onClick }: { icon: any; label: string; onClick: () => void }) {
+function TBtn({
+  icon: Icon,
+  label,
+  onClick,
+  onMouseDown,
+}: {
+  icon: any;
+  label: string;
+  onClick: () => void;
+  onMouseDown?: () => void;
+}) {
   return (
-    <button onClick={onClick} title={label}
-      className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+    <button
+      onClick={onClick}
+      onMouseDown={onMouseDown}
+      title={label}
+      className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+    >
       <Icon className="w-3.5 h-3.5" />
     </button>
   );

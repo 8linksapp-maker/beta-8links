@@ -159,30 +159,64 @@ export default function SitesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Site limit check
+  // Site limit check — null enquanto carrega pra evitar mostrar estado errado
+  // (cliente past_due aparecendo como ativo nos primeiros ms da página)
   const [siteLimit, setSiteLimit] = useState(999);
   const [planName, setPlanName] = useState("Starter");
-  const [subStatus, setSubStatus] = useState("trialing");
+  const [subStatus, setSubStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    async function checkPlan() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: profile } = await supabase.from("profiles").select("plan_id, subscription_status").eq("id", user.id).single();
-      if (profile) {
-        const planId = (profile.plan_id || "starter") as keyof typeof PLANS;
-        const plan = PLANS[planId] ?? PLANS.starter;
-        setSiteLimit(plan.limits.sites);
-        setPlanName(plan.name);
-        setSubStatus(profile.subscription_status ?? "trialing");
-      }
+    const supabase = createClient();
+    let cancelled = false;
+
+    async function loadProfile(userId: string) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("plan_id, subscription_status")
+        .eq("id", userId)
+        .single();
+      if (cancelled || !profile) return;
+      const planId = (profile.plan_id || "starter") as keyof typeof PLANS;
+      const plan = PLANS[planId] ?? PLANS.starter;
+      setSiteLimit(plan.limits.sites);
+      setPlanName(plan.name);
+      setSubStatus(profile.subscription_status ?? "trialing");
     }
-    checkPlan();
+
+    // Tenta imediato — funciona quando cookies já estão prontos
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user && !cancelled) loadProfile(user.id);
+    });
+
+    // Backup pra cold starts: reage quando session resolver
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user && !cancelled) loadProfile(session.user.id);
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
+  const isPlanLoading = subStatus === null;
   const isAtLimit = enrichedSites.length >= siteLimit;
-  const isActive = ["active", "trialing"].includes(subStatus);
+  const isActive = !isPlanLoading && ["active", "trialing"].includes(subStatus);
+
+  const handleAddSiteClick = () => {
+    // Ignora click até saber o status — evita clientes past_due "vazarem"
+    // pra /sites/new no intervalo entre mount e fetch do profile.
+    if (isPlanLoading) return;
+    if (!isActive) {
+      toast.error("Sua assinatura está com pendência. Atualize a forma de pagamento para adicionar mais sites.");
+      return;
+    }
+    if (isAtLimit) {
+      toast.error(`Limite de ${siteLimit} site${siteLimit > 1 ? "s" : ""} atingido no plano ${planName}. Faça upgrade para adicionar mais.`);
+      return;
+    }
+    router.push("/sites/new");
+  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -244,11 +278,12 @@ export default function SitesPage() {
             Os sites que você quer subir no Google.
           </p>
         </div>
-        <Button size="lg" className="shrink-0 gap-2" disabled={isAtLimit || !isActive} onClick={() => {
-          if (!isActive) { toast.error("Ative sua assinatura para adicionar sites."); return; }
-          if (isAtLimit) { toast.error(`Limite de ${siteLimit} site${siteLimit > 1 ? "s" : ""} atingido no plano ${planName}. Faça upgrade.`); return; }
-          router.push("/sites/new");
-        }}>
+        <Button
+          size="lg"
+          className="shrink-0 gap-2"
+          onClick={handleAddSiteClick}
+          data-plan-status={isPlanLoading ? "loading" : isActive ? "active" : "blocked"}
+        >
           <Plus className="w-5 h-5" /> Adicionar site
         </Button>
       </motion.div>
@@ -294,7 +329,7 @@ export default function SitesPage() {
           icon={Globe}
           title="Nenhum site cadastrado"
           description="Adicione seu primeiro site para começar"
-          action={{ label: "Adicionar Site", onClick: () => router.push("/sites/new") }}
+          action={{ label: "Adicionar Site", onClick: handleAddSiteClick }}
         />
       ) : viewMode === "list" ? (
         <SitesList
