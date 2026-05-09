@@ -37,6 +37,8 @@ export async function POST(request: Request) {
       return handleSubscriptionFailed(supabase, payload);
     }
 
+    // Eventos como pix_created, pix_expired são ignorados
+    console.log(`[Kiwify] Event type ignored: ${eventType}`);
     return NextResponse.json({ received: true, event: eventType });
   } catch (err) {
     console.error("[Kiwify Webhook] Error:", err);
