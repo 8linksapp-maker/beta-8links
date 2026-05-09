@@ -232,21 +232,23 @@ function detectPlan(rawPlanName: string): string | null {
   return null;
 }
 
-async function findOrCreateUser(supabase: ReturnType<typeof createClient>, email: string): Promise<string | null> {
-  // Try to find user via RPC
+async function findOrCreateUser(supabase: any, email: string): Promise<string | null> {
+  // Try to find user by querying profiles directly
   console.log(`[Kiwify] Searching for user: ${email}`);
 
-  const { data: rpcData, error: rpcError } = await supabase.rpc("get_user_id_by_email", {
-    p_email: email
-  });
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("email", email)
+    .single();
 
-  if (rpcError) {
-    console.warn(`[Kiwify] RPC call failed: ${rpcError.message}`);
+  if (profileError && profileError.code !== "PGRST116") {
+    console.warn(`[Kiwify] Profile query failed: ${profileError.message}`);
   }
 
-  if (rpcData) {
-    console.log(`[Kiwify] User found via RPC: ${rpcData}`);
-    return rpcData;
+  if (profile?.id) {
+    console.log(`[Kiwify] User found: ${profile.id}`);
+    return profile.id;
   }
 
   // Create new user via invite
