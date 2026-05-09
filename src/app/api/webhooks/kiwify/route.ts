@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   }
 }
 
-async function handleOrderApproved(supabase: ReturnType<typeof createClient>, payload: any) {
+async function handleOrderApproved(supabase: any, payload: any) {
   console.log("[Kiwify] Processing order_approved event...");
 
   const customerEmail = payload.Customer?.email;
@@ -110,7 +110,7 @@ async function handleOrderApproved(supabase: ReturnType<typeof createClient>, pa
   return NextResponse.json({ received: true, userId, planId });
 }
 
-async function handleOrderRefunded(supabase: ReturnType<typeof createClient>, payload: any) {
+async function handleOrderRefunded(supabase: any, payload: any) {
   console.log("[Kiwify] Processing order_refunded event...");
 
   const subscriptionId = payload.subscription_id;
@@ -134,7 +134,7 @@ async function handleOrderRefunded(supabase: ReturnType<typeof createClient>, pa
   return NextResponse.json({ received: true, subscriptionId });
 }
 
-async function handleSubscriptionCanceled(supabase: ReturnType<typeof createClient>, payload: any) {
+async function handleSubscriptionCanceled(supabase: any, payload: any) {
   console.log("[Kiwify] Processing subscription_canceled event...");
 
   const subscriptionId = payload.subscription_id;
@@ -158,7 +158,7 @@ async function handleSubscriptionCanceled(supabase: ReturnType<typeof createClie
   return NextResponse.json({ received: true, subscriptionId });
 }
 
-async function handleSubscriptionRenewed(supabase: ReturnType<typeof createClient>, payload: any) {
+async function handleSubscriptionRenewed(supabase: any, payload: any) {
   console.log("[Kiwify] Processing subscription_renewed event...");
 
   const subscriptionId = payload.subscription_id;
@@ -190,7 +190,7 @@ async function handleSubscriptionRenewed(supabase: ReturnType<typeof createClien
   return NextResponse.json({ received: true, subscriptionId });
 }
 
-async function handleSubscriptionFailed(supabase: ReturnType<typeof createClient>, payload: any) {
+async function handleSubscriptionFailed(supabase: any, payload: any) {
   console.log("[Kiwify] Processing subscription_failed event...");
 
   const subscriptionId = payload.subscription_id;
