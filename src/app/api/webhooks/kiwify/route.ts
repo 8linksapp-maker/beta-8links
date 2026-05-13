@@ -87,17 +87,17 @@ async function handleOrderApproved(supabase: any, payload: any) {
     plan_id: planId,
     payment_provider: "kiwify",
     subscription_id: subscriptionId || payload.order_id || null,
-    subscription_period_end: nextPaymentDate
-      ? new Date(nextPaymentDate).toISOString()
-      : planId === "lifetime" || planId === "legacy"
-        ? "2099-12-31T23:59:59.000Z"
-        : null,
   };
 
   // Atualizar perfil
   const { error } = await supabase
     .from("profiles")
-    .update(updateData)
+    .update({
+      ...updateData,
+      subscription_period_end: nextPaymentDate
+        ? new Date(nextPaymentDate).toISOString()
+        : null,
+    })
     .eq("id", userId);
 
   if (error) {
@@ -106,7 +106,12 @@ async function handleOrderApproved(supabase: any, payload: any) {
 
     const { error: retryError } = await supabase
       .from("profiles")
-      .update(updateData)
+      .update({
+        ...updateData,
+        subscription_period_end: nextPaymentDate
+          ? new Date(nextPaymentDate).toISOString()
+          : null,
+      })
       .eq("id", userId);
 
     if (retryError) {
