@@ -231,15 +231,16 @@ function detectPlan(rawPlanName: string): string | null {
   // Check exact matches first
   if (VALID_PLANS.includes(planName)) return planName;
 
-  // Check partial matches
+  // Lifetime (inclui "8links lifetime", "8links lifetime 50%", etc)
   if (planName.includes("lifetime")) return "lifetime";
-  if (planName.includes("legacy")) return "legacy";
+
+  // Legacy (inclui "Lançamento", "Pré lançamento", "Pre lancamento")
+  if (planName.includes("lanç") || planName.includes("lanc") || planName.includes("pré") || planName.includes("pre")) return "legacy";
+
+  // Mensais
   if (planName.includes("starter")) return "starter";
   if (planName.includes("pro")) return "pro";
   if (planName.includes("agency")) return "agency";
-
-  // Plano "Pré lançamento" = legacy
-  if (planName.includes("pré") || planName.includes("pre") || planName.includes("lançamento") || planName.includes("lancamento")) return "legacy";
 
   return null;
 }
