@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 
-export default function ConfirmPage() {
+function ConfirmForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
@@ -26,7 +26,6 @@ export default function ConfirmPage() {
     const type = searchParams.get("type");
 
     if (type === "signup" || type === "invite") {
-      // Token já está na URL, Supabase vai usar automaticamente
       setVerified(true);
       setToken(accessToken);
     } else if (accessToken) {
@@ -105,6 +104,19 @@ export default function ConfirmPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
+        <Suspense fallback={
+          <Card>
+            <CardContent className="p-8 text-center">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Carregando...</h2>
+              <p className="text-sm text-muted-foreground">
+                Aguarde enquanto verificamos seu link de acesso.
+              </p>
+            </CardContent>
+          </Card>
+        }>
         <Card>
           <CardHeader>
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -170,7 +182,32 @@ export default function ConfirmPage() {
             </form>
           </CardContent>
         </Card>
+        </Suspense>
       </motion.div>
     </div>
+  );
+}
+
+export default function ConfirmPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Carregando...</h2>
+              <p className="text-sm text-muted-foreground">
+                Aguarde enquanto verificamos seu link de acesso.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    }>
+      <ConfirmForm />
+    </Suspense>
   );
 }
