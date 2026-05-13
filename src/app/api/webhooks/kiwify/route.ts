@@ -86,13 +86,12 @@ async function handleOrderApproved(supabase: any, payload: any) {
     subscription_status: subscriptionStatus,
     plan_id: planId,
     payment_provider: "kiwify",
-    kiwify_subscription_id: subscriptionId || payload.order_id || null,
+    subscription_id: subscriptionId || payload.order_id || null,
     subscription_period_end: nextPaymentDate
       ? new Date(nextPaymentDate).toISOString()
       : planId === "lifetime" || planId === "legacy"
         ? "2099-12-31T23:59:59.000Z"
         : null,
-    stripe_subscription_id: null,
   };
 
   // Atualizar perfil
