@@ -33,3 +33,11 @@ SaaS de crescimento orgânico no piloto automático. Backlinks ilimitados + arti
 
 ## Referência completa
 Ver PRODUCT_SPEC.md para especificação detalhada do produto.
+
+## Continuação de sessões (pós-compaction)
+
+Quando retomar sessão após compaction:
+1. SEMPRE ler o arquivo JSONL completo em `/Users/gustavos/.claude/projects/-Users-gustavos-Documents-beta-8links/<session-id>.jsonl`
+2. NUNCA confiar apenas no summary compactado
+3. Validar informações nas fontes originais (APIs, Supabase, Stripe, Kiwify) antes de afirmar qualquer coisa
+4. SEMPRE verificar o impacto de qualquer alteração proposta na aplicação, banco de dados, ou sistemas integrados

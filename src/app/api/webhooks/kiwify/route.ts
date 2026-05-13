@@ -23,18 +23,25 @@ export async function POST(request: Request) {
     const payload = await request.json();
     console.log("[Kiwify Webhook] Received:", JSON.stringify(payload, null, 2));
 
-    const eventType = payload.webhook_event_type;
+    // Kiwify envia os dados dentro de "order" ou na raiz
+    const order = payload.order || payload;
+    const eventType = order.webhook_event_type;
+
+    if (!eventType) {
+      console.error("[Kiwify] Event type not found");
+      return NextResponse.json({ error: "Event type not found" }, { status: 400 });
+    }
 
     if (eventType === "order_approved") {
-      return handleOrderApproved(supabase, payload);
+      return handleOrderApproved(supabase, order);
     } else if (eventType === "order_refunded") {
-      return handleOrderRefunded(supabase, payload);
+      return handleOrderRefunded(supabase, order);
     } else if (eventType === "subscription_canceled") {
-      return handleSubscriptionCanceled(supabase, payload);
+      return handleSubscriptionCanceled(supabase, order);
     } else if (eventType === "subscription_renewed") {
-      return handleSubscriptionRenewed(supabase, payload);
+      return handleSubscriptionRenewed(supabase, order);
     } else if (eventType === "subscription_failed") {
-      return handleSubscriptionFailed(supabase, payload);
+      return handleSubscriptionFailed(supabase, order);
     }
 
     // Eventos como pix_created, pix_expired são ignorados

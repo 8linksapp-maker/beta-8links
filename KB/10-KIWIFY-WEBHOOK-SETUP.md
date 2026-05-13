@@ -45,7 +45,7 @@ KIWIFY_WEBHOOK_SECRET=seu_webhook_secret_aqui
 
 | Campo | Valor |
 |-------|-------|
-| **URL** | `https://8links.com.br/api/webhooks/kiwify` (prod) ou `https://seu-ngrok-url.ngrok.io/api/webhooks/kiwify` (dev) |
+| **URL** | `https://app.8links.com.br/api/webhooks/kiwify` (prod) ou `https://seu-ngrok-url.ngrok.io/api/webhooks/kiwify` (dev) |
 | **Eventos** | Marque todos: |
 | | ☑️ `order_approved` |
 | | ☑️ `order_refunded` |

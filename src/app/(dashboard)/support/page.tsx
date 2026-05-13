@@ -34,6 +34,10 @@ const faqs = [
 export default function SupportPage() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [selected, setSelected] = useState<any>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [reply, setReply] = useState("");
+  const [sending, setSending] = useState(false);
 
   // New ticket
   const [createOpen, setCreateOpen] = useState(false);
@@ -42,7 +46,6 @@ export default function SupportPage() {
   const [description, setDescription] = useState("");
   const [screenshots, setScreenshots] = useState<File[]>([]);
   const [screenshotPreviews, setScreenshotPreviews] = useState<string[]>([]);
-  const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // FAQ
@@ -70,6 +73,36 @@ export default function SupportPage() {
     }
     load();
   }, []);
+
+  const loadMessages = async (ticket: any) => {
+    setSelected(ticket);
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("messages")
+      .select("id, content, sender_type, sender_id, sent_at, screenshot_url")
+      .eq("conversation_id", ticket.id)
+      .order("sent_at", { ascending: true });
+    setMessages(data ?? []);
+  };
+
+  const sendReply = async () => {
+    if (!reply.trim() || !selected) return;
+    setSending(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    await supabase.from("messages").insert({
+      conversation_id: selected.id,
+      sender_type: "client",
+      sender_id: user?.id,
+      content: reply,
+    });
+
+    setMessages(prev => [...prev, { id: Date.now(), content: reply, sender_type: "client", sent_at: new Date().toISOString() }]);
+    setReply("");
+    setSending(false);
+    toast.success("Mensagem enviada");
+  };
 
   // File handling
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,21 +215,41 @@ export default function SupportPage() {
     return <cat.icon className={`w-4 h-4 ${cat.color}`} />;
   };
 
+  const goBack = () => {
+    setSelected(null);
+    setMessages([]);
+    setReply("");
+  };
+
   const filteredFaqs = searchFaq
     ? faqs.filter(f => f.q.toLowerCase().includes(searchFaq.toLowerCase()))
     : faqs;
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
         className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-bold font-[family-name:var(--font-display)] tracking-tight">Suporte</h1>
-          <p className="text-sm text-muted-foreground mt-1">Reportar bugs, sugerir melhorias ou tirar dúvidas</p>
+        <div className="flex items-center gap-3">
+          {selected && (
+            <Button variant="ghost" size="sm" onClick={goBack} className="h-8 px-2">
+              ← Voltar
+            </Button>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold font-[family-name:var(--font-display)] tracking-tight">
+              {selected ? "Ver Ticket" : "Suporte"}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {selected ? selected.subject : "Reportar bugs, sugerir melhorias ou tirar dúvidas"}
+            </p>
+          </div>
         </div>
-        <Button className="gap-2" onClick={() => setCreateOpen(!createOpen)}>
-          <Plus className="w-4 h-4" /> Novo ticket
-        </Button>
+        {!selected && (
+          <Button className="gap-2" onClick={() => setCreateOpen(!createOpen)}>
+            <Plus className="w-4 h-4" /> Novo ticket
+          </Button>
+        )}
       </motion.div>
 
       {/* Create ticket */}
@@ -257,69 +310,128 @@ export default function SupportPage() {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <MessageSquare className="w-4 h-4 text-primary" /> Seus tickets
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!loaded ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Carregando...</p>
-              ) : tickets.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Nenhum ticket ainda.</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {tickets.map(t => (
-                    <div key={t.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center gap-3 min-w-0">
-                        {catIcon(t.category)}
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{t.subject}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono">
-                            {new Date(t.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} · {t.messages} msg
-                          </p>
-                        </div>
-                      </div>
-                      {statusBadge(t.status)}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <HelpCircle className="w-4 h-4 text-primary" /> FAQ
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="relative mb-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <Input placeholder="Buscar..." className="pl-9 h-8 text-xs" value={searchFaq} onChange={e => setSearchFaq(e.target.value)} />
+      {/* Conversation View */}
+      {selected ? (
+        <Card className="h-[70vh] flex flex-col">
+          {/* Header */}
+          <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3">
+              {catIcon(selected.category)}
+              <div>
+                <h3 className="text-sm font-bold">{selected.subject}</h3>
+                <p className="text-[10px] text-muted-foreground">
+                  {new Date(selected.date).toLocaleDateString("pt-BR")} · {statusBadge(selected.status)}
+                </p>
               </div>
-              {filteredFaqs.map((faq, i) => (
-                <div key={i} className="border border-border/50 rounded-lg overflow-hidden">
-                  <button onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
-                    className="w-full flex items-center justify-between p-3 text-left cursor-pointer hover:bg-muted/20 transition-colors">
-                    <span className="text-xs font-medium pr-2">{faq.q}</span>
-                    <ChevronRight className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${expandedFaq === i ? "rotate-90" : ""}`} />
-                  </button>
-                  {expandedFaq === i && (
-                    <div className="px-3 pb-3"><p className="text-xs text-muted-foreground leading-relaxed">{faq.a}</p></div>
-                  )}
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {messages.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Nenhuma mensagem</p>
+            ) : (
+              messages.map(m => (
+                <div key={m.id} className={`flex ${m.sender_type === "client" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[80%] rounded-xl px-4 py-2.5 ${
+                    m.sender_type === "client" ? "bg-primary/10 text-foreground" : "bg-muted text-foreground"
+                  }`}>
+                    <p className="text-sm whitespace-pre-wrap">{m.content}</p>
+                    {m.screenshot_url && (
+                      <a href={m.screenshot_url} target="_blank" rel="noopener noreferrer" className="mt-2 block">
+                        <img src={m.screenshot_url} alt="Screenshot" className="max-w-[300px] rounded-lg border border-border" />
+                      </a>
+                    )}
+                    <p className="text-[9px] text-muted-foreground mt-1">
+                      {m.sender_type === "client" ? "Você" : "Equipe"} · {new Date(m.sent_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+              ))
+            )}
+          </div>
+
+          {/* Reply */}
+          <div className="p-4 border-t border-border shrink-0">
+            <div className="flex gap-2">
+              <Textarea placeholder="Responder..." rows={2} value={reply} onChange={e => setReply(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) sendReply(); }}
+                className="text-sm" />
+              <Button onClick={sendReply} disabled={sending || !reply.trim()} className="shrink-0 self-end">
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-[9px] text-muted-foreground mt-1">Ctrl+Enter para enviar</p>
+          </div>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Ticket List */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <MessageSquare className="w-4 h-4 text-primary" /> Seus tickets
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!loaded ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Carregando...</p>
+                ) : tickets.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Nenhum ticket ainda.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {tickets.map(t => (
+                      <div key={t.id} onClick={() => loadMessages(t)}
+                        className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/30 transition-colors cursor-pointer">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {catIcon(t.category)}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{t.subject}</p>
+                            <p className="text-[10px] text-muted-foreground font-mono">
+                              {new Date(t.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} · {t.messages} msg
+                            </p>
+                          </div>
+                        </div>
+                        {statusBadge(t.status)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* FAQ */}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <HelpCircle className="w-4 h-4 text-primary" /> FAQ
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input placeholder="Buscar..." className="pl-9 h-8 text-xs" value={searchFaq} onChange={e => setSearchFaq(e.target.value)} />
+                </div>
+                {filteredFaqs.map((faq, i) => (
+                  <div key={i} className="border border-border/50 rounded-lg overflow-hidden">
+                    <button onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
+                      className="w-full flex items-center justify-between p-3 text-left cursor-pointer hover:bg-muted/20 transition-colors">
+                      <span className="text-xs font-medium pr-2">{faq.q}</span>
+                      <ChevronRight className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${expandedFaq === i ? "rotate-90" : ""}`} />
+                    </button>
+                    {expandedFaq === i && (
+                      <div className="px-3 pb-3"><p className="text-xs text-muted-foreground leading-relaxed">{faq.a}</p></div>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

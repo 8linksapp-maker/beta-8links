@@ -1,7 +1,13 @@
-# 8links — Análise Completa Stripe vs Kiwify (543 Clientes)
+# 8links — Análise Completa Stripe vs Kiwify (544 Clientes)
 
-**Data da análise**: 8 de maio de 2026
-**Status**: ✅ **ANÁLISE COMPLETA FINALIZADA**
+**Data da análise**: 9 de maio de 2026
+**Status**: ✅ **ANÁLISE VALIDADA COM DADOS ATUAIS**
+
+**Fontes validadas:**
+- Supabase: 544 usuários (KB/12-SUPABASE-DATA.md)
+- Stripe API: 170 assinaturas (KB/11-STRIPE-DATA.md)
+- Kiwify Lifetime: 62 vendas paid/waiting (KB/13-KIWIFY-DATA.md)
+- Kiwify Mensal: 25 assinaturas (3 ativas verdadeiras) (KB/13-KIWIFY-DATA.md)
 
 ---
 
@@ -9,296 +15,269 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Total de clientes no Supabase** | **543** |
-| ✅ Com pagamento válido (Stripe + Kiwify) | **124** |
-| ⚠️ **Free Riders (ativos sem pagar)** | **27** |
-| ❌ Cancelados (`subscription_status = 'canceled'`) | **392** |
-
-**Fontes cruzadas**:
-- Stripe API: **489 clientes** com assinatura (busca customer por customer)
-- Kiwify Lifetime: 62 clientes (vendas pagas)
-- Kiwify Mensal Ativo: 3 assinaturas (Current Period End >= 2026-05-08)
-- Kiwify Vendas Recentes: 3 clientes (paid < 30 dias)
+| **Total de clientes no Supabase** | **544** |
+| **Ativos/Trialing/Past Due** | **151** |
+| ✅ **Com pagamento válido (Stripe + Kiwify)** | **140** |
+| ⚠️ **Free Riders (ativos sem pagar)** | **25** |
+| 📦 **Kiwify Lifetime** | **62** |
+| 💳 **Stripe (active/trialing/past_due)** | **93** |
 
 ---
 
-## 🎯 Clientes com Pagamento (124 total)
+## 📊 CATEGORIZAÇÃO COMPLETA
 
-### 1. Stripe (489 clientes com assinatura)
+### 1. ✅ OK — NÃO PRECISAM DE NADA (Supabase correto)
 
-Clientes encontrados no Stripe com pelo menos 1 assinatura (qualquer status):
+Clientes que já estão corretos no Supabase:
 
-**Status das assinaturas encontradas**:
-- `active` — Ativo
-- `trialing` — Período de teste
-- `past_due` — Pagamento atrasado
-- `canceled` — Cancelada
-- `incomplete_expired` — Incompleta expirada
-- `paused` — Pausada
-
-**Principais clientes ativos no Stripe**:
-
-| Email | Plano Supabase | Status Stripe |
-|-------|----------------|---------------|
-| 8links@encontra.com.br | legacy_monthly | active, paused |
-| abud.miami@gmail.com | starter | active |
-| adrianobotelhoseo@gmail.com | starter | active |
-| alearriagaf@gmail.com | legacy_monthly | active, paused |
-| alexdigital50@gmail.com | lifetime | trialing |
-| avillajr.job@gmail.com | starter | active |
-| berniceh.olt.1.5.1.1.3@gmail.com | legacy | trialing |
-| blogdoflaoficial@gmail.com | legacy_monthly | active, paused |
-| buscasimplacas@gmail.com | starter | active |
-| businessintext@gmail.com | starter | active |
-| cesarbalestrodebem@gmail.com | legacy_monthly | active, paused |
-| contato@upwriter.com.br | starter | active |
-| criarsitedivulgar@gmail.com | starter | past_due |
-| danielvidalreis@gmail.com | legacy_monthly | active |
-| developer.joaquim@gmail.com | legacy_monthly | active, past_due |
-| duarterafael125@gmail.com | legacy_monthly | active |
-| e.jonhnes@gmail.com | legacy_monthly | active, paused |
-| edgar2013live@gmail.com | legacy_monthly | active |
-| edmilsonod@gmail.com | legacy_monthly | active |
-| eduardokavalek@gmail.com | pro | active, paused |
-| emersonalexandrevieira5@gmail.com | lifetime | trialing, paused |
-| eu.flauneves@gmail.com | legacy | trialing |
-| ewertonexpert1@gmail.com | legacy_monthly | active |
-| financeiro@bn3.com.br | starter | past_due |
-| flavianests@gmail.com | starter | past_due |
-| fredmorg.a.n.21115@gmail.com | legacy | trialing |
-| gabricajueiro@gmail.com | legacy_monthly | active, paused |
-| galdes3@hotmail.com | legacy_monthly | active |
-| gabrielmax@gmail.com | starter | active |
-| guilherme1989alencar@gmail.com | pro | active |
-| guilhermeguns3000@gmail.com | pro | active |
-| guilhermemigues@hotmail.com | starter | active |
-| gugalimaseo@gmail.com | legacy | trialing |
-| halysonserrado1@gmail.com | starter | past_due |
-| hitlermarques@gmail.com | pro | active |
-| ioferreira@live.com | starter | active |
-| isaquesestudios@gmail.com | legacy_monthly | active, paused |
-| jairoalves47@gmail.com | starter | active |
-| joyceohana5@gmail.com | legacy_monthly | active |
-| lucaslavri@gmail.com | pro | active |
-| luismonteirobh@gmail.com | starter | active |
-| luisotavio.seo@gmail.com | legacy_monthly | active, paused |
-| luistsiufpr@gmail.com | starter | active |
-| maia.juanchaves@gmail.com | legacy | trialing |
-| maicon@agenciafidelis.com.br | starter | active |
-| marcelomneves@gmail.com | pro | active |
-| mario_fsneto@yahoo.com.br | starter | active |
-| mariojorgefx@gmail.com | starter | active, paused |
-| mikaeloliveira@tecplustelecom.com.br | pro | active |
-| mickaelcamargoborges91@gmail.com | starter | active |
-| miguelferreira012018@gmail.com | starter | active |
-| nauber.biemann@gmail.com | legacy_monthly | active |
-| novaeracomvisual@gmail.com | pro | active |
-| nuvempaueagua@gmail.com | starter | active |
-| ola@gabrielschmidt.com.br | starter | active |
-| pauloandre86@hotmail.com | legacy_monthly | active |
-| pl.navarro@yahoo.com.br | starter | active |
-| prbn021@gmail.com | lifetime | trialing |
-| regdsdesign@gmail.com | starter | active |
-| renan@yaslip.com.br | pro | active |
-| ricardofreireb@gmail.com | legacy_monthly | active, paused |
-| ricardomarkevis2@gmail.com | starter | active |
-| rm2273gustavo@gmail.com | starter | active |
-| robertocaf@gmail.com | starter | active |
-| roger.alves1@gmail.com | pro | active, paused |
-| romuloa.fortaleza@gmail.com | legacy_monthly | active |
-| samuelfrnnds96@gmail.com | legacy_monthly | active |
-| senna.ricarte@gmail.com | legacy_monthly | active |
-| surf4fun.rci@gmail.com | legacy_monthly | active |
-| vctakai@gmail.com | legacy_monthly | active |
-| zelmdhs@gmail.com | legacy_monthly | active, paused |
-| zzl_182@hotmail.com | legacy_monthly | active |
+| Categoria | Qtd | Descrição |
+|-----------|-----|-----------|
+| Kiwify Lifetime | 0 | Nenhum está 100% correto (todos precisam de provider) |
+| Kiwify Mensal | 0 | Nenhum está 100% correto |
+| Stripe | ~70 | Clientes Stripe com provider marcado |
 
 ---
 
-### 2. Kiwify Lifetime/Legacy (62 clientes)
+### 2. ⚠️ PRECISAM DE ATUALIZAÇÃO NO SUPABASE
 
-Clientes que compraram Lifetime/Legacy na Kiwify:
+#### 2.1. Kiwify Lifetime — Atualizar `payment_provider = 'kiwify'` (51 clientes)
 
-| Email | Plano Supabase |
-|-------|----------------|
-| 16vmarques@gmail.com | lifetime |
-| aparicio@maximoconsultoria.com.br | legacy |
-| axandex@gmail.com | lifetime |
-| brescia81@hotmail.com | legacy |
-| carlanovas7@gmail.com | lifetime |
-| carlos.siqueira.carmo@gmail.com | legacy |
-| comercial@acorsan.com.br | lifetime |
-| contato.multiversopop@gmail.com | lifetime |
-| daniel@seogenome.com | legacy |
-| dmendes40@gmail.com | legacy |
-| e.curyosidades@gmail.com | lifetime |
-| edumelo2013@gmail.com | legacy |
-| eng.bruno.cesar@outlook.com | lifetime |
-| f.s.gomes96@gmail.com | legacy |
-| felipe.amb@hotmail.com | legacy |
-| fernandolopespro@gmail.com | legacy |
-| fernandovale@msn.com | lifetime |
-| financeiro@marketnet.com.br | lifetime |
-| flavio@raffaelli.com.br | lifetime |
-| fleck.martin@gmail.com | legacy |
-| fpncreation@gmail.com | lifetime |
-| frbarbozacomz@gmail.com | legacy |
-| hercules.silvva@bol.com.br | lifetime |
-| hpires87@gmail.com | legacy |
-| hugomurilo@hotmail.com | lifetime |
-| joycer.tx@hotmail.com | lifetime |
-| juniodomingues@gmail.com | legacy |
-| karen.lemuche@icloud.com | lifetime |
-| leandragcosta@yahoo.com.br | legacy |
-| lorenagarcia.web@gmail.com | legacy |
-| marcelo.marconcini@gmail.com | legacy |
-| marcoshalter@gmail.com | legacy |
-| mikeiasdesigner@gmail.com | legacy |
-| mwnegociosdigitais@gmail.com | lifetime |
-| neojps@gmail.com | lifetime |
-| novoclaudio2023@gmail.com | legacy |
-| porto.biomed@gmail.com | lifetime |
-| randalos.madeira@grupordm.com.br | legacy |
-| regerjs@gmail.com | legacy |
-| spassibvendaslima@gmail.com | legacy |
-| spsantos.bruno@gmail.com | lifetime |
-| tecjuliano@gmail.com | legacy |
-| ton.bsantos@gmail.com | legacy |
-| trafego.seo.marketing@gmail.com | legacy |
-| victor.sanacleto@gmail.com | legacy |
-| victormarquesadvo@gmail.com | lifetime |
-| willianwfmulti@gmail.com | legacy |
-| willtonbrito@gmail.com | lifetime |
-| yuricxgomes@gmail.com | legacy |
-| nildo.farias.renda@gmail.com | pro |
-| marcos@megadigital.com.br | agency |
-| diogo@cloudmarket.com.br | agency |
-| marcus.baracho2016@gmail.com | agency |
-| getuliovaladaresalves@gmail.com | agency |
-| gabrielsaccomorilopes@gmail.com | agency |
-| michaeldesantana@gmail.com | agency |
-| rumostore23@gmail.com | agency |
-| luizmxt@gmail.com | agency |
-| kdu_afonso@hotmail.com | agency |
-| valdemarmedeiros4@gmail.com | agency |
-| valerio.soares35@gmail.com | agency |
-| zaira.goncalves@ymail.com | agency |
+Todos estão com `plan_id` e `subscription_status` corretos, mas `payment_provider = null`:
+
+| Email | Plano | Status | Provider Atual |
+|-------|-------|--------|----------------|
+| 16vmarques@gmail.com | lifetime | active | null |
+| aparicio@maximoconsultoria.com.br | legacy | active | null |
+| axandex@gmail.com | lifetime | active | null |
+| beneficiorh@gmail.com | legacy | active | null |
+| brescia81@hotmail.com | legacy | active | null |
+| carlanovas7@gmail.com | lifetime | active | null |
+| carlos.siqueira.carmo@gmail.com | legacy | active | null |
+| comercial@acorsan.com.br | lifetime | active | null |
+| contato.multiversopop@gmail.com | lifetime | active | null |
+| daniel@seogenome.com | legacy | active | null |
+| dmendes40@gmail.com | legacy | active | null |
+| e.curyosidades@gmail.com | lifetime | active | null |
+| edumelo2013@gmail.com | legacy | active | null |
+| eng.bruno.cesar@outlook.com | lifetime | active | null |
+| f.s.gomes96@gmail.com | legacy | active | null |
+| felipe.amb@hotmail.com | legacy | active | null |
+| fernandolopespro@gmail.com | legacy | active | null |
+| fernandovale@msn.com | lifetime | active | null |
+| financeiro@marketnet.com.br | lifetime | active | null |
+| flavio@raffaelli.com.br | lifetime | active | null |
+| fleck.martin@gmail.com | legacy | active | null |
+| fpncreation@gmail.com | lifetime | active | null |
+| frbarbozacomz@gmail.com | legacy | active | null |
+| hercules.silvva@bol.com.br | lifetime | active | null |
+| hpires87@gmail.com | legacy | active | null |
+| hugomurilo@hotmail.com | lifetime | active | null |
+| joycer.tx@hotmail.com | lifetime | active | null |
+| juniodomingues@gmail.com | legacy | active | null |
+| karen.lemuche@icloud.com | lifetime | active | null |
+| leandragcosta@yahoo.com.br | legacy | active | null |
+| lorenagarcia.web@gmail.com | legacy | active | null |
+| marcelo.marconcini@gmail.com | legacy | active | null |
+| marcoshalter@gmail.com | legacy | active | null |
+| mikeiasdesigner@gmail.com | legacy | active | null |
+| mwnegociosdigitais@gmail.com | lifetime | active | null |
+| neojps@gmail.com | lifetime | active | null |
+| novoclaudio2023@gmail.com | legacy | active | null |
+| porto.biomed@gmail.com | lifetime | active | null |
+| randalos.madeira@grupordm.com.br | legacy | active | null |
+| regerjs@gmail.com | legacy | active | null |
+| spassibvendaslima@gmail.com | legacy | active | null |
+| spsantos.bruno@gmail.com | lifetime | active | null |
+| tecjuliano@gmail.com | legacy | active | null |
+| ton.bsantos@gmail.com | legacy | active | null |
+| trafego.seo.marketing@gmail.com | legacy | active | null |
+| victor.sanacleto@gmail.com | legacy | active | null |
+| victormarquesadvo@gmail.com | lifetime | active | null |
+| willianwfmulti@gmail.com | legacy | active | null |
+| willtonbrito@gmail.com | lifetime | active | null |
+| yuricxgomes@gmail.com | legacy | active | null |
+
+**Ação**: `UPDATE profiles SET payment_provider = 'kiwify' WHERE email IN (lista acima)`
 
 ---
 
-### 3. Kiwify Mensal Ativo (3 clientes)
+#### 2.2. Kiwify Mensal Ativas — Atualizar `payment_provider = 'kiwify'` (3 clientes)
 
-| Email | Plano Supabase |
-|-------|----------------|
-| limpacano@hotmail.com | starter |
-| seopersonall@gmail.com | starter |
-| zaume7@gmail.com | starter |
+| Email | Plano Atual | Status Atual | Provider | Ação |
+|-------|-------------|--------------|----------|------|
+| limpacano@hotmail.com | starter | trialing | null | Update provider + status |
+| seopersonall@gmail.com | starter | active | null | Update provider |
+| zaume7@gmail.com | starter | active | null | Update provider |
 
----
-
-## ⚠️ FREE RIDERS (27 clientes)
-
-Clientes **ativos/trialing/past_due** **SEM PAGAMENTO** (nem Stripe, nem Kiwify):
-
-| Email | Status | Plano |
-|-------|--------|-------|
-| arplay1215@gmail.com | active | legacy |
-| bsnegocio9@gmail.com | trialing | starter |
-| danielsousaf23@gmail.com | trialing | starter |
-| desentopeurgencia@gmail.com | trialing | starter |
-| dionelgcosta@gmail.com | trialing | starter |
-| jsoaresngc@gmail.com | trialing | starter |
-| junioreawil@gmail.com | trialing | starter |
-| maiconpublicitario@gmail.com | past_due | pro |
-| marina-pastdue@8links.test | past_due | pro |
-| marina-test@8links.test | active | pro |
-| marketing@wawebdesign.com.br | active | pro |
-| me@brunomedeiroseo.com.br | trialing | starter |
-| mkt.williamaranha@gmail.com | active | legacy_monthly |
-| murilogxmautex@gmail.com | trialing | starter |
-| oficial.blackbrindes@gmail.com | trialing | starter |
-| paradisevalley1883@gmail.com | active | lifetime |
-| pauloreis.rj97@gmail.com | active | starter |
-| pcfiz73@gmail.com | trialing | starter |
-| teste22055464356456@gmail.com | trialing | starter |
-| victorprsilva@outlook.com | trialing | starter |
-| wesllyinfo@gmail.com | trialing | starter |
-
-**Ação**: Investigar cada um — podem ser:
-- Testes internos / desenvolvimento
-- Contas de equipe 8links
-- Clientes que pagaram mas webhook falhou
-- Usuários usando sem pagar (free riders reais)
+**Ação**: `UPDATE profiles SET payment_provider = 'kiwify', subscription_status = 'active' WHERE email = 'limpacano@hotmail.com'`
 
 ---
 
-## 🚨 Assinaturas "Fantasmas" no Stripe (37 para cancelar)
+#### 2.3. Plano Errado — Kiwify Lifetime com plano incorreto no Supabase (7 clientes)
 
-**Total de trials no Stripe**: 45
-- **37** são de clientes Kiwify Lifetime → **CANCELAR** (já pagaram)
-- **8** são de clientes SEM Lifetime → **MANTER** (trials legítimos)
+| Email | Plano Atual | Deveria Ser |
+|-------|-------------|-------------|
+| nildo.farias.renda@gmail.com | pro | lifetime/legacy |
+| marcos@megadigital.com.br | agency | lifetime/legacy |
+| diogo@cloudmarket.com.br | agency | lifetime/legacy |
+| marcus.baracho2016@gmail.com | agency | lifetime/legacy |
+| getuliovaladaresalves@gmail.com | agency | lifetime/legacy |
+| gabrielsaccomorilopes@gmail.com | agency | lifetime/legacy |
+| michaeldesantana@gmail.com | agency | lifetime/legacy |
 
-Clientes **Lifetime/Legacy na Kiwify** com **trial no Stripe** (cobrança indevida):
-
-| Subscription ID | Email | Plano Stripe | Status |
-|-----------------|-------|--------------|--------|
-| sub_1TPleEDssGMGr4Apwmh5PAoc | fleck.martin@gmail.com | Legacy Mensal | trialing |
-| sub_1TONAbDssGMGr4ApdGlyt4el | novoclaudio2023@gmail.com | Legacy Mensal | trialing |
-| sub_1TOGEeDssGMGr4ApIFLNibGS | frbarbozacomz@gmail.com | Legacy Mensal | trialing |
-| sub_1TOGDsDssGMGr4AptPidVuIH | edumelo2013@gmail.com | Legacy Mensal | trialing |
-| sub_1TOGCHDssGMGr4ApFD66KDQ3 | victor.sanacleto@gmail.com | Legacy Mensal | trialing |
-| sub_1SfRdJDssGMGr4ApBOa9ZICi | aparicio@maximoconsultoria.com.br | Agency | trialing |
-| sub_1Sc4c8DssGMGr4ApYw4wJAgK | randalos.madeira@grupordm.com.br | Legacy Mensal | trialing |
-| sub_1SWIguDssGMGr4Ap2WkcjPBH | juniodomingues@gmail.com | Club | trialing |
-| sub_1SUp3nDssGMGr4Apu8KOKa61 | f.s.gomes96@gmail.com | Club | trialing |
-| sub_1SUowqDssGMGr4ApF1VuZCcv | ton.bsantos@gmail.com | Club | trialing |
-| sub_1SUU6BDssGMGr4ApCnu3jstu | carlos.siqueira.carmo@gmail.com | Club | trialing |
-| sub_1SU5dFDssGMGr4ApTKC1ORFQ | dmendes40@gmail.com | Club | trialing |
-| sub_1STVu6DssGMGr4ApcRSwqG7G | brescia81@hotmail.com | Club | trialing |
-| sub_1SPrdpDssGMGr4ApygiYW4pU | hpires87@gmail.com | Club | trialing |
-| sub_1SOJHlDssGMGr4Ap0Xae3jB6 | spassibvendaslima@gmail.com | Club | trialing |
-| sub_1SOIBoDssGMGr4ApzebxsQff | marcelo.marconcini@gmail.com | Club | trialing |
-| sub_1SO283DssGMGr4ApCVIOpE4y | fernandolopespro@gmail.com | Legacy Mensal | trialing |
-| sub_1SNaYhDssGMGr4ApEgTh17RT | daniel@seogenome.com | Club | trialing |
-| sub_1SE4ZoDssGMGr4ApVc6hwER2 | e.curyosidades@gmail.com | Legacy Mensal | trialing |
-| sub_1SD7uJDssGMGr4ApYNewo6Hk | mikeiasdesigner@gmail.com | Legacy Mensal | trialing |
-| sub_1SBjZlDssGMGr4ApsvgBjdIY | e.curyosidades@gmail.com | Legacy Mensal | trialing |
-| sub_1SZzBaDssGMGr4Apyj6Nvadc | tecjuliano@gmail.com | Legacy Mensal (2 anos) | trialing |
-| sub_1SVu53DssGMGr4ApFIkA82sJ | franklin.tekk@hotmail.com | Club (2 anos) | trialing |
-| sub_1SVtbdDssGMGr4Ap3qVVqRRl | nestorvicentesoares@gmail.com | Club (2 anos) | trialing |
-| sub_1SQZo4DssGMGr4Apky1yVKUN | beneficiorh@gmail.com | Club (2 anos) | trialing |
-| sub_1SOLbvDssGMGr4ApYdGIGiWd | neojps@gmail.com | Club | trialing |
-| sub_1TOOLyDssGMGr4ApR37Yne5a | axandex@gmail.com | Legacy Mensal | trialing |
-| sub_1TOGI2DssGMGr4ApFO2qUbDS | fpncreation@gmail.com | Legacy Mensal | trialing |
-| sub_1TOGHUDssGMGr4ApRLMcXQFG | eng.bruno.cesar@outlook.com | Legacy Mensal | trialing |
-| sub_1TOGFmDssGMGr4Ap0NlWOXRp | karen.lemuche@icloud.com | Legacy Mensal | trialing |
-| sub_1TOGDPDssGMGr4ApuAxxOVIH | willtonbrito@gmail.com | Legacy Mensal | trialing |
-| sub_1TOGAmDssGMGr4ApooOfNLjr | joycer.tx@hotmail.com | Legacy Mensal | trialing |
-| sub_1TNbBODssGMGr4ApeCegPW3t | hercules.silvva@bol.com.br | Legacy Mensal | trialing |
-| sub_1TNMlnDssGMGr4ApnKAdueqP | flavio@raffaelli.com.br | Legacy Mensal | trialing |
-| sub_1TNMizDssGMGr4ApWDDlZpXI | carlanovas7@gmail.com | Legacy Mensal | trialing |
-| sub_1TNMgeDssGMGr4ApUMUYNvaH | fernandovale@msn.com | Legacy Mensal | trialing |
-| sub_1SD82MDssGMGr4ApQnbNCq5A | e.curyosidades@gmail.com | Legacy Mensal | trialing |
-
-**Ação**: Cancelar todas — são cobranças indevidas para clientes que já pagaram na Kiwify.
+**Ação**: Investigar — podem ser upgrades ou erros de cadastro.
 
 ---
 
-## 📋 Resumo das Ações
+#### 2.4. Não Estão no Supabase — Criar Usuários (4 clientes Kiwify Lifetime)
 
-| Prioridade | Ação | Impacto | Qtd |
-|------------|------|---------|-----|
-| 🔴 **ALTA** | Atualizar `payment_provider` no Supabase | Corrige base de dados | ~124 |
-| 🔴 **ALTA** | Cancelar assinaturas "fantasmas" no Stripe | Evita cobrança indevida | 37 |
-| 🟡 **MÉDIA** | Investigar 27 free riders | Recupera receita perdida | 27 |
-| 🟢 **BAIXA** | Configurar webhook Kiwify | Previne futuros problemas | 1 |
+| Email | Produto | Status |
+|-------|---------|--------|
+| digitalalexman@gmail.com | 8links Lifetime | paid |
+| juliocelesc@yahoo.com.br | 8links Legacy | paid |
+| maiconr@gmail.com | 8links Lifetime | paid |
+| paradisevalley@gmail.com | 8links Lifetime | paid |
+
+**Ação**: Criar usuários via invite ou manualmente.
 
 ---
 
-## Fontes
+### 3. 🚨 PRECISAM SAIR / CANCELAR
 
-- **Supabase**: 543 clientes (export completo)
-- **Stripe API**: Busca customer por customer — **489 clientes** encontrados com assinatura
-- **Kiwify Lifetime**: `sales_yof04_1778287322883.csv`
-- **Kiwify Mensal**: `subscriptions_zhzobc_1778289509552.csv`
-- **Kiwify Vendas**: `sales_8links_kiwify.csv`
+#### 3.1. Stripe Trials — Cancelar (41 assinaturas)
+
+**37 clientes Kiwify + 4 especiais (funcionários/negociação direta):**
+
+| Email | Motivo |
+|-------|--------|
+| aparicio@maximoconsultoria.com.br | Kiwify Lifetime |
+| axandex@gmail.com | Kiwify Lifetime |
+| beneficiorh@gmail.com | Kiwify Lifetime |
+| brescia81@hotmail.com | Kiwify Lifetime |
+| carlanovas7@gmail.com | Kiwify Lifetime |
+| carlos.siqueira.carmo@gmail.com | Kiwify Lifetime |
+| daniel@seogenome.com | Kiwify Lifetime |
+| dmendes40@gmail.com | Kiwify Lifetime |
+| edumelo2013@gmail.com | Kiwify Lifetime |
+| eng.bruno.cesar@outlook.com | Kiwify Lifetime |
+| f.s.gomes96@gmail.com | Kiwify Lifetime |
+| felipe.amb@hotmail.com | Kiwify Lifetime |
+| fernandolopespro@gmail.com | Kiwify Lifetime |
+| fernandovale@msn.com | Kiwify Lifetime |
+| flavio@raffaelli.com.br | Kiwify Lifetime |
+| fleck.martin@gmail.com | Kiwify Lifetime |
+| fpncreation@gmail.com | Kiwify Lifetime |
+| franklin.tekk@hotmail.com | Kiwify Lifetime |
+| frbarbozacomz@gmail.com | Kiwify Lifetime |
+| hercules.silvva@bol.com.br | Kiwify Lifetime |
+| hpires87@gmail.com | Kiwify Lifetime |
+| joycer.tx@hotmail.com | Kiwify Lifetime |
+| juniodomingues@gmail.com | Kiwify Lifetime |
+| karen.lemuche@icloud.com | Kiwify Lifetime |
+| lorenagarcia.web@gmail.com | Kiwify Lifetime |
+| marcelo.marconcini@gmail.com | Kiwify Lifetime |
+| mikeiasdesigner@gmail.com | Kiwify Lifetime |
+| neojps@gmail.com | Kiwify Lifetime |
+| nestorvicentesoares@gmail.com | Kiwify Lifetime |
+| novoclaudio2023@gmail.com | Kiwify Lifetime |
+| randalos.madeira@grupordm.com.br | Kiwify Lifetime |
+| spassibvendaslima@gmail.com | Kiwify Lifetime |
+| tecjuliano@gmail.com | Kiwify Lifetime |
+| ton.bsantos@gmail.com | Kiwify Lifetime |
+| victor.sanacleto@gmail.com | Kiwify Lifetime |
+| willtonbrito@gmail.com | Kiwify Lifetime |
+| yuricxgomes@gmail.com | Kiwify Lifetime |
+| alexdigital50@gmail.com | Especial/Funcionário |
+| gugalimaseo@gmail.com | Especial/Funcionário |
+| maia.juanchaves@gmail.com | Especial/Funcionário |
+| prbn021@gmail.com | Especial/Funcionário |
+
+**Ação**: Cancelar no Stripe Dashboard ou via API.
+
+---
+
+#### 3.2. Stripe Trials — Analisar (4 clientes)
+
+| Email | Status | Observação |
+|-------|--------|------------|
+| berniceh.olt.1.5.1.1.3@gmail.com | trialing | Não é Kiwify, não é funcionário |
+| emersonalexandrevieira5@gmail.com | trialing | Não é Kiwify, não é funcionário |
+| eu.flauneves@gmail.com | trialing | Não é Kiwify, não é funcionário |
+| fredmorg.a.n.21115@gmail.com | trialing | Não é Kiwify, não é funcionário |
+
+**Ação**: Investigar — são trials legítimos ou devem ser cancelados?
+
+---
+
+### 4. ⚠️ FREE RIDERS — 25 CLIENTES
+
+Usuários ativos no Supabase SEM pagamento no Stripe E SEM pagamento na Kiwify:
+
+| Email | Plano | Status | Observação |
+|-------|-------|--------|------------|
+| arplay1215@gmail.com | legacy | active | |
+| bsnegocio9@gmail.com | starter | trialing | |
+| businessintext@gmail.com | starter | past_due | Tem no Stripe (cancelado) |
+| cliente-teste@exemplo.com.br | ? | ? | CONTA DE TESTE — REMOVER |
+| danielsousaf23@gmail.com | starter | trialing | |
+| desentopeurgencia@gmail.com | starter | trialing | |
+| dionelgcosta@gmail.com | starter | trialing | |
+| jsoaresngc@gmail.com | starter | trialing | |
+| junioreawil@gmail.com | starter | trialing | |
+| maicon@agenciafidelis.com.br | starter | active | |
+| maiconpublicitario@gmail.com | pro | past_due | |
+| marina-pastdue@8links.test | pro | past_due | CONTA DE TESTE — REMOVER |
+| marina-test@8links.test | pro | active | CONTA DE TESTE — REMOVER |
+| marketing@wawebdesign.com.br | pro | active | |
+| me@brunomedeiroseo.com.br | starter | trialing | |
+| mkt.williamaranha@gmail.com | legacy_monthly | active | |
+| murilogxmautex@gmail.com | starter | trialing | |
+| novaeracomvisual@gmail.com | pro | active | |
+| oficial.blackbrindes@gmail.com | starter | trialing | |
+| paradisevalley1883@gmail.com | lifetime | active | |
+| pauloreis.rj97@gmail.com | starter | active | |
+| pcfiz73@gmail.com | starter | trialing | |
+| teste22055464356456@gmail.com | starter | trialing | CONTA DE TESTE — REMOVER |
+| victorprsilva@outlook.com | starter | trialing | |
+| wesllyinfo@gmail.com | starter | trialing | |
+
+**Ações**:
+1. Remover 4 contas de teste
+2. Investigar 21 restantes — podem ser equipe, testes, ou free riders reais
+
+---
+
+## 📋 RESUMO DAS AÇÕES
+
+| Prioridade | Ação | Qtd | Impacto |
+|------------|------|-----|---------|
+| 🔴 ALTA | Atualizar `payment_provider = 'kiwify'` | 54 | Corrige base de dados |
+| 🔴 ALTA | Cancelar trials Stripe | 41 | Evita cobrança indevida |
+| 🟡 MÉDIA | Criar 4 usuários Kiwify faltantes | 4 | Onboard clientes |
+| 🟡 MÉDIA | Investigar 7 planos errados | 7 | Corrige inconsistências |
+| 🟡 MÉDIA | Analisar 4 trials não-Kiwify | 4 | Decidir manter/cancelar |
+| 🟡 MÉDIA | Remover 4 contas de teste | 4 | Limpeza de dados |
+| 🟢 BAIXA | Investigar 21 free riders | 21 | Recupera receita |
+
+---
+
+## PRÓXIMOS PASSOS
+
+1. **Rodar update do payment_provider** para 54 clientes Kiwify
+2. **Cancelar 41 trials no Stripe** (37 Kiwify + 4 especiais)
+3. **Criar 4 usuários faltantes** do Kiwify no Supabase
+4. **Investigar 7 clientes com plano errado**
+5. **Decidir sobre 4 trials não-Kiwify** (manter ou cancelar)
+6. **Remover 4 contas de teste** do Supabase
+7. **Contatar 21 free riders** para regularização
+
+---
+
+## Fontes dos Dados
+
+- **KB/11-STRIPE-DATA.md** — 170 assinaturas Stripe (snapshot 2026-05-09)
+- **KB/12-SUPABASE-DATA.md** — 544 usuários Supabase (snapshot 2026-05-09)
+- **KB/13-KIWIFY-DATA.md** — 62 vendas Lifetime + 25 mensal (snapshot 2026-05-09)
+- **sales_yof04_1778287322883.csv** — Kiwify Lifetime
+- **subscriptions_zhzobc_1778289509552.csv** — Kiwify Mensal
+- **sales_8links_kiwify.csv** — Kiwify Vendas
