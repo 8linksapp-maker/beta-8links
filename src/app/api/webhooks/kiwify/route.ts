@@ -238,6 +238,9 @@ function detectPlan(rawPlanName: string): string | null {
   if (planName.includes("pro")) return "pro";
   if (planName.includes("agency")) return "agency";
 
+  // Plano "Pré lançamento" = legacy
+  if (planName.includes("pré") || planName.includes("pre") || planName.includes("lançamento") || planName.includes("lancamento")) return "legacy";
+
   return null;
 }
 
