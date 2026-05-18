@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { requireSubscription } from "@/lib/subscription";
 
 export async function POST(request: Request) {
   const { keyword } = await request.json();
   if (!keyword) return NextResponse.json({ error: "Digite uma palavra-chave para analisar." }, { status: 400 });
+
+  // Auth + subscription check
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+
+  const subCheck = await requireSubscription();
+  if ("error" in subCheck) return NextResponse.json({ error: subCheck.error }, { status: 403 });
 
   if (!process.env.DATAFORSEO_LOGIN) {
     console.error("[serp-analysis] DATAFORSEO_LOGIN not set");

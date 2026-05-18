@@ -13,6 +13,8 @@ import { MigrationBanner } from "@/components/migration-banner";
 import { SentryUserSync } from "@/components/sentry-user-sync";
 import { SimpleModeBanner } from "@/components/simple-mode-banner";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 // Command palette ships cmdk (~30 KB) and only opens on Ctrl/Cmd+K. Defer
 // the bundle until the user actually triggers it.
@@ -29,6 +31,7 @@ export default function DashboardLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { profile, loading } = useUser();
+  const router = useRouter();
 
   // Track last activity for cron optimization
   useEffect(() => {
@@ -50,6 +53,38 @@ export default function DashboardLayout({
   const userName = profile?.name || profile?.email?.split("@")[0] || "Usuário";
   const planId = (profile?.plan_id || "starter") as keyof typeof PLANS;
   const plan = PLANS[planId];
+
+  // Bloqueia usuários inativos (exceto active e trialing)
+  if (!loading && profile && !["active", "trialing"].includes(profile.subscription_status)) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="max-w-md text-center space-y-6 p-8">
+          <div className="w-16 h-16 mx-auto rounded-full bg-destructive/10 flex items-center justify-center">
+            <svg className="w-8 h-8 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-2xl font-black font-[family-name:var(--font-display)] mb-2">
+              Assinatura suspensa
+            </h1>
+            <p className="text-muted-foreground">
+              Sua assinatura está {profile.subscription_status === "canceled" ? "cancelada" : "com pendência"}.
+              Regularize seu pagamento para continuar usando o 8links.
+            </p>
+          </div>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => window.open("/api/billing/portal", "_blank")}>
+              Regularizar Pagamento
+            </Button>
+            <Button variant="outline" onClick={() => router.push("/sites")}>
+              Ver Meus Sites
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getKeywordSuggestions } from "@/lib/apis/dataforseo";
 import { createClient } from "@/lib/supabase/server";
+import { requireSubscription } from "@/lib/subscription";
 import { useActionOrFail } from "@/lib/actions/usage";
 import { attachSentryUser } from "@/lib/utils/sentry-user";
 
@@ -21,6 +22,10 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sua sessão expirou. Recarregue a página e faça login novamente." }, { status: 401 });
   await attachSentryUser(supabaseAuth);
+
+  // Subscription check
+  const subCheck = await requireSubscription();
+  if ("error" in subCheck) return NextResponse.json({ error: subCheck.error }, { status: 403 });
 
   // Check daily search limit (separate from auto discovery)
   const usage = await useActionOrFail(user.id, "keyword_search", keyword.trim());

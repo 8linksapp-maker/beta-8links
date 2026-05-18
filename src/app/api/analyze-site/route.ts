@@ -3,10 +3,19 @@ import { getBacklinkSummary, getRankedKeywords, getCompetitorDomains, parsePageC
 import { getMozDA } from "@/lib/apis/moz";
 import { detectNiche, getCompatibleNiches } from "@/lib/niche-detector";
 import { createClient } from "@/lib/supabase/server";
+import { requireSubscription } from "@/lib/subscription";
 
 export async function POST(request: Request) {
   const { url, hasGscKeywords, gscKeywords } = await request.json();
   if (!url) return NextResponse.json({ error: "Informe o endereço do site (ex: meusite.com.br)." }, { status: 400 });
+
+  // Auth + subscription check
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+
+  const subCheck = await requireSubscription();
+  if ("error" in subCheck) return NextResponse.json({ error: subCheck.error }, { status: 403 });
 
   const domain = url.replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/\/$/, "");
   const fullUrl = url.startsWith("http") ? url : `https://${url}`;

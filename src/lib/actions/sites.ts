@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireSubscription } from "@/lib/subscription";
 
 export async function getSites() {
   const supabase = await createClient();
@@ -17,6 +18,9 @@ export async function getSites() {
 }
 
 export async function addSite(url: string) {
+  const subCheck = await requireSubscription();
+  if ("error" in subCheck) return subCheck;
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireSubscription } from "@/lib/subscription";
 
 export async function getBacklinks(siteId?: string) {
   const supabase = await createClient();

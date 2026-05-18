@@ -49,6 +49,18 @@ export default function SettingsPage() {
 
   const router = useRouter();
 
+  // Payment provider state
+  const [paymentProvider, setPaymentProvider] = useState<"stripe" | "kiwify" | null>(null);
+
+  useEffect(() => {
+    if (profile) {
+      // Detecta provedor de pagamento
+      if (profile.stripe_customer_id || profile.subscription_id) setPaymentProvider("stripe");
+      else if (profile.kiwify_subscription_id) setPaymentProvider("kiwify");
+      else setPaymentProvider(null);
+    }
+  }, [profile]);
+
   // Site data for integrations
   const [siteData, setSiteData] = useState<any>(null);
   const [onboardingMode, setOnboardingMode] = useState<"simple" | "full" | null>(null);
@@ -62,6 +74,9 @@ export default function SettingsPage() {
   const [wpTesting, setWpTesting] = useState(false);
   const [wpSaving, setWpSaving] = useState(false);
   const [wpTestResult, setWpTestResult] = useState<any>(null);
+
+  // Billing dialog state
+  const [billingDialogOpen, setBillingDialogOpen] = useState(false);
 
   // Load site data for integrations tab + onboarding mode
   useEffect(() => {
@@ -95,6 +110,15 @@ export default function SettingsPage() {
       return;
     }
     router.push("/onboarding/full");
+  };
+
+  const handlePaymentMethod = () => {
+    setBillingDialogOpen(true);
+  };
+
+  const handleUpgrade = () => {
+    // Redireciona para checkout de upgrade
+    toast.info("Funcionalidade de upgrade será implementada em breve");
   };
 
   const testWordPress = async () => {
@@ -268,14 +292,19 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Card className="card-interactive cursor-pointer" onClick={() => toast("Esta funcionalidade será liberada em breve!")}>
+                <Card className="card-interactive cursor-pointer" onClick={handlePaymentMethod}>
                   <CardContent className="p-5 flex items-center gap-4">
                     <CreditCard className="w-5 h-5 text-muted-foreground" />
-                    <div><p className="text-sm font-semibold">Método de pagamento</p><p className="text-xs text-muted-foreground">Visa •••• 4242</p></div>
+                    <div>
+                      <p className="text-sm font-semibold">Método de pagamento</p>
+                      <p className="text-xs text-muted-foreground">
+                        {paymentProvider === "stripe" ? "Gerenciar no Stripe" : paymentProvider === "kiwify" ? "Gerenciar na Kiwify" : "Nenhum método cadastrado"}
+                      </p>
+                    </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
                   </CardContent>
                 </Card>
-                <Card className="card-interactive cursor-pointer" onClick={() => toast("Esta funcionalidade será liberada em breve!")}>
+                <Card className="card-interactive cursor-pointer" onClick={handleUpgrade}>
                   <CardContent className="p-5 flex items-center gap-4">
                     <Zap className="w-5 h-5 text-primary" />
                     <div><p className="text-sm font-semibold">Fazer upgrade</p><p className="text-xs text-muted-foreground">Mudar para Agência (R$597/mês)</p></div>
@@ -498,6 +527,92 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Billing Dialog */}
+          <Dialog open={billingDialogOpen} onOpenChange={setBillingDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Método de Pagamento</DialogTitle>
+                <DialogDescription>
+                  Gerencie seu método de pagamento e assinatura.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                {paymentProvider === "stripe" && profile?.subscription_id && (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-lg bg-primary-light border border-primary/20">
+                      <div className="flex items-center gap-3 mb-2">
+                        <CreditCard className="w-5 h-5 text-primary" />
+                        <p className="text-sm font-semibold">Stripe</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Sua assinatura é gerenciada pelo Stripe. Você pode atualizar seu cartão de crédito, visualizar faturas e cancelar diretamente no portal do cliente.
+                      </p>
+                    </div>
+                    <Button className="w-full" onClick={() => window.open("/api/billing/portal", "_blank")}>
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Abrir Portal do Cliente Stripe
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Isso abrirá uma página segura do Stripe onde você pode gerenciar sua assinatura.
+                    </p>
+                  </div>
+                )}
+                {paymentProvider === "stripe" && !profile?.subscription_id && (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-lg bg-primary-light border border-primary/20">
+                      <div className="flex items-center gap-3 mb-2">
+                        <CreditCard className="w-5 h-5 text-primary" />
+                        <p className="text-sm font-semibold">Stripe</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {profile?.subscription_status === "trialing"
+                          ? "Você está no período de teste. Para continuar usando e adicionar seu cartão de crédito, assine um plano."
+                          : "Você tem um cadastro no Stripe mas ainda não possui uma assinatura ativa. Assine um plano para começar."}
+                      </p>
+                    </div>
+                    <Button className="w-full" onClick={() => window.open("/pricing", "_blank")}>
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      {profile?.subscription_status === "trialing" ? "Assinar para Continuar" : "Ver Planos e Assinar"}
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Você será redirecionado para a página de planos.
+                    </p>
+                  </div>
+                )}
+                {paymentProvider === "kiwify" && (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-lg bg-primary-light border border-primary/20">
+                      <div className="flex items-center gap-3 mb-2">
+                        <CreditCard className="w-5 h-5 text-primary" />
+                        <p className="text-sm font-semibold">Kiwify</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Sua assinatura é gerenciada pela Kiwify. Para alterar seu método de pagamento ou cancelar, entre em contato com o suporte.
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center">
+                      O portal do cliente Kiwify será disponibilizado em breve.
+                    </p>
+                  </div>
+                )}
+                {!paymentProvider && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground text-center py-2">
+                      Nenhum método de pagamento cadastrado.
+                    </p>
+                    <Button className="w-full" onClick={() => window.open("/pricing", "_blank")}>
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Assinar Agora
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setBillingDialogOpen(false)}>Fechar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </motion.div>
       </div>
     </div>

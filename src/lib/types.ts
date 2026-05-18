@@ -40,6 +40,8 @@ export interface Profile {
   plan_id: PlanId;
   subscription_status: SubscriptionStatus;
   subscription_id: string | null;
+  stripe_customer_id: string | null;
+  kiwify_subscription_id: string | null;
   payment_provider: "stripe" | "kiwify" | null;
   credits_balance: number;
   credits_reset_at: string;

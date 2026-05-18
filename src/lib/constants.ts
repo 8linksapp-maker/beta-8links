@@ -225,7 +225,7 @@ export const NAV_ITEMS = {
   business: [
     { href: "/crm", label: "Revenda", icon: "Briefcase", soon: true },
     { href: "/reports", label: "Relatórios", icon: "BarChart3", soon: true },
-    { href: "/courses", label: "Club", icon: "Radio", soon: true },
+    { href: "/courses", label: "Club", icon: "Radio" },
   ],
   bottom: [
     { href: "/support", label: "Suporte", icon: "MessageSquare" },
