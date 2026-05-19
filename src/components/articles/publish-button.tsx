@@ -117,11 +117,13 @@ export function PublishArticleButton({
       // Roteamento via code (backend é fonte de verdade — robusto contra race
       // entre /publish-status e /publish)
       if (data.code === "no_integration") {
+        setStatus(null);   // cache local divergia do backend — invalida
         setChooseOpen(false);
         setNoIntegOpen(true);
         return;
       }
       if (data.code === "choose_integration") {
+        setStatus(null);   // cache local divergia do backend — invalida
         setNoIntegOpen(false);
         setChooseOpen(true);
         return;
@@ -191,14 +193,20 @@ export function PublishArticleButton({
 
       <ChooseIntegrationDialog
         open={chooseOpen}
-        onClose={() => setChooseOpen(false)}
+        onClose={() => {
+          setChooseOpen(false);
+          setStatus(null);   // user pode ter reconfigurado integracao em outra aba
+        }}
         onChoose={(via) => publish(via)}
         publishing={publishing}
       />
 
       <NoIntegrationDialog
         open={noIntegOpen}
-        onClose={() => setNoIntegOpen(false)}
+        onClose={() => {
+          setNoIntegOpen(false);
+          setStatus(null);   // user pode ter saido pra /integracoes e conectado — refetcha no proximo click
+        }}
         siteUrl={status?.siteUrl ?? ""}
       />
 
