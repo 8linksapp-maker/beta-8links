@@ -70,3 +70,6 @@ plan_*.json
 
 # Supabase CLI cache
 supabase/.temp/
+
+.claude-persona
+
