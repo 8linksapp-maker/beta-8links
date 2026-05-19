@@ -186,7 +186,7 @@ export function PublishArticleButton({
         disabled={publishing}
       >
         {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-        {!iconOnly && <span className={size === "sm" ? "text-xs" : ""}>{publishing ? "Publicando..." : label}</span>}
+        {!iconOnly && <span>{publishing ? "Publicando..." : label}</span>}
       </Button>
 
       <ChooseIntegrationDialog

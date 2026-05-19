@@ -39,7 +39,7 @@ const OPTIONS: {
   {
     via: "github",
     title: "GitHub",
-    hint: "Faz commit no repositório. Site atualiza após o deploy (2-5min).",
+    hint: "Commit no seu repo. Site atualiza em 2-5min após o deploy.",
     icon: GitBranch,
     iconBg: "bg-muted text-muted-foreground",
   },
@@ -85,7 +85,7 @@ export function ChooseIntegrationDialog({ open, onClose, onChoose, publishing = 
                 onClick={() => setPicked(opt.via)}
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.98 }}
-                className={`flex flex-col items-center text-center gap-2 p-5 rounded-xl border-2 cursor-pointer transition-colors ${
+                className={`flex flex-col items-center text-center gap-2 p-5 rounded-xl border-2 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                   isPicked
                     ? "border-primary bg-primary/5"
                     : "border-border bg-card hover:border-primary/50 hover:bg-primary/5"

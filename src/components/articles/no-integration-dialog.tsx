@@ -69,7 +69,7 @@ export function NoIntegrationDialog({ open, onClose, siteUrl }: Props) {
               <Link
                 href={opt.href}
                 onClick={onClose}
-                className="flex flex-col items-center text-center gap-2 p-5 rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-colors h-full"
+                className="flex flex-col items-center text-center gap-2 p-5 rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-colors h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${opt.iconBg}`}>
                   <opt.icon className="w-5 h-5" />
