@@ -25,6 +25,7 @@ journey-*.png
 # QA screenshots (live runner) — ephemerais, regeram a cada execucao
 scripts/qa/screenshots/
 scripts/qa/done-report-draft.md
+scripts/qa/.dev-server.log
 
 # next.js
 /.next/

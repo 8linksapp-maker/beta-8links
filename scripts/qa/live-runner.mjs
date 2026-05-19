@@ -1,22 +1,24 @@
 /**
- * Live QA runner — Cenarios 1-5 do feat-fix-botao-publicar-artigo.
+ * Live QA runner — Hotfix publish-status cache stale + cenarios legados.
  *
  * SEGURANCA:
  * - Senha NUNCA hardcoded. Le de process.env.QA_PASSWORD.
- * - Se senha ausente: aborta com mensagem leiga.
  * - Logs NUNCA imprimem senha (so confirma "login OK" / "login FAIL").
  *
  * Uso:
  *   $env:QA_PASSWORD = "..."
+ *   $env:E2E_BASE_URL = "http://localhost:3001"   (opcional, default 3000)
  *   node scripts/qa/live-runner.mjs [stage]
  *
- * Stages disponiveis:
- *   smoke-login    — Sanity: login + screenshot dashboard. PRIMEIRO sempre.
- *   c2-github      — Cenario 2: site GH-only + publica artigo + valida commit
- *   c4-noint       — Cenario 4: NoIntegrationDialog + deeplink /integracoes?open=
- *   c5-empty       — Cenario 5.4: conteudo vazio
- *
- * (Cenario 1/3/5.2/5.3 ficam em followup — precisam WP creds ou destrutivos)
+ * Stages:
+ *   smoke-login    — Sanity: login + screenshot dashboard
+ *   ha-deeplink    — Hotfix Cenario A: NoIntegrationDialog → click Conectar GH → volta → click Publicar → REFETCH /publish-status (FIX)
+ *   hb-close-only  — Hotfix Cenario B: NoIntegrationDialog → Agora nao (ou ESC) → click Publicar → REFETCH /publish-status
+ *   hd-regress     — Hotfix Cenario D: regressao cenario 4 (NoIntegrationDialog + deeplink + ESC limpa URL)
+ *   c2-github      — Cenario 2 legado (bloqueado por OAuth)
+ *   c4-noint       — Cenario 4 legado
+ *   c5-empty       — Cenario 5.4 (TODO)
+ *   cleanup        — deletar sites qa-teste (limitado por UI)
  */
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
@@ -202,6 +204,181 @@ async function runC5Empty() {
   return true;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// HOTFIX: publish-status cache stale
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Helper: do login → trocar pra site sem integração → /articles → 1o click Publicar.
+ * Retorna o articleId que foi clicado (extraído da chamada GET /publish-status).
+ */
+async function setupNoIntegrationFirstClick(stagePrefix) {
+  const ok = await login();
+  if (!ok) return null;
+
+  console.log(`[${stagePrefix}] Setup — troca contexto pra site SEM integracao (marina-contadora)`);
+  await page.goto(`${BASE_URL}/articles`, { waitUntil: "networkidle" });
+  await page.waitForTimeout(1500);
+
+  // Troca site context via header dropdown
+  const siteSwitcher = page.locator('button:has-text("marina-contadora"), button:has-text("brunomedeiroseo"), button:has-text("qa-teste-blog")').first();
+  await siteSwitcher.click({ timeout: 5_000 });
+  await page.waitForTimeout(800);
+  await page.getByText(/marina-contadora/).first().click({ timeout: 5_000 });
+  await page.waitForTimeout(2000);
+  await shot(`${stagePrefix}-01-marina-context`);
+
+  // Conta calls antes
+  apiCalls.length = 0;
+  const publicarCount = await page.getByRole("button", { name: /publicar/i }).count();
+  console.log(`[${stagePrefix}] botões Publicar: ${publicarCount}`);
+  if (publicarCount === 0) {
+    console.log(`[${stagePrefix}] FAIL — sem botão Publicar`);
+    return null;
+  }
+
+  // 1o click Publicar
+  await page.getByRole("button", { name: /publicar/i }).first().click();
+  await page.waitForTimeout(2500);
+  await shot(`${stagePrefix}-02-first-publicar`);
+
+  const dialogOpen = await page.getByText(/Conecte uma integração primeiro/i).count();
+  console.log(`[${stagePrefix}] NoIntegrationDialog aberto (1a vez): ${dialogOpen > 0 ? "[ok]" : "[X]"}`);
+  if (dialogOpen === 0) return null;
+
+  // Extrai articleId do call do /publish-status
+  const statusCall = apiCalls.find(c => c.url.includes("/publish-status"));
+  const articleId = statusCall ? statusCall.url.match(/articles\/([^/]+)\/publish-status/)?.[1] : null;
+  console.log(`[${stagePrefix}] articleId capturado: ${articleId}`);
+  console.log(`[${stagePrefix}] calls após 1o click:`, apiCalls.map(c => `${c.method} ${c.url} → ${c.status}`));
+
+  return articleId;
+}
+
+/**
+ * Cenário A — Hotfix:
+ * 1o click Publicar → NoIntegrationDialog → click "Conectar GitHub" (Link onClick=onClose)
+ * → navega pra /integracoes?open=github → volta pra /articles (sidebar)
+ * → 2o click Publicar
+ * VALIDAÇÃO: GET /publish-status é chamado DE NOVO (cache invalidado pelo fix).
+ * Sem o fix, status[useState] persiste e o GET é pulado.
+ */
+async function runHotfixA() {
+  const articleId = await setupNoIntegrationFirstClick("ha");
+  if (!articleId) return false;
+
+  console.log("[ha] Step 2 — click Conectar GitHub (dispara onClose → setStatus(null) + navega)");
+  await page.locator('a[href*="/integracoes?open=github"]').first().click();
+  await page.waitForTimeout(2500);
+  await shot("ha-03-integracoes-open-github");
+  console.log(`[ha] URL pós-click: ${page.url()}`);
+
+  // Em /integracoes — não vou conectar GH de verdade (OAuth aponta beta).
+  // Fecha o dialog auto-aberto via ESC.
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(1500);
+  await shot("ha-04-dialog-closed");
+
+  console.log("[ha] Step 3 — volta pra /articles via sidebar (preserva soft-nav)");
+  await page.getByRole("link", { name: /^Artigos$/ }).first().click();
+  await page.waitForURL(/\/articles$/, { timeout: 10_000 });
+  await page.waitForTimeout(2000);
+  await shot("ha-05-back-to-articles");
+
+  // Re-trocar contexto pra marina (sidebar pode ter mudado)
+  const siteSwitcherCtx = page.locator('button:has-text("marina-contadora"), button:has-text("brunomedeiroseo"), button:has-text("qa-teste-blog")').first();
+  const ctxText = await siteSwitcherCtx.textContent().catch(() => "");
+  if (!ctxText.includes("marina-contadora")) {
+    await siteSwitcherCtx.click();
+    await page.waitForTimeout(500);
+    await page.getByText(/marina-contadora/).first().click();
+    await page.waitForTimeout(2000);
+  }
+  await shot("ha-06-marina-restored");
+
+  // 2o click Publicar — esse eh o teste do FIX
+  apiCalls.length = 0;
+  console.log("[ha] Step 4 — 2o click Publicar (esperado: REFETCH /publish-status)");
+  await page.getByRole("button", { name: /publicar/i }).first().click();
+  await page.waitForTimeout(3000);
+  await shot("ha-07-second-publicar");
+
+  const refetched = apiCalls.find(c => c.url.includes("/publish-status"));
+  const dialogReopened = await page.getByText(/Conecte uma integração primeiro/i).count();
+  console.log(`[ha] calls após 2o click:`, apiCalls.map(c => `${c.method} ${c.url} → ${c.status}`));
+  console.log(`[ha] REFETCH /publish-status: ${refetched ? "[ok]" : "[X] FAIL — cache stale"}`);
+  console.log(`[ha] Dialog reabriu: ${dialogReopened > 0 ? "sim (esperado, sem integração)" : "não"}`);
+
+  return !!refetched;
+}
+
+/**
+ * Cenário B — Hotfix:
+ * 1o click Publicar → NoIntegrationDialog → ESC (sem navegar)
+ * → 2o click Publicar
+ * VALIDAÇÃO: GET /publish-status chamado DE NOVO (onClose dispara setStatus(null)).
+ */
+async function runHotfixB() {
+  const articleId = await setupNoIntegrationFirstClick("hb");
+  if (!articleId) return false;
+
+  console.log("[hb] Step 2 — fecha dialog com ESC (dispara onClose → setStatus(null))");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(1500);
+  await shot("hb-03-after-esc");
+
+  const dialogClosed = await page.getByText(/Conecte uma integração primeiro/i).count();
+  console.log(`[hb] Dialog fechou: ${dialogClosed === 0 ? "[ok]" : "[X]"}`);
+
+  // 2o click — teste do FIX
+  apiCalls.length = 0;
+  console.log("[hb] Step 3 — 2o click Publicar (esperado: REFETCH /publish-status)");
+  await page.getByRole("button", { name: /publicar/i }).first().click();
+  await page.waitForTimeout(3000);
+  await shot("hb-04-second-publicar");
+
+  const refetched = apiCalls.find(c => c.url.includes("/publish-status"));
+  const dialogReopened = await page.getByText(/Conecte uma integração primeiro/i).count();
+  console.log(`[hb] calls após 2o click:`, apiCalls.map(c => `${c.method} ${c.url} → ${c.status}`));
+  console.log(`[hb] REFETCH /publish-status: ${refetched ? "[ok]" : "[X] FAIL — cache stale"}`);
+  console.log(`[hb] Dialog reabriu: ${dialogReopened > 0 ? "[ok] (esperado)" : "[X]"}`);
+
+  return !!refetched && dialogReopened > 0;
+}
+
+/**
+ * Cenário D — Regressão do cenário 4 anterior.
+ * Replica o fluxo dead-end + deeplink WP que JÁ tinha passado, garantindo
+ * que o hotfix não quebrou nada.
+ */
+async function runHotfixD() {
+  const articleId = await setupNoIntegrationFirstClick("hd");
+  if (!articleId) return false;
+
+  // Click "Conectar WordPress" → URL muda → auto-open dialog WP
+  apiCalls.length = 0;
+  console.log("[hd] Step 2 — click Conectar WordPress (deeplink)");
+  await page.locator('a[href*="/integracoes?open=wordpress"]').first().click();
+  await page.waitForTimeout(2500);
+  await shot("hd-03-wp-deeplink");
+
+  const urlAfter = page.url();
+  const wpDialogVisible = await page.getByText(/^WordPress$/).count();
+  const wpUrlOpenParam = urlAfter.includes("open=wordpress");
+  console.log(`[hd] URL pós-click WP: ${urlAfter}`);
+  console.log(`[hd] auto-open WP dialog: ${wpDialogVisible > 0 ? "[ok]" : "[X]"} | URL?open=wordpress: ${wpUrlOpenParam ? "[ok]" : "[X]"}`);
+
+  // ESC fecha + URL volta limpa
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(1500);
+  await shot("hd-04-after-esc");
+  const urlAfterClose = page.url();
+  const urlClean = !urlAfterClose.includes("open=");
+  console.log(`[hd] URL pós-close: ${urlAfterClose} | limpa: ${urlClean ? "[ok]" : "[X]"}`);
+
+  return wpDialogVisible > 0 && wpUrlOpenParam && urlClean;
+}
+
 async function runCleanup() {
   const ok = await login();
   if (!ok) return false;
@@ -288,6 +465,15 @@ try {
       break;
     case "cleanup":
       success = await runCleanup();
+      break;
+    case "ha-deeplink":
+      success = await runHotfixA();
+      break;
+    case "hb-close-only":
+      success = await runHotfixB();
+      break;
+    case "hd-regress":
+      success = await runHotfixD();
       break;
     default:
       console.error(`[fatal] stage desconhecido: ${STAGE}`);
