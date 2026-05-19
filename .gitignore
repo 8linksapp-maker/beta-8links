@@ -22,6 +22,10 @@
 /.playwright-mcp
 journey-*.png
 
+# QA screenshots (live runner) — ephemerais, regeram a cada execucao
+scripts/qa/screenshots/
+scripts/qa/done-report-draft.md
+
 # next.js
 /.next/
 /out/
