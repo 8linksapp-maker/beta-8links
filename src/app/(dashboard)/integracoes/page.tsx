@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { Suspense, useState, useMemo, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import {
@@ -67,9 +68,36 @@ function isConnected(site: any, key: IntegrationKey): boolean {
 }
 
 export default function IntegracoesPage() {
+  // useSearchParams precisa de Suspense boundary em pages Next.js 16
+  return (
+    <Suspense fallback={null}>
+      <IntegracoesPageInner />
+    </Suspense>
+  );
+}
+
+function IntegracoesPageInner() {
   const { sites, loading: sitesLoading, reload } = useSite();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [openIntegration, setOpenIntegration] = useState<IntegrationKey | null>(null);
+
+  // Hidrata o dialog aberto via ?open= (ex.: vindo de /artigos com NoIntegrationDialog)
+  useEffect(() => {
+    const open = searchParams.get("open");
+    if (open === "wordpress" || open === "github" || open === "google") {
+      setOpenIntegration(open);
+    }
+  }, [searchParams]);
+
+  // Ao fechar o dialog, limpa o ?open= da URL pra F5 não reabrir
+  const handleCloseDialog = () => {
+    setOpenIntegration(null);
+    if (searchParams.get("open")) {
+      router.replace("/integracoes", { scroll: false });
+    }
+  };
 
   const totalSites = sites.length;
 
@@ -255,7 +283,7 @@ export default function IntegracoesPage() {
           key={integration.key}
           integration={integration}
           open={openIntegration === integration.key}
-          onClose={() => setOpenIntegration(null)}
+          onClose={handleCloseDialog}
           sites={sites}
           onUpdate={reload}
         />

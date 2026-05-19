@@ -11,8 +11,12 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import { ChooseIntegrationDialog } from "./choose-integration-dialog";
+import { NoIntegrationDialog } from "./no-integration-dialog";
 
 type PublishedInfo = { publishedUrl: string };
+type Via = "wordpress" | "github";
+type PublishStatus = { hasWp: boolean; hasGithub: boolean; siteId: string; siteUrl: string };
 
 interface Props extends Pick<ButtonProps, "size" | "variant" | "className"> {
   articleId: string;
@@ -30,8 +34,15 @@ interface Props extends Pick<ButtonProps, "size" | "variant" | "className"> {
 }
 
 /**
- * Publishes an article to the linked client_site's WordPress.
- * Triggers a just-in-time WordPress setup modal if the site isn't connected yet.
+ * Publishes an article to the linked client_site.
+ * Routes to WordPress or GitHub depending on what the site has connected:
+ * - none connected → NoIntegrationDialog (CTA pro /integracoes)
+ * - só WP → publica direto
+ * - só GitHub → publica direto (commit no repo)
+ * - ambos → ChooseIntegrationDialog
+ *
+ * Mantém o JIT ConnectWordPressDialog se o backend devolver `wp_not_configured`
+ * (borda: user escolheu WP mas site não tem credencial salva ainda).
  */
 export function PublishArticleButton({
   articleId,
@@ -44,28 +55,99 @@ export function PublishArticleButton({
   beforePublish,
 }: Props) {
   const [publishing, setPublishing] = useState(false);
+  const [status, setStatus] = useState<PublishStatus | null>(null);
+  const [chooseOpen, setChooseOpen] = useState(false);
+  const [noIntegOpen, setNoIntegOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
   const [setupSiteId, setSetupSiteId] = useState<string | null>(null);
   const [setupSiteUrl, setSetupSiteUrl] = useState<string>("");
 
-  const publish = async () => {
+  async function ensureStatus(): Promise<PublishStatus | null> {
+    if (status) return status;
+    try {
+      const res = await fetch(`/api/articles/${articleId}/publish-status`);
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Não conseguimos abrir agora.");
+        return null;
+      }
+      const s: PublishStatus = {
+        hasWp: !!data.hasWp,
+        hasGithub: !!data.hasGithub,
+        siteId: data.siteId ?? "",
+        siteUrl: data.siteUrl ?? "",
+      };
+      setStatus(s);
+      return s;
+    } catch {
+      toast.error("Não conseguimos abrir agora. Tente de novo.");
+      return null;
+    }
+  }
+
+  async function onClickPublish() {
+    if (publishing) return;
+    const s = await ensureStatus();
+    if (!s) return;
+    if (!s.hasWp && !s.hasGithub) {
+      setNoIntegOpen(true);
+      return;
+    }
+    if (s.hasWp && s.hasGithub) {
+      setChooseOpen(true);
+      return;
+    }
+    // Só uma integração conectada — vai direto
+    await publish(undefined);
+  }
+
+  async function publish(via: Via | undefined) {
     setPublishing(true);
     try {
       if (beforePublish) {
         await beforePublish();
       }
-      const res = await fetch(`/api/articles/${articleId}/publish`, { method: "POST" });
+      const res = await fetch(`/api/articles/${articleId}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(via ? { via } : {}),
+      });
       const data = await res.json();
 
+      // Roteamento via code (backend é fonte de verdade — robusto contra race
+      // entre /publish-status e /publish)
+      if (data.code === "no_integration") {
+        setChooseOpen(false);
+        setNoIntegOpen(true);
+        return;
+      }
+      if (data.code === "choose_integration") {
+        setNoIntegOpen(false);
+        setChooseOpen(true);
+        return;
+      }
       if (data.code === "wp_not_configured") {
-        // JIT — open the setup modal with the relevant siteId + locked siteUrl
+        // JIT — abre setup do WP com siteId + URL travada
         setSetupSiteId(data.siteId ?? null);
         setSetupSiteUrl(data.siteUrl ?? "");
+        setChooseOpen(false);
         setSetupOpen(true);
         return;
       }
       if (data.code === "wp_auth_failed") {
-        toast.error(data.error);
+        toast.error(data.error || "Sua conexão com WordPress falhou. Reconecte em Integrações.");
+        return;
+      }
+      if (data.code === "github_auth_failed") {
+        toast.error("Sua conexão com GitHub venceu. Reconecte em Integrações.");
+        return;
+      }
+      if (data.code === "github_repo_error") {
+        toast.error(data.error || "Não conseguimos fazer commit no GitHub.");
+        return;
+      }
+      if (data.code === "slug_conflict") {
+        toast.error(data.error || "Esse artigo já existe no repositório.");
         return;
       }
       if (!res.ok || !data.success) {
@@ -73,7 +155,15 @@ export function PublishArticleButton({
         return;
       }
 
-      toast.success("Publicado no seu site!", {
+      // Sucesso — fecha o chooser (caso tenha vindo dele) e toast por integração
+      setChooseOpen(false);
+      const finalVia: Via = data.via ?? via ?? (status?.hasWp ? "wordpress" : "github");
+      const successCopy =
+        finalVia === "github"
+          ? "Commit feito! Vai aparecer no site em 2-5min após o deploy."
+          : "Publicado no seu site!";
+
+      toast.success(successCopy, {
         action: data.publishedUrl
           ? { label: "Abrir", onClick: () => window.open(data.publishedUrl, "_blank") }
           : undefined,
@@ -84,7 +174,7 @@ export function PublishArticleButton({
     } finally {
       setPublishing(false);
     }
-  };
+  }
 
   return (
     <>
@@ -92,12 +182,25 @@ export function PublishArticleButton({
         size={size}
         variant={variant}
         className={className}
-        onClick={publish}
+        onClick={onClickPublish}
         disabled={publishing}
       >
         {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-        {!iconOnly && <span className={size === "sm" ? "text-xs" : ""}>{publishing ? "Publicando..." : label}</span>}
+        {!iconOnly && <span>{publishing ? "Publicando..." : label}</span>}
       </Button>
+
+      <ChooseIntegrationDialog
+        open={chooseOpen}
+        onClose={() => setChooseOpen(false)}
+        onChoose={(via) => publish(via)}
+        publishing={publishing}
+      />
+
+      <NoIntegrationDialog
+        open={noIntegOpen}
+        onClose={() => setNoIntegOpen(false)}
+        siteUrl={status?.siteUrl ?? ""}
+      />
 
       <ConnectWordPressDialog
         siteId={setupSiteId}
@@ -106,8 +209,10 @@ export function PublishArticleButton({
         onClose={() => setSetupOpen(false)}
         onConnected={() => {
           setSetupOpen(false);
-          // Auto-retry publish after connection succeeds
-          publish();
+          // Invalida cache de status pra refetchar (pode ter mudado hasWp)
+          setStatus(null);
+          // Auto-retry: como agora tem WP, manda explícito
+          publish("wordpress");
         }}
       />
     </>
