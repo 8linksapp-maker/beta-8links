@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   Plug, Plug2, Check, X, Loader2, ExternalLink,
   LayoutGrid, List, ChevronRight, Sparkles, Globe2, GitBranch,
-  Trash2, RefreshCw,
+  Trash2, RefreshCw, AlertTriangle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -84,12 +84,20 @@ function IntegracoesPageInner() {
   const [openIntegration, setOpenIntegration] = useState<IntegrationKey | null>(null);
 
   // Hidrata o dialog aberto via ?open= (ex.: vindo de /artigos com NoIntegrationDialog)
+  // e via ?success=github_connected (volta do OAuth do GitHub) — abre dialog
+  // automaticamente pra user selecionar o repositorio.
   useEffect(() => {
     const open = searchParams.get("open");
+    const success = searchParams.get("success");
     if (open === "wordpress" || open === "github" || open === "google") {
       setOpenIntegration(open);
     }
-  }, [searchParams]);
+    if (success === "github_connected") {
+      setOpenIntegration("github");
+      // limpa a URL pra F5 nao reabrir
+      router.replace("/integracoes", { scroll: false });
+    }
+  }, [searchParams, router]);
 
   // Ao fechar o dialog, limpa o ?open= da URL pra F5 não reabrir
   const handleCloseDialog = () => {
@@ -333,6 +341,8 @@ function IntegrationDialog({ integration, open, onClose, sites, onUpdate }: {
   );
 }
 
+type Repo = { id?: number; fullName: string; name: string };
+
 function SiteIntegrationRow({ site, integration, onUpdate }: {
   site: any;
   integration: Integration;
@@ -340,8 +350,63 @@ function SiteIntegrationRow({ site, integration, onUpdate }: {
 }) {
   const [expanded, setExpanded] = useState(false);
   const [chooserOpen, setChooserOpen] = useState(false);
+  const [reposExpanded, setReposExpanded] = useState(false);
+  const [repos, setRepos] = useState<Repo[]>([]);
+  const [loadingRepos, setLoadingRepos] = useState(false);
+  const [savingRepo, setSavingRepo] = useState(false);
   const connected = isConnected(site, integration.key);
   const cleanUrl = (site.url ?? "").replace(/^https?:\/\//, "").replace(/\/+$/, "");
+
+  // GitHub conectado mas sem repo selecionado — estado intermediario que bloqueia publish
+  const githubNeedsRepo =
+    integration.key === "github" && !!site.github_token && !site.github_repo;
+
+  async function loadRepos() {
+    setLoadingRepos(true);
+    try {
+      const res = await fetch(`/api/integrations/github-repos?siteId=${site.id}`);
+      const data = await res.json();
+      if (Array.isArray(data.repos)) {
+        setRepos(data.repos);
+      } else {
+        setRepos([]);
+        if (data.error) toast.error("Não conseguimos carregar seus repositórios. Tente reconectar.");
+      }
+    } catch {
+      setRepos([]);
+      toast.error("Não conseguimos carregar seus repositórios.");
+    } finally {
+      setLoadingRepos(false);
+    }
+  }
+
+  async function pickRepo(repoFullName: string) {
+    setSavingRepo(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("client_sites")
+        .update({ github_repo: repoFullName })
+        .eq("id", site.id);
+      if (error) throw error;
+      toast.success(`Repositório ${repoFullName} salvo!`);
+      setReposExpanded(false);
+      await onUpdate();
+    } catch {
+      toast.error("Não conseguimos salvar agora. Tente de novo.");
+    } finally {
+      setSavingRepo(false);
+    }
+  }
+
+  // Auto-abre o repo picker quando user volta de OAuth com token mas sem repo
+  useEffect(() => {
+    if (githubNeedsRepo && !reposExpanded) {
+      setReposExpanded(true);
+      loadRepos();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [githubNeedsRepo]);
 
   // What "Reconfigurar" does, per integration
   const reconfigure = () => {
@@ -357,6 +422,12 @@ function SiteIntegrationRow({ site, integration, onUpdate }: {
 
   // Click handler for the row's main button
   const onActionClick = () => {
+    // Caso intermediario: GitHub conectado mas sem repo — abre direto o picker
+    if (githubNeedsRepo) {
+      setReposExpanded(true);
+      if (repos.length === 0 && !loadingRepos) loadRepos();
+      return;
+    }
     if (connected) {
       setChooserOpen(true);
     } else {
@@ -371,28 +442,46 @@ function SiteIntegrationRow({ site, integration, onUpdate }: {
     }
   };
 
+  // Texto de status do site (Conectado / Não conectado / Falta repo)
+  let statusEl: React.ReactNode;
+  if (githubNeedsRepo) {
+    statusEl = (
+      <span className="text-warning font-semibold inline-flex items-center gap-1">
+        <AlertTriangle className="w-3 h-3" /> Falta escolher repositório
+      </span>
+    );
+  } else if (connected) {
+    statusEl = (
+      <span className="text-success font-semibold inline-flex items-center gap-1">
+        <Check className="w-3 h-3" /> Conectado
+      </span>
+    );
+  } else {
+    statusEl = "Não conectado";
+  }
+
+  // Label do botao
+  let actionLabel: string;
+  if (githubNeedsRepo) actionLabel = "Escolher repositório";
+  else if (connected) actionLabel = "Gerenciar";
+  else actionLabel = "Conectar";
+
   return (
     <div className="border border-border rounded-lg overflow-hidden">
       <div className="flex items-center gap-3 p-3.5 hover:bg-muted/20">
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold truncate">{cleanUrl}</p>
-          <p className="text-xs text-muted-foreground">
-            {connected ? (
-              <span className="text-success font-semibold inline-flex items-center gap-1">
-                <Check className="w-3 h-3" /> Conectado
-              </span>
-            ) : (
-              "Não conectado"
-            )}
-          </p>
+          <p className="text-xs text-muted-foreground">{statusEl}</p>
         </div>
 
-        <Button size="sm" variant={connected ? "outline" : "default"} className="gap-1.5"
-          onClick={onActionClick}>
-          <Plug className="w-3.5 h-3.5" />
-          {connected
-            ? (integration.key === "wordpress" ? "Gerenciar" : "Gerenciar")
-            : "Conectar"}
+        <Button
+          size="sm"
+          variant={githubNeedsRepo ? "default" : connected ? "outline" : "default"}
+          className="gap-1.5"
+          onClick={onActionClick}
+        >
+          {githubNeedsRepo ? <GitBranch className="w-3.5 h-3.5" /> : <Plug className="w-3.5 h-3.5" />}
+          {actionLabel}
         </Button>
       </div>
 
@@ -405,6 +494,76 @@ function SiteIntegrationRow({ site, integration, onUpdate }: {
         />
       )}
 
+      {/* GitHub repo picker inline */}
+      {reposExpanded && integration.key === "github" && (
+        <div className="border-t border-border bg-warning-light/10 p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-warning mt-0.5 shrink-0" />
+            <div className="text-xs leading-relaxed flex-1">
+              <p className="font-semibold mb-1">
+                {site.github_repo ? "Trocar repositório" : "Falta selecionar o repositório"}
+              </p>
+              <p className="text-muted-foreground">
+                {site.github_repo
+                  ? "Os próximos artigos serão commitados no repositório escolhido."
+                  : "Você conectou o GitHub, agora escolha em qual repositório publicar os artigos."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReposExpanded(false)}
+              className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              aria-label="Fechar"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {loadingRepos ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : repos.length === 0 ? (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Nenhum repositório encontrado. Verifique se você tem repos no GitHub.
+              </p>
+              <Button size="sm" variant="outline" onClick={loadRepos} className="gap-1.5">
+                <RefreshCw className="w-3 h-3" /> Tentar de novo
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+              {repos.map((r) => {
+                const isCurrent = site.github_repo === r.fullName;
+                return (
+                  <button
+                    key={r.fullName}
+                    type="button"
+                    onClick={() => pickRepo(r.fullName)}
+                    disabled={savingRepo || isCurrent}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors disabled:cursor-not-allowed text-left ${
+                      isCurrent
+                        ? "border-success bg-success-light/20 text-foreground"
+                        : "border-border bg-card hover:border-primary/50 hover:bg-primary/5 disabled:opacity-60"
+                    }`}
+                  >
+                    <GitBranch className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="font-mono text-xs truncate flex-1">{r.fullName}</span>
+                    {isCurrent && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-success shrink-0">
+                        <Check className="w-3 h-3" /> Atual
+                      </span>
+                    )}
+                    {savingRepo && !isCurrent && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* "Site conectado" chooser modal */}
       <ConnectedChooserDialog
         open={chooserOpen}
@@ -412,18 +571,28 @@ function SiteIntegrationRow({ site, integration, onUpdate }: {
         site={site}
         integration={integration}
         onReconfigure={reconfigure}
+        onPickRepo={
+          integration.key === "github"
+            ? () => {
+                setChooserOpen(false);
+                setReposExpanded(true);
+                if (repos.length === 0 && !loadingRepos) loadRepos();
+              }
+            : undefined
+        }
         onUpdate={onUpdate}
       />
     </div>
   );
 }
 
-function ConnectedChooserDialog({ open, onClose, site, integration, onReconfigure, onUpdate }: {
+function ConnectedChooserDialog({ open, onClose, site, integration, onReconfigure, onPickRepo, onUpdate }: {
   open: boolean;
   onClose: () => void;
   site: any;
   integration: Integration;
   onReconfigure: () => void;
+  onPickRepo?: () => void;
   onUpdate: () => Promise<void>;
 }) {
   const [disconnecting, setDisconnecting] = useState(false);
@@ -504,6 +673,26 @@ function ConnectedChooserDialog({ open, onClose, site, integration, onReconfigur
               {reconfigureHint}
             </p>
           </motion.button>
+
+          {onPickRepo && (
+            <motion.button
+              type="button"
+              onClick={onPickRepo}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex flex-col items-center text-center gap-2 p-5 rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-colors"
+            >
+              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                <GitBranch className="w-5 h-5 text-primary" />
+              </div>
+              <p className="text-sm font-bold">Trocar repositório</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {site.github_repo
+                  ? `Atual: ${site.github_repo}. Pode escolher outro.`
+                  : "Escolha em qual repo publicar."}
+              </p>
+            </motion.button>
+          )}
 
           <motion.button
             type="button"
