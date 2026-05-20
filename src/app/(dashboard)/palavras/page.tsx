@@ -321,12 +321,12 @@ export default function PalavrasPage() {
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-3xl sm:text-4xl font-black font-[family-name:var(--font-display)] tracking-tight">Suas palavras</h1>
+      <div>
+        <h1 className="text-3xl sm:text-4xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">Suas palavras</h1>
         <p className="text-base text-muted-foreground mt-2 leading-relaxed max-w-2xl">
           As palavras que você quer aparecer no Google. Pra cada uma, você cria backlinks ou escreve artigos.
         </p>
-      </motion.div>
+      </div>
 
       {/* KPIs */}
       <PageMetrics

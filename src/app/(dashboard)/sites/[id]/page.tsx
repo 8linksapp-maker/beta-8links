@@ -287,10 +287,9 @@ export default function SiteDetailPage() {
 
       {/* Score + KPIs */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="card-beam relative overflow-hidden p-5">
-          <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full bg-primary/5 blur-2xl" />
+        <Card className="relative overflow-hidden p-5">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono mb-1">Score SEO</p>
-          <p className="text-3xl font-black font-[family-name:var(--font-display)] tracking-tight text-gradient relative"><NumberTicker value={siteData.seoScore} /></p>
+          <p className="text-3xl font-extrabold font-[family-name:var(--font-display)] tracking-tight text-primary relative"><NumberTicker value={siteData.seoScore} /></p>
           <p className="text-[10px] text-muted-foreground font-mono">/100</p>
         </Card>
         {[
@@ -304,7 +303,7 @@ export default function SiteDetailPage() {
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono">{kpi.label}</span>
               <kpi.icon className="w-4 h-4 text-primary" />
             </div>
-            <p className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight">
+            <p className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">
               <NumberTicker value={kpi.value} />{kpi.suffix && <span className="text-sm text-muted-foreground">{kpi.suffix}</span>}
             </p>
             {kpi.change && <p className="text-xs text-success font-semibold font-mono mt-0.5">{kpi.change}</p>}

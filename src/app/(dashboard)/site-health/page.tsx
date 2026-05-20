@@ -173,7 +173,7 @@ export default function SiteHealthPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Score Tecnico</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-black font-[family-name:var(--font-display)] tabular-nums text-primary">
+                    <span className="text-3xl font-extrabold font-[family-name:var(--font-display)] tabular-nums text-primary">
                       <NumberTicker value={technicalScore} />
                     </span>
                     <span className="text-sm text-muted-foreground">/100</span>

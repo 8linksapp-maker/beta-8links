@@ -98,7 +98,7 @@ export function AppSidebar({ collapsed, onToggle, userName = "Usuário", userPla
             <LinkIcon className="w-4 h-4 text-white" />
           </div>
           {!collapsed && (
-            <span className="text-sm font-black text-white font-[family-name:var(--font-display)] tracking-tight">
+            <span className="text-sm font-extrabold text-white font-[family-name:var(--font-display)] tracking-tight">
               8links
             </span>
           )}

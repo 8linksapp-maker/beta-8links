@@ -18,7 +18,7 @@ function WhatsAppIcon({ className = "w-6 h-6" }: { className?: string }) {
 
 function GradientAvatar({ className = "w-10 h-10" }: { className?: string }) {
   return (
-    <div className={`${className} rounded-full bg-gradient-to-br from-primary via-[hsl(35,100%,55%)] to-[hsl(20,100%,50%)] flex items-center justify-center font-black text-white shadow-md ring-2 ring-card`}>
+    <div className={`${className} rounded-full bg-gradient-to-br from-primary via-[hsl(35,100%,55%)] to-[hsl(20,100%,50%)] flex items-center justify-center font-extrabold text-white shadow-md ring-2 ring-card`}>
       <span className="text-base">8</span>
     </div>
   );

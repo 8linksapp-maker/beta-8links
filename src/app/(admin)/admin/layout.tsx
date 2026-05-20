@@ -44,7 +44,7 @@ export default function AdminLayout({
             <LinkIcon className="w-4 h-4 text-white" />
           </div>
           <div>
-            <span className="text-sm font-black font-[family-name:var(--font-display)] tracking-tight">8links</span>
+            <span className="text-sm font-extrabold font-[family-name:var(--font-display)] tracking-tight">8links</span>
             <span className="text-[10px] font-mono text-destructive block -mt-0.5">ADMIN</span>
           </div>
         </div>

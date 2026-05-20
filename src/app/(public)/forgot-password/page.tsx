@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] flex items-center justify-center mx-auto mb-4 shadow-[0_0_32px_hsl(24_100%_55%/0.2)]">
             <LinkIcon className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight">
+          <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">
             Recuperar senha
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Enviaremos um link de recuperação</p>

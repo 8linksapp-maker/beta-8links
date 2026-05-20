@@ -237,7 +237,7 @@ export default function SettingsPage() {
           {/* Billing */}
           {activeTab === "billing" && (
             <div className="space-y-4">
-              <Card className="card-beam relative overflow-hidden">
+              <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -248,7 +248,7 @@ export default function SettingsPage() {
                         const billingLabel = plan.billing === "yearly" ? "/ano" : plan.billing === "once" ? " único" : "/mês";
                         return (
                           <>
-                            <p className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mt-1">
+                            <p className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mt-1">
                               {plan.name}
                               <Badge variant={profile?.subscription_status === "active" ? "success" : profile?.subscription_status === "trialing" ? "info" : "outline"} className="ml-2">
                                 {profile?.subscription_status === "active" ? "Ativo" : profile?.subscription_status === "trialing" ? "Trial" : profile?.subscription_status === "past_due" ? "Pendente" : "Inativo"}
@@ -264,7 +264,7 @@ export default function SettingsPage() {
                       const billingLabel = plan.billing === "yearly" ? "/ano" : plan.billing === "once" ? " único" : "/mês";
                       return (
                         <div className="text-right">
-                          <p className="text-2xl font-black font-[family-name:var(--font-display)]">R$ {plan.price}<span className="text-sm text-muted-foreground font-normal">{billingLabel}</span></p>
+                          <p className="text-2xl font-extrabold font-[family-name:var(--font-display)]">R$ {plan.price}<span className="text-sm text-muted-foreground font-normal">{billingLabel}</span></p>
                         </div>
                       );
                     })()}

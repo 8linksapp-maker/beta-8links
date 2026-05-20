@@ -7,7 +7,7 @@ const statusConfig = {
   processing: { label: "Processing", dotClass: "bg-info dot-pulse",          textClass: "text-info",             bgClass: "bg-info-light" },
   pending:    { label: "Pending",    dotClass: "bg-warning",                textClass: "text-warning",          bgClass: "bg-warning-light" },
   paused:     { label: "Paused",     dotClass: "bg-muted-foreground",       textClass: "text-muted-foreground", bgClass: "bg-muted" },
-  error:      { label: "Error",      dotClass: "bg-destructive dot-pulse",  textClass: "text-destructive",      bgClass: "bg-[hsl(0_80%_60%/0.1)]" },
+  error:      { label: "Error",      dotClass: "bg-destructive dot-pulse",  textClass: "text-destructive",      bgClass: "bg-destructive/10" },
 } as const
 
 type StatusType = keyof typeof statusConfig

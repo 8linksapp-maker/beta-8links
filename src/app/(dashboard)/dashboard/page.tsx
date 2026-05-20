@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
 import {
   Sparkles, Plus, Search, FileText, Link as LinkIcon,
   Check, ArrowRight, Loader2, Zap,
@@ -88,8 +87,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       {/* Greeting */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-3xl sm:text-4xl font-black font-[family-name:var(--font-display)] tracking-tight">
+      <div>
+        <h1 className="text-3xl sm:text-4xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">
           {getGreeting()}{userName ? `, ${userName}` : ""}!
         </h1>
         <p className="text-base text-muted-foreground mt-2 leading-relaxed">
@@ -97,57 +96,44 @@ export default function DashboardPage() {
             ? "Vamos posicionar seu site no Google."
             : "Aqui está como o seu site está indo."}
         </p>
-      </motion.div>
+      </div>
 
       {/* Hero — primary CTA */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <Card className="card-beam relative overflow-hidden border-primary/20">
-          <CardContent className="p-8 sm:p-10">
-            <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-            <div className="relative flex flex-col sm:flex-row sm:items-center gap-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] flex items-center justify-center shrink-0 shadow-[0_0_32px_hsl(24_100%_55%/0.3)]">
-                <Sparkles className="w-8 h-8 text-white" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">
-                  {isEmpty ? "Adicione sua primeira palavra" : "Posicione mais palavras"}
-                </h2>
-                <p className="text-base text-muted-foreground mb-5 sm:mb-0 leading-relaxed">
-                  {isEmpty
-                    ? "As palavras que você quer aparecer no Google. Depois você cria backlinks e artigos pra cada uma."
-                    : "Quanto mais palavras no seu plano, mais oportunidades de aparecer no Google."}
-                </p>
-              </div>
-              <Link href="/palavras">
-                <Button size="xl" className="shrink-0 gap-2 w-full sm:w-auto">
-                  <Plus className="w-5 h-5" /> {isEmpty ? "Adicionar palavra" : "Adicionar mais"}
-                </Button>
-              </Link>
+      <Card className="border-primary/20">
+        <CardContent className="p-8 sm:p-10">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shrink-0">
+              <Sparkles className="w-8 h-8 text-white" />
             </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">
+                {isEmpty ? "Adicione sua primeira palavra" : "Posicione mais palavras"}
+              </h2>
+              <p className="text-base text-muted-foreground mb-5 sm:mb-0 leading-relaxed">
+                {isEmpty
+                  ? "As palavras que você quer aparecer no Google. Depois você cria backlinks e artigos pra cada uma."
+                  : "Quanto mais palavras no seu plano, mais oportunidades de aparecer no Google."}
+              </p>
+            </div>
+            <Link href="/palavras">
+              <Button size="xl" className="shrink-0 gap-2 w-full sm:w-auto">
+                <Plus className="w-5 h-5" /> {isEmpty ? "Adicionar palavra" : "Adicionar mais"}
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* KPIs */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-3 gap-4"
-      >
+      <div className="grid grid-cols-3 gap-4">
         <KpiCard icon={Search} label="Palavras no plano" value={stats.keywords} href="/palavras" color="text-primary" />
         <KpiCard icon={LinkIcon} label="Backlinks" value={stats.backlinks} href="/backlinks" color="text-info" />
         <KpiCard icon={FileText} label="Artigos" value={stats.articles} href="/articles" color="text-success" />
-      </motion.div>
+      </div>
 
       {/* Recent activity + checklist */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="lg:col-span-2"
-        >
+        <div className="lg:col-span-2">
           <Card>
             <CardContent className="p-6 sm:p-8">
               <h3 className="text-base font-bold mb-5">Atividade recente</h3>
@@ -180,13 +166,9 @@ export default function DashboardPage() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
+        <div>
           <Card>
             <CardContent className="p-6 sm:p-8">
               <h3 className="text-base font-bold mb-5">Próximos passos</h3>
@@ -213,7 +195,7 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
@@ -230,7 +212,7 @@ function KpiCard({ icon: Icon, label, value, href, color }: {
             <Icon className={`w-5 h-5 ${color}`} />
             <span className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wider font-mono font-semibold">{label}</span>
           </div>
-          <p className={`text-3xl sm:text-4xl font-black font-[family-name:var(--font-display)] ${color}`}>{value}</p>
+          <p className={`text-3xl sm:text-4xl font-extrabold font-[family-name:var(--font-display)] tabular-nums ${color}`}>{value}</p>
         </CardContent>
       </Card>
     </Link>

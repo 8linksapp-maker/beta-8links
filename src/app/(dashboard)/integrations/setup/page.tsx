@@ -544,12 +544,12 @@ function SetupContent() {
             <motion.div key="done" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring" }}>
               <div className="text-center">
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring", damping: 15 }}
-                  className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] flex items-center justify-center mx-auto mb-6 shadow-[0_0_48px_hsl(24_100%_55%/0.3)]">
+                  className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center mx-auto mb-6">
                   <Zap className="w-9 h-9 text-white" />
                 </motion.div>
 
-                <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-3">
-                  Tudo <span className="text-gradient">configurado!</span>
+                <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-3">
+                  Tudo <span className="text-foreground">configurado!</span>
                 </h1>
                 <p className="text-muted-foreground mb-6">
                   {connectedCount === 0 && "Nenhuma integração conectada — você pode configurar depois."}
@@ -582,10 +582,9 @@ function SetupContent() {
                   </CardContent>
                 </Card>
 
-                <button onClick={() => router.push("/dashboard")}
-                  className="btn-glow rounded-xl px-10 py-4 text-base font-bold inline-flex items-center gap-2 cursor-pointer">
+                <Button size="lg" onClick={() => router.push("/dashboard")}>
                   <Sparkles className="w-5 h-5" /> Ir para o Dashboard
-                </button>
+                </Button>
               </div>
             </motion.div>
           )}

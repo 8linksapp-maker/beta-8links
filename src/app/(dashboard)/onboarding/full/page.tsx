@@ -356,7 +356,7 @@ function OnboardingContent() {
             <div className="w-16 h-16 rounded-2xl bg-primary/10 ring-1 ring-primary/30 flex items-center justify-center mx-auto mb-5 shadow-[0_0_32px_hsl(24_100%_55%/0.15)]">
               <Sparkles className="w-7 h-7 text-primary" />
             </div>
-            <h1 className="text-3xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">Bem-vindo à 8links!</h1>
+            <h1 className="text-3xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">Bem-vindo à 8links!</h1>
             <p className="text-muted-foreground">Como você quer começar?</p>
           </div>
 
@@ -365,7 +365,7 @@ function OnboardingContent() {
               type="button"
               onClick={() => setFlowMode("simple")}
               whileHover={{ y: -4 }}
-              className="text-left card-beam rounded-2xl border bg-card p-6 hover:border-primary/50 transition-colors cursor-pointer"
+              className="text-left rounded-2xl border bg-card p-6 hover:border-primary/50 transition-colors cursor-pointer"
             >
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                 <Rocket className="w-6 h-6 text-primary" />
@@ -386,7 +386,7 @@ function OnboardingContent() {
               type="button"
               onClick={() => setFlowMode("full")}
               whileHover={{ y: -4 }}
-              className="text-left card-beam rounded-2xl border bg-card p-6 hover:border-primary/50 transition-colors cursor-pointer relative"
+              className="text-left rounded-2xl border bg-card p-6 hover:border-primary/50 transition-colors cursor-pointer relative"
             >
               <Badge className="absolute top-4 right-4 text-[9px]">Recomendado</Badge>
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
@@ -430,10 +430,10 @@ function OnboardingContent() {
             <div className="w-16 h-16 rounded-2xl bg-primary/10 ring-1 ring-primary/30 flex items-center justify-center mx-auto mb-5 shadow-[0_0_32px_hsl(24_100%_55%/0.15)]">
               <Globe className="w-7 h-7 text-primary" />
             </div>
-            <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">Qual é o seu site?</h1>
+            <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">Qual é o seu site?</h1>
             <p className="text-muted-foreground">A URL pra onde os backlinks vão apontar.</p>
           </div>
-          <div className="card-beam rounded-2xl border bg-card p-8 relative overflow-hidden">
+          <div className="rounded-2xl border bg-card p-8">
             <Input
               placeholder="https://meusite.com.br"
               value={siteUrl}
@@ -478,10 +478,10 @@ function OnboardingContent() {
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 ring-1 ring-primary/30 flex items-center justify-center mx-auto mb-5 shadow-[0_0_32px_hsl(24_100%_55%/0.15)]">
                   <Globe className="w-7 h-7 text-primary" />
                 </div>
-                <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">Qual é o seu site?</h1>
+                <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">Qual é o seu site?</h1>
                 <p className="text-muted-foreground">Cole a URL do site que quer ranquear no Google.</p>
               </div>
-              <div className="card-beam rounded-2xl border bg-card p-8 relative overflow-hidden">
+              <div className="rounded-2xl border bg-card p-8">
                 <Input placeholder="https://meusite.com.br" value={siteUrl} onChange={(e) => setSiteUrl(e.target.value)} className="h-12 text-base mb-4" onKeyDown={(e) => e.key === "Enter" && siteUrl.trim() && createSite()} />
                 <Button size="xl" className="w-full" disabled={!siteUrl.trim()} onClick={createSite}>Continuar <ArrowRight className="w-4 h-4" /></Button>
               </div>
@@ -495,7 +495,7 @@ function OnboardingContent() {
                 <div className="w-16 h-16 rounded-2xl bg-[#4285F4]/10 ring-1 ring-[#4285F4]/30 flex items-center justify-center mx-auto mb-5">
                   <Search className="w-7 h-7 text-[#4285F4]" />
                 </div>
-                <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">Google Search Console</h1>
+                <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">Google Search Console</h1>
                 <p className="text-muted-foreground">Conecte para ver suas keywords e posições reais.</p>
               </div>
               <div className="rounded-2xl border bg-card p-6 space-y-5">
@@ -519,7 +519,7 @@ function OnboardingContent() {
           {currentStep === "gsc-select" && (
             <motion.div key="gsc" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">Search Console</h1>
+                <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">Search Console</h1>
                 <p className="text-muted-foreground">Selecione o site que corresponde a <span className="text-foreground font-semibold">{siteUrl.replace(/^https?:\/\//, "")}</span></p>
               </div>
               <div className="rounded-2xl border bg-card p-6 space-y-4">
@@ -550,7 +550,7 @@ function OnboardingContent() {
                 <div className="w-16 h-16 rounded-2xl bg-[#F9AB00]/10 ring-1 ring-[#F9AB00]/30 flex items-center justify-center mx-auto mb-5">
                   <BarChart3 className="w-7 h-7 text-[#F9AB00]" />
                 </div>
-                <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">Google Analytics</h1>
+                <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">Google Analytics</h1>
                 <p className="text-muted-foreground">Selecione a propriedade do Analytics para ver o tráfego.</p>
               </div>
               <div className="rounded-2xl border bg-card p-6 space-y-4">
@@ -578,7 +578,7 @@ function OnboardingContent() {
           {currentStep === "analysis" && (
             <motion.div key="analysis" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">{analyzing ? "Analisando seu site..." : "Análise completa!"}</h1>
+                <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">{analyzing ? "Analisando seu site..." : "Análise completa!"}</h1>
                 <p className="text-muted-foreground font-mono text-sm">{siteUrl.replace(/^https?:\/\//, "")}</p>
               </div>
               <div className="rounded-2xl border bg-card p-8 space-y-4">
@@ -595,17 +595,17 @@ function OnboardingContent() {
                     <div className="grid grid-cols-3 gap-3">
                       <div className="bg-muted/30 rounded-xl p-4 text-center">
                         <Shield className="w-5 h-5 text-primary mx-auto mb-2" />
-                        <p className="text-2xl font-black font-[family-name:var(--font-display)]"><NumberTicker value={da} /></p>
+                        <p className="text-2xl font-extrabold font-[family-name:var(--font-display)]"><NumberTicker value={da} /></p>
                         <p className="text-[10px] text-muted-foreground font-mono uppercase mt-1">DA</p>
                       </div>
                       <div className="bg-muted/30 rounded-xl p-4 text-center">
                         <LinkIcon className="w-5 h-5 text-primary mx-auto mb-2" />
-                        <p className="text-2xl font-black font-[family-name:var(--font-display)]"><NumberTicker value={backlinks} /></p>
+                        <p className="text-2xl font-extrabold font-[family-name:var(--font-display)]"><NumberTicker value={backlinks} /></p>
                         <p className="text-[10px] text-muted-foreground font-mono uppercase mt-1">Backlinks</p>
                       </div>
                       <div className="bg-muted/30 rounded-xl p-4 text-center">
                         <FileText className="w-5 h-5 text-primary mx-auto mb-2" />
-                        <p className="text-2xl font-black font-[family-name:var(--font-display)]"><NumberTicker value={totalPages} /></p>
+                        <p className="text-2xl font-extrabold font-[family-name:var(--font-display)]"><NumberTicker value={totalPages} /></p>
                         <p className="text-[10px] text-muted-foreground font-mono uppercase mt-1">Páginas</p>
                       </div>
                     </div>
@@ -620,7 +620,7 @@ function OnboardingContent() {
           {currentStep === "context" && (
             <motion.div key="context" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">Sobre o seu site</h1>
+                <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">Sobre o seu site</h1>
                 <p className="text-muted-foreground">Com base nas {totalPages} páginas que encontramos, esse é o resumo do seu site. Confirme ou edite.</p>
               </div>
               <div className="rounded-2xl border bg-card p-6 space-y-5">
@@ -676,7 +676,7 @@ function OnboardingContent() {
           {currentStep === "niche" && (
             <motion.div key="niche" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">Qual é o nicho do seu site?</h1>
+                <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">Qual é o nicho do seu site?</h1>
                 <p className="text-muted-foreground">Isso nos ajuda a encontrar os melhores parceiros de backlink.</p>
               </div>
               <div className="rounded-2xl border bg-card p-6 space-y-5">
@@ -730,7 +730,7 @@ function OnboardingContent() {
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 ring-1 ring-primary/30 flex items-center justify-center mx-auto mb-5">
                   <MessageSquare className="w-7 h-7 text-primary" />
                 </div>
-                <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">Como você quer ser mencionado?</h1>
+                <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">Como você quer ser mencionado?</h1>
                 <p className="text-muted-foreground">Isso define o tom dos artigos que vão linkar pro seu site.</p>
               </div>
               <div className="rounded-2xl border bg-card p-6 space-y-5">
@@ -790,7 +790,7 @@ function OnboardingContent() {
           {currentStep === "keywords" && (
             <motion.div key="keywords" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">Suas palavras no Google</h1>
+                <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">Suas palavras no Google</h1>
                 <p className="text-muted-foreground">
                   {keywordsToMonitor.length > 0 ? `Encontramos ${keywordsToMonitor.length.toLocaleString()} keywords. Todas serão monitoradas.` : "Nenhuma keyword encontrada ainda — elas aparecerão conforme seu site cresce."}
                 </p>

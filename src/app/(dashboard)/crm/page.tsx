@@ -148,28 +148,27 @@ export default function CRMPage() {
 
       {/* Revenue cards */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <div className="card-beam rounded-xl border bg-card p-6 relative overflow-hidden">
-          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+        <div className="rounded-xl border bg-card p-6 relative overflow-hidden">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 relative">
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono mb-2">Clientes Ativos</p>
-              <p className="text-3xl font-black font-[family-name:var(--font-display)] tracking-tight"><NumberTicker value={clients.length} /></p>
+              <p className="text-3xl font-extrabold font-[family-name:var(--font-display)] tracking-tight"><NumberTicker value={clients.length} /></p>
             </div>
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono mb-2">Receita Mensal</p>
-              <p className="text-3xl font-black font-[family-name:var(--font-display)] tracking-tight text-gradient">
+              <p className="text-3xl font-extrabold font-[family-name:var(--font-display)] tracking-tight text-primary">
                 R$ <NumberTicker value={totalReceita} />
               </p>
             </div>
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono mb-2">Custo 8links</p>
-              <p className="text-3xl font-black font-[family-name:var(--font-display)] tracking-tight text-muted-foreground">
+              <p className="text-3xl font-extrabold font-[family-name:var(--font-display)] tracking-tight text-muted-foreground">
                 R$ {custoPlano}
               </p>
             </div>
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono mb-2">Lucro Líquido</p>
-              <p className="text-3xl font-black font-[family-name:var(--font-display)] tracking-tight text-success">
+              <p className="text-3xl font-extrabold font-[family-name:var(--font-display)] tracking-tight text-success">
                 R$ <NumberTicker value={lucro} />
               </p>
             </div>

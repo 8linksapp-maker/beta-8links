@@ -273,7 +273,7 @@ export default function SitesPage() {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-black font-[family-name:var(--font-display)] tracking-tight">Meus sites</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">Meus sites</h1>
           <p className="text-base text-muted-foreground mt-2 leading-relaxed">
             Os sites que você quer subir no Google.
           </p>
@@ -351,7 +351,6 @@ export default function SitesPage() {
               transition={{ duration: 0.45, delay: index * 0.08 }}>
               <Card className={`card-interactive relative overflow-hidden cursor-pointer ${activeSiteId === site.id ? 'ring-1 ring-primary/30' : ''}`}
                 onClick={() => handleSelectSite(site.id)}>
-                <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
 
                 <CardHeader className="pb-4 relative">
                   <div className="flex items-start justify-between gap-3">
@@ -513,7 +512,7 @@ function KpiTile({ icon: Icon, label, value, format }: {
         <Icon className="w-3.5 h-3.5 text-primary" />
         <p className="text-[11px] text-muted-foreground font-mono uppercase tracking-wider font-semibold">{label}</p>
       </div>
-      <p className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight">
+      <p className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">
         {format === "position" ? value.toFixed(1) : <NumberTicker value={value} />}
       </p>
     </div>

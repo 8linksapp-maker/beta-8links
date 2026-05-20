@@ -179,7 +179,7 @@ export default function ArticleEditPage() {
           onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); saveContent(); } }}
           className="min-h-[75vh] max-h-[85vh] p-8 bg-card border border-border rounded-b-xl
             focus:outline-none overflow-y-auto leading-relaxed
-            [&>h1]:text-2xl [&>h1]:font-black [&>h1]:mb-6 [&>h1]:mt-2 [&>h1]:text-foreground [&>h1]:font-[family-name:var(--font-display)]
+            [&>h1]:text-2xl [&>h1]:font-extrabold [&>h1]:mb-6 [&>h1]:mt-2 [&>h1]:text-foreground [&>h1]:font-[family-name:var(--font-display)]
             [&>h2]:text-xl [&>h2]:font-bold [&>h2]:mt-10 [&>h2]:mb-4 [&>h2]:text-foreground [&>h2]:font-[family-name:var(--font-display)] [&>h2]:border-b [&>h2]:border-border/30 [&>h2]:pb-2
             [&>h3]:text-base [&>h3]:font-semibold [&>h3]:mt-6 [&>h3]:mb-3 [&>h3]:text-foreground/90
             [&>p]:text-[14px] [&>p]:leading-[1.85] [&>p]:text-muted-foreground [&>p]:mb-4 [&>p]:max-w-[680px]

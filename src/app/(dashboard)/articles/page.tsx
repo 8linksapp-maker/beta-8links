@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
 import { useSite } from "@/lib/hooks/use-site";
 import {
@@ -111,10 +110,9 @@ export default function ArticlesPage() {
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-black font-[family-name:var(--font-display)] tracking-tight">Artigos</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">Artigos</h1>
           <p className="text-base text-muted-foreground mt-2 leading-relaxed">
             Conteúdo escrito por IA pra subir seu site no Google.
           </p>
@@ -122,20 +120,18 @@ export default function ArticlesPage() {
         <Button size="lg" className="gap-2" onClick={() => setCreateOpen(true)}>
           <Plus className="w-5 h-5" /> Criar artigo
         </Button>
-      </motion.div>
+      </div>
 
       {/* KPIs */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard label="Total" value={total} icon={FileText} />
         <MetricCard label="Rascunhos" value={drafts} icon={Clock} />
         <MetricCard label="Publicados" value={published} icon={CheckCircle2} />
         <MetricCard label="Palavras escritas" value={totalWords} icon={PenLine} />
-      </motion.div>
+      </div>
 
       {/* Filters */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex gap-1 p-1 bg-muted/30 rounded-xl">
           {[
             { id: "all", label: "Todos" },
@@ -152,7 +148,7 @@ export default function ArticlesPage() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Buscar artigo..." className="pl-10 h-11 text-sm" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-      </motion.div>
+      </div>
 
       {/* Articles list */}
       {!loaded ? (
@@ -164,7 +160,7 @@ export default function ArticlesPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map((article, i) => (
-            <motion.div key={article.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 + i * 0.03 }}>
+            <div key={article.id}>
               <Card className="hover:border-primary/30 transition-colors">
                 <CardContent className="p-5">
                   <div className="flex items-center gap-4">
@@ -236,7 +232,7 @@ export default function ArticlesPage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           ))}
         </div>
       )}

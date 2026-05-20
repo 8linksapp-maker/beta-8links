@@ -267,16 +267,15 @@ export default function ClubPage() {
       {/* Next session card */}
       {nextSession && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <Card className="card-beam relative overflow-hidden">
+          <Card className="relative overflow-hidden">
             <CardContent className="p-6">
-              <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
               <div className="flex items-start justify-between relative">
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
                     <span className="text-xs font-semibold text-destructive uppercase tracking-wider font-mono">Próxima sessão ao vivo</span>
                   </div>
-                  <h2 className="text-xl font-black font-[family-name:var(--font-display)] tracking-tight mb-1">
+                  <h2 className="text-xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-1">
                     {nextSession.dayOfWeek}, {nextSession.date}
                   </h2>
                   <p className="text-sm text-muted-foreground">às {nextSession.time} • Duração: ~45 min</p>
@@ -333,7 +332,7 @@ export default function ClubPage() {
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono">{s.label}</span>
               <s.icon className="w-4 h-4 text-primary" />
             </div>
-            <p className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight">
+            <p className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">
               <NumberTicker value={s.value} />
             </p>
           </Card>
@@ -455,7 +454,7 @@ export default function ClubPage() {
                 <div className="space-y-6">
                   {/* Info do vídeo */}
                   <div>
-                    <h2 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">
+                    <h2 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">
                       {selectedReplay.title}
                     </h2>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">

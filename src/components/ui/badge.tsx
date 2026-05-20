@@ -28,7 +28,7 @@ const badgeVariants = cva(
         pending:
           "border-transparent bg-warning-light text-warning",
         error:
-          "border-transparent bg-[hsl(0_85%_66%/0.10)] text-destructive",
+          "border-transparent bg-destructive/10 text-destructive",
       },
     },
     defaultVariants: {

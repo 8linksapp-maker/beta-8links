@@ -16,9 +16,8 @@ function Switch({ checked, onCheckedChange, disabled, className }: SwitchProps) 
       onClick={() => onCheckedChange(!checked)}
       className={cn(
         "inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-all duration-300",
-        checked
-          ? "bg-primary shadow-[0_0_12px_hsl(24_100%_55%/0.3)]"
-          : "bg-muted",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        checked ? "bg-primary" : "bg-muted",
         disabled && "opacity-40 cursor-not-allowed",
         className
       )}

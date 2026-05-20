@@ -224,7 +224,7 @@ function KPI({ icon: Icon, label, value }: { icon: any; label: string; value: nu
         </div>
         <div>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">{label}</p>
-          <p className="text-lg font-black font-mono">{value}</p>
+          <p className="text-lg font-extrabold font-mono">{value}</p>
         </div>
       </CardContent>
     </Card>

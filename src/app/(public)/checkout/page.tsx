@@ -45,7 +45,6 @@ function CheckoutContent() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[radial-gradient(ellipse_at_center,hsl(24_100%_55%/0.06),transparent_60%)]" />
       </div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md relative">
@@ -54,15 +53,15 @@ function CheckoutContent() {
         </Link>
 
         <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] flex items-center justify-center mx-auto mb-4 shadow-[0_0_32px_hsl(24_100%_55%/0.2)]">
+          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
             <LinkIcon className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-xl font-black font-[family-name:var(--font-display)] tracking-tight">
-            Assinar plano <span className="text-gradient">{plan.name}</span>
+          <h1 className="text-xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">
+            Assinar plano <span className="text-foreground">{plan.name}</span>
           </h1>
         </div>
 
-        <Card className="card-beam relative overflow-hidden">
+        <Card className="relative overflow-hidden">
           <CardContent className="p-6 space-y-5">
             {/* Plan summary */}
             <div className="flex items-center justify-between">
@@ -71,7 +70,7 @@ function CheckoutContent() {
                 <p className="text-xs text-muted-foreground">Cobrança mensal</p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-black font-[family-name:var(--font-display)]">
+                <p className="text-2xl font-extrabold font-[family-name:var(--font-display)]">
                   R$ {plan.price}
                 </p>
                 <p className="text-xs text-muted-foreground font-mono">/mês</p>

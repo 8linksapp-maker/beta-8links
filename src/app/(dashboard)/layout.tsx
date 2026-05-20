@@ -65,7 +65,7 @@ export default function DashboardLayout({
             </svg>
           </div>
           <div>
-            <h1 className="text-2xl font-black font-[family-name:var(--font-display)] mb-2">
+            <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] mb-2">
               Assinatura suspensa
             </h1>
             <p className="text-muted-foreground">

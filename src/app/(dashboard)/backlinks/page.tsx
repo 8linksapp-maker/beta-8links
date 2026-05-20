@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { motion } from "motion/react";
 import { toast } from "sonner";
 import {
   Link as LinkIcon, ExternalLink, Loader2, Play, Check,
@@ -333,9 +332,9 @@ export default function BacklinksPage() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-black font-[family-name:var(--font-display)] tracking-tight">Backlinks</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">Backlinks</h1>
           <p className="text-base text-muted-foreground mt-2 leading-relaxed">
             Os backlinks que você criou pra subir seu site no Google.
           </p>
@@ -357,11 +356,11 @@ export default function BacklinksPage() {
             <Plus className="w-5 h-5" /> Criar backlink
           </Button>
         </div>
-      </motion.div>
+      </div>
 
       {items.length === 0 ? (
         // Empty state
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+        <div>
           <Card>
             <CardContent className="py-20 text-center">
               <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
@@ -377,16 +376,11 @@ export default function BacklinksPage() {
               </Button>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       ) : (
         <>
           {/* Filters */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="space-y-3"
-          >
+          <div className="space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
               {STATUS_FILTERS.map(f => (
                 <button
@@ -424,15 +418,10 @@ export default function BacklinksPage() {
             <p className="text-xs text-muted-foreground">
               Mostrando {filtered.length} de {items.length} backlinks · {publishedCount} publicado{publishedCount === 1 ? "" : "s"}
             </p>
-          </motion.div>
+          </div>
 
           {/* Table (desktop) */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="hidden md:block"
-          >
+          <div className="hidden md:block">
             <Card className="overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -486,15 +475,10 @@ export default function BacklinksPage() {
                 )}
               </div>
             </Card>
-          </motion.div>
+          </div>
 
           {/* Cards (mobile) */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="md:hidden space-y-3"
-          >
+          <div className="md:hidden space-y-3">
             {filtered.length === 0 ? (
               <Card>
                 <CardContent className="py-10 text-center">
@@ -527,7 +511,7 @@ export default function BacklinksPage() {
                 </Card>
               ))
             )}
-          </motion.div>
+          </div>
         </>
       )}
 

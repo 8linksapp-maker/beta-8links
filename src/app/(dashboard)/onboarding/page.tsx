@@ -111,7 +111,7 @@ function OnboardingContent() {
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 ring-1 ring-primary/30 flex items-center justify-center mx-auto mb-6 shadow-[0_0_32px_hsl(24_100%_55%/0.2)]">
                   <Globe className="w-7 h-7 text-primary" />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-black font-[family-name:var(--font-display)] tracking-tight mb-3">
+                <h1 className="text-3xl sm:text-4xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-3">
                   Qual é o seu site?
                 </h1>
                 <p className="text-base text-muted-foreground">
@@ -119,7 +119,7 @@ function OnboardingContent() {
                 </p>
               </div>
 
-              <div className="card-beam rounded-2xl border bg-card p-6 sm:p-8">
+              <div className="rounded-2xl border bg-card p-6 sm:p-8">
                 <Input
                   placeholder="https://meusite.com.br"
                   value={siteUrl}
@@ -160,7 +160,7 @@ function OnboardingContent() {
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 ring-1 ring-primary/30 flex items-center justify-center mx-auto mb-6 shadow-[0_0_32px_hsl(24_100%_55%/0.2)]">
                   <Sparkles className="w-7 h-7 text-primary" />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-black font-[family-name:var(--font-display)] tracking-tight mb-3">
+                <h1 className="text-3xl sm:text-4xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-3">
                   Conte rapidinho o que você faz
                 </h1>
                 <p className="text-base text-muted-foreground">
@@ -168,7 +168,7 @@ function OnboardingContent() {
                 </p>
               </div>
 
-              <div className="card-beam rounded-2xl border bg-card p-6 sm:p-8">
+              <div className="rounded-2xl border bg-card p-6 sm:p-8">
                 <Textarea
                   placeholder="Ex: Loja online de cosméticos veganos pra mulheres que valorizam beleza natural"
                   value={description}

@@ -1,10 +1,8 @@
 "use client";
 
-import { motion } from "motion/react";
 import { type LucideIcon, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { NumberTicker } from "@/components/ui/number-ticker";
 import { cn } from "@/lib/utils";
 
 export type PageMetric = {
@@ -42,42 +40,30 @@ export function PageMetrics({ items, loading }: PageMetricsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       {items.map((m, i) => (
-        <motion.div
-          key={m.label}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <div key={m.label}>
           <Card
             className={cn(
-              "group relative overflow-hidden transition-all duration-300",
+              "group transition-all duration-300",
               "hover:border-primary/30 hover:-translate-y-0.5",
-              "hover:shadow-[0_0_48px_hsl(24_100%_55%/0.08)]"
             )}
           >
-            <CardContent className="p-5 sm:p-6 relative">
-              {m.accent && (
-                <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-primary/[0.07] blur-3xl pointer-events-none" />
-              )}
-
-              <div className="relative flex items-center gap-2 mb-3">
+            <CardContent className="p-5 sm:p-6">
+              <div className="flex items-center gap-2 mb-3">
                 <m.icon className={cn("w-4 h-4", m.accent ? "text-primary" : "text-muted-foreground")} />
                 <span className="text-[11px] uppercase tracking-wider font-mono font-semibold text-muted-foreground">
                   {m.label}
                 </span>
               </div>
 
-              <div className="relative flex items-baseline gap-3 flex-wrap">
-                <NumberTicker
-                  value={m.value}
-                  decimalPlaces={m.format === "decimal" ? 1 : 0}
-                  delay={i * 0.1}
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <span
                   className={cn(
-                    "text-4xl sm:text-5xl font-black font-[family-name:var(--font-display)] tracking-tight leading-none",
-                    m.accent &&
-                      "bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] bg-clip-text text-transparent"
+                    "tabular-nums text-4xl sm:text-5xl font-extrabold font-[family-name:var(--font-display)] tracking-tight leading-none",
+                    m.accent ? "text-primary" : "text-foreground"
                   )}
-                />
+                >
+                  {m.format === "decimal" ? m.value.toFixed(1) : m.value}
+                </span>
                 {m.trend && (
                   <TrendChip delta={m.trend.delta} label={m.trend.label ?? "esta semana"} />
                 )}
@@ -102,7 +88,7 @@ export function PageMetrics({ items, loading }: PageMetricsProps) {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       ))}
     </div>
   );

@@ -40,20 +40,19 @@ export default function VerificarNichePage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[radial-gradient(ellipse_at_center,hsl(24_100%_55%/0.06),transparent_60%)]" />
       </div>
 
       <div className="w-full max-w-xl relative">
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[hsl(24,100%,55%)] to-[hsl(35,100%,60%)] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <LinkIcon className="w-4 h-4 text-white" />
             </div>
-            <span className="text-sm font-black font-[family-name:var(--font-display)]">8links</span>
+            <span className="text-sm font-extrabold font-[family-name:var(--font-display)]">8links</span>
           </Link>
           <h1 className="text-3xl font-black font-[family-name:var(--font-display)] tracking-tight mb-3">
-            Funciona pro <span className="text-gradient">seu nicho</span>?
+            Funciona pro <span className="text-foreground">seu nicho</span>?
           </h1>
           <p className="text-muted-foreground max-w-md mx-auto">
             Cole a URL do seu site e descubra em 5 segundos quantos sites parceiros temos para o seu nicho.
@@ -63,7 +62,7 @@ export default function VerificarNichePage() {
         <AnimatePresence mode="wait">
           {!result ? (
             <motion.div key="form" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
-              <div className="card-beam rounded-2xl border bg-card p-8 relative overflow-hidden">
+              <div className="rounded-2xl border bg-card p-8 relative overflow-hidden">
                 <div className="space-y-4">
                   <div className="relative">
                     <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -121,7 +120,7 @@ export default function VerificarNichePage() {
 
                   <div className="bg-primary-light rounded-xl p-5 border border-primary/20 text-center">
                     <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider mb-2">Sites parceiros compatíveis</p>
-                    <p className="text-4xl font-black font-[family-name:var(--font-display)] tracking-tight text-gradient">
+                    <p className="text-4xl font-extrabold font-[family-name:var(--font-display)] tracking-tight text-foreground">
                       <NumberTicker value={result.totalSites} />
                     </p>
                     <p className="text-sm text-muted-foreground mt-2">prontos para linkar para o seu site</p>
@@ -166,8 +165,10 @@ export default function VerificarNichePage() {
 
                 {/* CTA */}
                 <div className="p-6 border-t border-border bg-muted/20">
-                  <Link href="/register" className="btn-glow rounded-xl w-full py-3.5 text-base font-bold inline-flex items-center justify-center gap-2 cursor-pointer">
-                    <Zap className="w-5 h-5" /> Começar com {result.totalSites} sites parceiros <ArrowRight className="w-4 h-4" />
+                  <Link href="/register">
+                    <Button variant="default" size="lg" className="w-full">
+                      <Zap className="w-5 h-5" /> Começar com {result.totalSites} sites parceiros <ArrowRight className="w-4 h-4" />
+                    </Button>
                   </Link>
                   <p className="text-center text-xs text-muted-foreground mt-3">14 dias grátis • Backlinks ilimitados • Cancele quando quiser</p>
                 </div>

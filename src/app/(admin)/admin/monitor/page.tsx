@@ -329,7 +329,7 @@ function KPI({ icon: Icon, label, value, sub, color }: { icon: any; label: strin
           <Icon className={`w-4 h-4 ${color ?? "text-muted-foreground"}`} />
           <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">{label}</span>
         </div>
-        <p className={`text-xl font-black font-mono ${color ?? ""}`}>{value}</p>
+        <p className={`text-xl font-extrabold font-mono ${color ?? ""}`}>{value}</p>
         {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
       </CardContent>
     </Card>

@@ -94,20 +94,19 @@ export default function PricingPage() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[hsl(24,100%,55%)] to-[hsl(35,100%,60%)] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <LinkIcon className="w-4 h-4 text-white" />
           </div>
-          <span className="text-sm font-black font-[family-name:var(--font-display)]">8links</span>
+          <span className="text-sm font-extrabold font-[family-name:var(--font-display)]">8links</span>
         </Link>
         <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground">Entrar</Link>
       </nav>
 
       {/* Header */}
       <section className="text-center px-6 pt-16 pb-12 max-w-4xl mx-auto relative">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[radial-gradient(ellipse_at_center,hsl(24_100%_55%/0.06),transparent_60%)] pointer-events-none" />
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative">
           <h1 className="text-4xl font-black font-[family-name:var(--font-display)] tracking-tight mb-4">
-            Planos simples, <span className="text-gradient">resultado real</span>
+            Planos simples, <span className="text-primary">resultado real</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
             Backlinks ilimitados em todos os planos. 14 dias grátis. Cancele quando quiser.
@@ -125,18 +124,18 @@ export default function PricingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               className={`relative rounded-2xl border bg-card p-8 flex flex-col overflow-hidden ${
-                plan.popular ? 'card-shine ring-1 ring-[hsl(24,100%,55%,0.2)] scale-[1.02]' : ''
+                plan.popular ? 'ring-1 ring-[hsl(24,100%,55%,0.2)] scale-[1.02]' : ''
               }`}
             >
               {plan.popular && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-gradient-to-r from-[hsl(24,100%,55%)] to-[hsl(35,100%,60%)] text-[10px] font-bold text-black uppercase tracking-widest rounded-b-lg font-mono">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-primary text-[10px] font-bold text-black uppercase tracking-widest rounded-b-lg font-mono">
                   Mais Popular
                 </div>
               )}
 
               <div className="text-center mb-6">
                 <p className="text-sm font-semibold text-muted-foreground mt-4 font-[family-name:var(--font-display)]">{plan.name}</p>
-                <p className="text-4xl font-black font-[family-name:var(--font-display)] tracking-tight my-3">
+                <p className="text-4xl font-extrabold font-[family-name:var(--font-display)] tracking-tight my-3">
                   <span className="text-lg text-muted-foreground align-top">R$</span>
                   <NumberTicker value={plan.price} />
                 </p>
@@ -158,8 +157,10 @@ export default function PricingPage() {
               </ul>
 
               {plan.popular ? (
-                <Link href="/register" className="btn-glow rounded-xl w-full py-3 text-sm font-bold inline-flex items-center justify-center gap-2 cursor-pointer">
-                  <Zap className="w-4 h-4" /> Começar com Pro
+                <Link href="/register">
+                  <Button variant="default" size="lg" className="w-full">
+                    <Zap className="w-4 h-4" /> Começar com Pro
+                  </Button>
                 </Link>
               ) : (
                 <Link href="/register">
@@ -172,8 +173,8 @@ export default function PricingPage() {
 
         {/* All features */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="mt-20">
-          <h2 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight text-center mb-3">
-            Tudo incluso em <span className="text-gradient">todos os planos</span>
+          <h2 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight text-center mb-3">
+            Tudo incluso em <span className="text-primary">todos os planos</span>
           </h2>
           <p className="text-center text-muted-foreground mb-10">Sem surpresas. Sem taxas escondidas.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

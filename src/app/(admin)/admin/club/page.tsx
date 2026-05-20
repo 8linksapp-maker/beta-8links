@@ -303,7 +303,7 @@ export default function ClubAdminPage() {
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-1">Club 8links</h1>
+          <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-1">Club 8links</h1>
           <p className="text-sm text-muted-foreground">Gerencie replays, sessões e candidatos</p>
         </div>
       </motion.div>

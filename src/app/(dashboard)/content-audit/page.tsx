@@ -126,7 +126,7 @@ export default function ContentAuditPage() {
                       Score geral:
                     </span>
                     <span
-                      className={`text-2xl font-black font-[family-name:var(--font-display)] tabular-nums ${getScoreColor(
+                      className={`text-2xl font-extrabold font-[family-name:var(--font-display)] tabular-nums ${getScoreColor(
                         overallScore
                       )}`}
                     >
@@ -177,7 +177,7 @@ export default function ContentAuditPage() {
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`text-xl font-black font-[family-name:var(--font-display)] tabular-nums ${getScoreColor(
+                            className={`text-xl font-extrabold font-[family-name:var(--font-display)] tabular-nums ${getScoreColor(
                               page.score
                             )}`}
                           >

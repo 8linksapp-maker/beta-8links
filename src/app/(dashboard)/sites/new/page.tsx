@@ -153,14 +153,14 @@ export default function NewSitePage() {
           {currentStep === "url" && (
             <motion.div key="url" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">
+                <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">
                   Adicionar novo site
                 </h1>
                 <p className="text-muted-foreground">
                   Cole a URL do site que você quer subir no Google.
                 </p>
               </div>
-              <div className="card-beam rounded-2xl border bg-card p-8 relative overflow-hidden">
+              <div className="rounded-2xl border bg-card p-8">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>URL do site</Label>
@@ -192,7 +192,7 @@ export default function NewSitePage() {
           {currentStep === "niche" && (
             <motion.div key="niche" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2">
+                <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2">
                   Sobre o que é esse site?
                 </h1>
                 <p className="text-muted-foreground">

@@ -63,9 +63,8 @@ export default function ReportsPage() {
 
       {/* Current month summary */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <Card className="card-beam relative overflow-hidden">
+        <Card className="relative overflow-hidden">
           <CardContent className="p-6">
-            <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
             <div className="relative">
               <div className="flex items-center justify-between mb-5">
                 <div>
@@ -87,7 +86,7 @@ export default function ReportsPage() {
                       <item.icon className="w-4 h-4 text-muted-foreground" />
                       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono">{item.label}</span>
                     </div>
-                    <p className={`text-2xl font-black font-[family-name:var(--font-display)] tracking-tight ${item.color}`}>
+                    <p className={`text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight ${item.color}`}>
                       <NumberTicker value={parseInt(item.value.replace('.', ''))} />
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>

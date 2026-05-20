@@ -31,12 +31,6 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${outfit.variable} ${ibmPlexMono.variable} h-full`}
     >
-      <head>
-        <link
-          href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body className="min-h-full bg-background text-foreground antialiased">
         <Providers>
           {children}
@@ -46,9 +40,9 @@ export default function RootLayout({
           position="bottom-right"
           toastOptions={{
             style: {
-              background: "hsl(20 12% 7%)",
-              border: "1px solid hsl(20 10% 18%)",
-              color: "hsl(30 20% 95%)",
+              background: "var(--card)",
+              border: "1px solid var(--border-strong)",
+              color: "var(--foreground)",
             },
           }}
         />

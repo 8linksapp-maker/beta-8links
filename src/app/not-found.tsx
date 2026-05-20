@@ -7,7 +7,7 @@ export default function NotFound() {
       <div className="w-16 h-16 rounded-2xl bg-primary/10 ring-1 ring-primary/30 flex items-center justify-center mb-6">
         <LinkIcon className="w-7 h-7 text-primary" />
       </div>
-      <h1 className="text-6xl font-black font-[family-name:var(--font-display)] tracking-tight mb-2" style={{ background: 'linear-gradient(135deg, hsl(24, 100%, 55%), hsl(45, 100%, 65%))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <h1 className="text-6xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-2" style={{ background: 'linear-gradient(135deg, hsl(24, 100%, 55%), hsl(45, 100%, 65%))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
         404
       </h1>
       <p className="text-lg font-semibold mb-2">Página não encontrada</p>

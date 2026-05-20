@@ -47,7 +47,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[radial-gradient(ellipse_at_center,hsl(24_100%_55%/0.08),transparent_60%)]" />
       </div>
 
       <motion.div
@@ -57,16 +56,16 @@ export default function LoginPage() {
         className="w-full max-w-sm relative"
       >
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] flex items-center justify-center mx-auto mb-4 shadow-[0_0_32px_hsl(24_100%_55%/0.2)]">
+          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
             <LinkIcon className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight">
-            <span className="text-gradient">8</span>links
+          <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">
+            8links
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Entre na sua conta</p>
         </div>
 
-        <div className="card-beam rounded-2xl border bg-card p-6 relative overflow-hidden">
+        <div className="rounded-2xl border bg-card p-6 relative overflow-hidden">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && error !== "migrate" && (
               <div className="p-3 rounded-lg bg-[hsl(0_80%_60%/0.1)] border border-[hsl(0_80%_60%/0.2)] text-sm text-destructive">

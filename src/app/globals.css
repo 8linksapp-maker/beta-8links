@@ -4,23 +4,11 @@
    8LINKS v2 — DESIGN SYSTEM — DARK ONLY
    Aesthetic: Luxury-tech, warm, commanding
    Palette: Blazing Orange dominant
-   Fonts: Outfit (display) + Satoshi (body) + IBM Plex Mono (data)
+   Fonts: Outfit (display + body) + IBM Plex Mono (data)
    ============================================ */
 
-@property --beam-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@property --glow-opacity {
-  syntax: '<number>';
-  initial-value: 0.5;
-  inherits: false;
-}
-
 @theme inline {
-  --font-sans: "Satoshi", "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
@@ -122,9 +110,6 @@
   }
   html {
     color-scheme: dark;
-    /* Bump base font-size pra UI mais legível pra leigos.
-       Tailwind v4 usa rem em fontes E spacing, então tudo escala junto. */
-    font-size: 17.5px;
   }
   body {
     @apply bg-background text-foreground antialiased;
@@ -181,95 +166,6 @@
   }
   .card-interactive:hover {
     border-color: hsl(24 100% 55% / 0.3);
-    box-shadow: 0 0 40px hsl(24 100% 55% / 0.06);
-  }
-
-  /* Border beam */
-  .card-beam {
-    position: relative;
-    overflow: hidden;
-  }
-  .card-beam::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1.5px;
-    background: conic-gradient(
-      from var(--beam-angle, 0deg),
-      transparent 0%, transparent 25%,
-      hsl(24 100% 55%) 38%, hsl(35 100% 65%) 50%,
-      hsl(24 100% 55%) 62%, transparent 75%, transparent 100%
-    );
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    -webkit-mask-composite: xor;
-    animation: beam-spin 4s linear infinite;
-    pointer-events: none;
-  }
-  @keyframes beam-spin { to { --beam-angle: 360deg; } }
-
-  /* Shine border */
-  .card-shine {
-    position: relative;
-    overflow: hidden;
-  }
-  .card-shine::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1.5px;
-    background: conic-gradient(
-      from var(--beam-angle, 0deg),
-      hsl(24 100% 55%) 0%, hsl(45 100% 60%) 20%,
-      hsl(280 80% 65%) 40%, hsl(215 85% 65%) 60%,
-      hsl(24 100% 55%) 80%, hsl(45 100% 60%) 100%
-    );
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    -webkit-mask-composite: xor;
-    animation: beam-spin 6s linear infinite;
-    pointer-events: none;
-  }
-
-  /* Glow button */
-  .btn-glow {
-    position: relative;
-    background: linear-gradient(135deg, hsl(24 100% 52%), hsl(35 100% 58%), hsl(24 100% 52%));
-    background-size: 200% 200%;
-    animation: glow-shift 3s ease infinite;
-    color: hsl(20 15% 4%);
-    font-weight: 700;
-    border: none;
-    overflow: hidden;
-    isolation: isolate;
-    box-shadow: 0 0 20px hsl(24 100% 55% / 0.3), 0 0 60px hsl(24 100% 55% / 0.1);
-    transition: all 0.3s ease;
-  }
-  .btn-glow::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.2) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.2) 55%, transparent 65%);
-    transform: translateX(-100%);
-    animation: shimmer-sweep 2.5s ease-in-out infinite;
-  }
-  .btn-glow:hover {
-    box-shadow: 0 0 30px hsl(24 100% 55% / 0.5), 0 0 80px hsl(24 100% 55% / 0.2), 0 8px 32px hsl(0 0% 0% / 0.4);
-    transform: translateY(-2px) scale(1.02);
-  }
-  @keyframes glow-shift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-  @keyframes shimmer-sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-
-  /* Gradient text */
-  .text-gradient {
-    background: linear-gradient(135deg, hsl(24 100% 55%), hsl(45 100% 65%));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
   }
 
   /* Metric number */
@@ -295,9 +191,9 @@
   }
   @keyframes skeleton-slide { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-  /* Input glow */
+  /* Input focus */
   .input-glow:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px hsl(24 100% 55% / 0.15), 0 0 20px hsl(24 100% 55% / 0.08);
+    box-shadow: 0 0 0 3px hsl(24 100% 55% / 0.15);
   }
 }

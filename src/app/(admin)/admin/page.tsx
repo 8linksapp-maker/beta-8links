@@ -304,13 +304,12 @@ function KpiCard({ label, value, prefix, suffix, icon: Icon, sub }: {
   sub?: string;
 }) {
   return (
-    <Card className="card-beam relative overflow-hidden p-5">
-      <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
+    <Card className="relative overflow-hidden p-5">
       <div className="flex items-center justify-between mb-3 relative">
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono">{label}</span>
         <Icon className="w-4 h-4 text-primary" />
       </div>
-      <p className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight relative">
+      <p className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight relative">
         {prefix}<NumberTicker value={value} />{suffix}
       </p>
       {sub && <p className="text-xs text-muted-foreground font-mono mt-1">{sub}</p>}

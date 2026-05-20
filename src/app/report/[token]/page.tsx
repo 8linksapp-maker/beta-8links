@@ -11,7 +11,7 @@ export default async function ReportPage({ params }: { params: Promise<{ token: 
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[hsl(24,100%,55%)] to-[hsl(35,100%,60%)] flex items-center justify-center mx-auto mb-4">
             <LinkIcon className="w-4 h-4 text-white" />
           </div>
-          <h1 className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight mb-1">Relatório SEO</h1>
+          <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight mb-1">Relatório SEO</h1>
           <p className="text-sm text-muted-foreground">clinicajoao.com.br • Abril 2026</p>
           <p className="text-xs text-muted-foreground font-mono mt-2">Token: {token.slice(0, 8)}...</p>
         </div>
@@ -19,7 +19,7 @@ export default async function ReportPage({ params }: { params: Promise<{ token: 
         {/* Score */}
         <div className="rounded-2xl border bg-card p-8 text-center mb-6">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono mb-2">Score SEO</p>
-          <p className="text-6xl font-black font-[family-name:var(--font-display)] tracking-tight" style={{ background: 'linear-gradient(135deg, hsl(24, 100%, 55%), hsl(45, 100%, 65%))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <p className="text-6xl font-extrabold font-[family-name:var(--font-display)] tracking-tight" style={{ background: 'linear-gradient(135deg, hsl(24, 100%, 55%), hsl(45, 100%, 65%))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             62
           </p>
           <p className="text-lg text-muted-foreground">/100</p>
@@ -39,7 +39,7 @@ export default async function ReportPage({ params }: { params: Promise<{ token: 
                 <m.icon className="w-4 h-4 text-muted-foreground" />
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono">{m.label}</span>
               </div>
-              <p className="text-2xl font-black font-[family-name:var(--font-display)] tracking-tight">{m.value}</p>
+              <p className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">{m.value}</p>
               <p className="text-xs font-semibold text-[hsl(152,70%,48%)] mt-0.5">{m.change}</p>
             </div>
           ))}

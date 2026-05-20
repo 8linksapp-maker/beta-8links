@@ -151,16 +151,14 @@ export default function AIVisibilityPage() {
       {hasData && (<>
       {/* AI Score Card */}
       <motion.div {...fadeUp} transition={{ duration: 0.4, delay: 0.05 }}>
-        <div className="card-beam rounded-xl border bg-card p-6 relative overflow-hidden">
-          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-
+        <div className="rounded-xl border bg-card p-6 relative overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative">
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono mb-2">
                 Pontuacao IA
               </p>
               <div className="flex items-end gap-3">
-                <span className="text-5xl font-black font-[family-name:var(--font-display)] tracking-tight text-gradient">
+                <span className="text-5xl font-extrabold font-[family-name:var(--font-display)] tracking-tight text-primary">
                   <NumberTicker value={34} />
                 </span>
                 <span className="text-lg text-muted-foreground mb-1">/100</span>
@@ -199,8 +197,6 @@ export default function AIVisibilityPage() {
             key={i}
             className="card-interactive rounded-xl border bg-card p-5 relative overflow-hidden"
           >
-            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
-
             <div className="flex items-center justify-between mb-3 relative">
               <span className="text-lg">{p.emoji}</span>
               {p.change > 0 ? (
