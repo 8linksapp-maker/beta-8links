@@ -6,13 +6,14 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import {
-  Link as LinkIcon, Check, Shield, CreditCard, Zap,
+  Check, Shield, CreditCard, Zap,
   ArrowLeft, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Logo } from "@/components/ui/logo";
 import { PLANS } from "@/lib/constants";
 
 function CheckoutContent() {
@@ -53,9 +54,7 @@ function CheckoutContent() {
         </Link>
 
         <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
-            <LinkIcon className="w-5 h-5 text-white" />
-          </div>
+          <Logo variant="mark" size="md" className="mx-auto mb-4" />
           <h1 className="text-xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">
             Assinar plano <span className="text-foreground">{plan.name}</span>
           </h1>

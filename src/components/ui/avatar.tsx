@@ -26,7 +26,7 @@ function AvatarImage({ src, alt, className }: { src: string; alt?: string; class
 function AvatarFallback({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={cn(
-      "flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] font-bold text-primary-foreground font-[family-name:var(--font-display)]",
+      "flex h-full w-full items-center justify-center bg-primary font-bold text-primary-foreground font-[family-name:var(--font-display)]",
       className
     )}>
       {children}

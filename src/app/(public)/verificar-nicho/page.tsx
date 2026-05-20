@@ -4,13 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Globe, Search, ArrowRight, Check, Loader2,
-  Link as LinkIcon, Sparkles, TrendingUp, Zap,
+  Globe, Search, ArrowRight, Check, Loader2, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { Badge } from "@/components/ui/badge";
+import { Logo } from "@/components/ui/logo";
 
 const mockResults = {
   niche: "Tecnologia",
@@ -46,10 +46,7 @@ export default function VerificarNichePage() {
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <LinkIcon className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-sm font-extrabold font-[family-name:var(--font-display)]">8links</span>
+            <Logo size="sm" />
           </Link>
           <h1 className="text-3xl font-black font-[family-name:var(--font-display)] tracking-tight mb-3">
             Funciona pro <span className="text-foreground">seu nicho</span>?

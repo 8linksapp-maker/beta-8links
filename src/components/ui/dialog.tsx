@@ -61,7 +61,7 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
 function DialogContent({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={cn(
-      "w-full max-w-lg rounded-2xl border border-border-strong bg-card p-7 sm:p-8 shadow-[0_32px_80px_rgba(0,0,0,0.5)] max-h-[88vh] overflow-y-auto",
+      "w-full max-w-lg rounded-2xl border border-border-strong bg-card p-6 sm:p-8 shadow-[0_32px_80px_rgba(0,0,0,0.5)] max-h-[88vh] overflow-y-auto",
       className
     )}>
       {children}

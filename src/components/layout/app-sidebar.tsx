@@ -12,6 +12,7 @@ import {
   MessageSquare, Settings, LogOut, ChevronLeft,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Logo } from "@/components/ui/logo";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, Globe, Search, Link: LinkIcon, FileText, Wand,
@@ -93,16 +94,7 @@ export function AppSidebar({ collapsed, onToggle, userName = "Usuário", userPla
     )}>
       {/* Logo */}
       <div className="flex items-center justify-between px-4 py-5 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] flex items-center justify-center shadow-[0_0_16px_hsl(24_100%_55%/0.3)] shrink-0">
-            <LinkIcon className="w-4 h-4 text-white" />
-          </div>
-          {!collapsed && (
-            <span className="text-sm font-extrabold text-white font-[family-name:var(--font-display)] tracking-tight">
-              8links
-            </span>
-          )}
-        </div>
+        <Logo variant={collapsed ? "mark" : "full"} size="sm" />
         <button
           onClick={onToggle}
           className="text-sidebar-foreground hover:text-foreground transition-colors cursor-pointer"

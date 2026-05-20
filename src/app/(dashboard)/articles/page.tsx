@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FilterPills } from "@/components/ui/filter-pills";
 import { PublishArticleButton } from "@/components/articles/publish-button";
 
 export default function ArticlesPage() {
@@ -132,18 +133,15 @@ export default function ArticlesPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex gap-1 p-1 bg-muted/30 rounded-xl">
-          {[
+        <FilterPills
+          options={[
             { id: "all", label: "Todos" },
             { id: "draft", label: "Rascunhos" },
             { id: "published", label: "Publicados" },
-          ].map(f => (
-            <button key={f.id} onClick={() => setFilter(f.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${filter === f.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
-              {f.label}
-            </button>
-          ))}
-        </div>
+          ]}
+          value={filter}
+          onChange={setFilter}
+        />
         <div className="relative max-w-xs flex-1 sm:flex-initial">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Buscar artigo..." className="pl-10 h-11 text-sm" value={search} onChange={e => setSearch(e.target.value)} />

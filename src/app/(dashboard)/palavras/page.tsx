@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PageMetrics, countSince } from "@/components/ui/page-metrics";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FilterPills } from "@/components/ui/filter-pills";
 const CreateBacklinkDialog = dynamic(
   () => import("@/components/backlinks/create-backlink-dialog").then(m => ({ default: m.CreateBacklinkDialog })),
   { ssr: false }
@@ -360,26 +362,14 @@ export default function PalavrasPage() {
       />
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/30 w-fit">
-        <button
-          type="button"
-          onClick={() => setTab("plano")}
-          className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
-            tab === "plano" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Meu plano {savedKeywords.length > 0 && <span className="ml-1.5 text-xs font-mono text-muted-foreground">({savedKeywords.length})</span>}
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("buscar")}
-          className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
-            tab === "buscar" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Keyword Planner
-        </button>
-      </div>
+      <FilterPills
+        options={[
+          { id: "plano", label: "Meu plano", count: savedKeywords.length > 0 ? savedKeywords.length : undefined },
+          { id: "buscar", label: "Keyword Planner" },
+        ]}
+        value={tab}
+        onChange={(id) => setTab(id as Tab)}
+      />
 
       {/* TAB: PLANO */}
       <AnimatePresence mode="wait">
@@ -431,20 +421,12 @@ export default function PalavrasPage() {
             {planLoading ? (
               <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
             ) : savedKeywords.length === 0 ? (
-              <Card>
-                <CardContent className="py-20 text-center">
-                  <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-                    <Sparkles className="w-9 h-9 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">Seu plano está vazio</h3>
-                  <p className="text-base text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
-                    Adicione palavras que você quer ver aparecer no Google. Pra cada palavra você pode criar backlinks ou escrever artigos.
-                  </p>
-                  <Button size="lg" onClick={() => setTab("buscar")} className="gap-2">
-                    <Search className="w-5 h-5" /> Abrir Keyword Planner
-                  </Button>
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={Sparkles}
+                title="Seu plano está vazio"
+                description="Adicione palavras que você quer ver aparecer no Google. Pra cada palavra você pode criar backlinks ou escrever artigos."
+                action={{ label: "Abrir Keyword Planner", onClick: () => setTab("buscar") }}
+              />
             ) : (
               <>
                 {/* View mode toggle */}
@@ -747,7 +729,7 @@ export default function PalavrasPage() {
                         type="button"
                         onClick={() => !r.inList && toggleSelected(r.keyword)}
                         disabled={r.inList}
-                        className={`w-full text-left rounded-xl border-2 p-4 sm:p-5 transition-all ${
+                        className={`w-full text-left rounded-xl border-2 p-4 sm:p-6 transition-all ${
                           r.inList ? "opacity-50 cursor-not-allowed border-border" :
                           isSelected ? "border-primary bg-primary/5 cursor-pointer" :
                           "border-border bg-card hover:border-primary/40 cursor-pointer"

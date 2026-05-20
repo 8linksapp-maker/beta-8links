@@ -89,7 +89,7 @@ export default function DashboardLayout({
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] animate-pulse" />
+        <div className="w-8 h-8 rounded-lg bg-primary/40 animate-pulse" />
       </div>
     );
   }

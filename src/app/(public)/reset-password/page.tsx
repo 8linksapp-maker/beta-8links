@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { Link as LinkIcon, Lock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Lock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -86,9 +87,7 @@ export default function ResetPasswordPage() {
         </div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-sm relative text-center">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] flex items-center justify-center mx-auto mb-4 shadow-[0_0_32px_hsl(24_100%_55%/0.2)]">
-            <LinkIcon className="w-5 h-5 text-white" />
-          </div>
+          <Logo variant="mark" size="lg" className="mx-auto mb-4" />
           <p className="text-sm text-muted-foreground">Verificando sessão...</p>
         </motion.div>
       </div>
@@ -104,9 +103,7 @@ export default function ResetPasswordPage() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm relative">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] flex items-center justify-center mx-auto mb-4 shadow-[0_0_32px_hsl(24_100%_55%/0.2)]">
-            <LinkIcon className="w-5 h-5 text-white" />
-          </div>
+          <Logo variant="mark" size="lg" className="mx-auto mb-4" />
           <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">
             {done ? "Senha atualizada!" : "Nova senha"}
           </h1>
@@ -127,7 +124,7 @@ export default function ResetPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <div className="p-3 rounded-lg bg-[hsl(0_80%_60%/0.1)] border border-[hsl(0_80%_60%/0.2)] text-sm text-destructive flex items-start gap-2">
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                   <span>{error}</span>
                 </div>

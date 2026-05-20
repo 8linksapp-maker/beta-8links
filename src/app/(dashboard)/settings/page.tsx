@@ -320,7 +320,7 @@ export default function SettingsPage() {
             <div className="space-y-4">
               {/* Simple → Full upgrade card (only when in simple mode) */}
               {onboardingMode === "simple" && (
-                <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+                <Card className="border-primary/30 bg-primary/5">
                   <CardContent className="p-5">
                     <div className="flex items-start gap-4">
                       <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">

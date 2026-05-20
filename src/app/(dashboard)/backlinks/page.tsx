@@ -18,6 +18,9 @@ import {
 import { useSite } from "@/lib/hooks/use-site";
 import { createClient } from "@/lib/supabase/client";
 import { humanizeError } from "@/lib/utils/error-messages";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FilterPills } from "@/components/ui/filter-pills";
+import { StatusTag } from "@/components/ui/status-tag";
 // Heavy create dialog only loads when the user opens it.
 const CreateBacklinkDialog = dynamic(
   () => import("@/components/backlinks/create-backlink-dialog").then(m => ({ default: m.CreateBacklinkDialog })),
@@ -359,44 +362,21 @@ export default function BacklinksPage() {
       </div>
 
       {items.length === 0 ? (
-        // Empty state
-        <div>
-          <Card>
-            <CardContent className="py-20 text-center">
-              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-                <Sparkles className="w-9 h-9 text-primary" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Nenhum backlink ainda</h3>
-              <p className="text-base text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
-                Backlinks são links de outros sites apontando pro seu — quanto mais você tem, mais o Google confia.
-                Comece criando o primeiro a partir de uma palavra do seu plano.
-              </p>
-              <Button size="lg" className="gap-2" onClick={() => setCreateOpen(true)}>
-                <Plus className="w-5 h-5" /> Criar primeiro backlink
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <EmptyState
+          icon={Sparkles}
+          title="Nenhum backlink ainda"
+          description="Backlinks são links de outros sites apontando pro seu. Comece criando o primeiro a partir de uma palavra do seu plano."
+          action={{ label: "Criar primeiro backlink", onClick: () => setCreateOpen(true) }}
+        />
       ) : (
         <>
           {/* Filters */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              {STATUS_FILTERS.map(f => (
-                <button
-                  key={f.value}
-                  type="button"
-                  onClick={() => setStatusFilter(f.value)}
-                  className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
-                    statusFilter === f.value
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted/40 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
+            <FilterPills
+              options={STATUS_FILTERS.map(f => ({ id: f.value, label: f.label }))}
+              value={statusFilter}
+              onChange={(id) => setStatusFilter(id as typeof statusFilter)}
+            />
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -438,7 +418,7 @@ export default function BacklinksPage() {
                   <tbody>
                     {filtered.map((bl, idx) => (
                       <tr key={bl.id} className={`border-b last:border-0 hover:bg-muted/20 transition-colors ${idx % 2 === 0 ? "" : "bg-muted/5"}`}>
-                        <td className="px-4 py-4"><StatusBadge status={bl.status} /></td>
+                        <td className="px-4 py-4"><StatusTag status={bl.status} /></td>
                         <td className="px-4 py-4">
                           <p className="text-sm font-semibold">{bl.anchor_text}</p>
                           {bl.error_message && (
@@ -490,7 +470,7 @@ export default function BacklinksPage() {
                 <Card key={bl.id}>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between gap-2">
-                      <StatusBadge status={bl.status} />
+                      <StatusTag status={bl.status} />
                       <span className="text-xs text-muted-foreground">{timeAgo(bl.created_at)}</span>
                     </div>
                     <div>
@@ -601,24 +581,6 @@ function RowActions({ bl, onReview, onRetry, onDelete }: {
         <Trash2 className="w-4 h-4" />
       </button>
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: Status }) {
-  const config: Record<Status, { color: string; icon: any }> = {
-    queued: { color: "bg-muted text-muted-foreground", icon: <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" /> },
-    generating: { color: "bg-warning-light text-warning", icon: <Loader2 className="w-3 h-3 animate-spin" /> },
-    ready_for_review: { color: "bg-info-light text-info", icon: <FileText className="w-3 h-3" /> },
-    published: { color: "bg-success-light text-success", icon: <Check className="w-3 h-3" /> },
-    indexed: { color: "bg-success-light text-success", icon: <Check className="w-3 h-3" /> },
-    error: { color: "bg-destructive/10 text-destructive", icon: <AlertTriangle className="w-3 h-3" /> },
-  };
-  const c = config[status];
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${c.color}`}>
-      {c.icon}
-      {STATUS_LABELS[status]}
-    </span>
   );
 }
 

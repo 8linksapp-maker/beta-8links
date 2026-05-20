@@ -4,10 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { Link as LinkIcon, Mail, Lock, User, ArrowRight } from "lucide-react";
+import { Mail, Lock, User, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Logo } from "@/components/ui/logo";
 import { createClient } from "@/lib/supabase/client";
 
 export default function RegisterPage() {
@@ -52,9 +53,7 @@ export default function RegisterPage() {
         className="w-full max-w-sm relative"
       >
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
-            <LinkIcon className="w-5 h-5 text-white" />
-          </div>
+          <Logo variant="mark" size="md" className="mx-auto mb-4" />
           <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">
             Criar conta
           </h1>
@@ -64,7 +63,7 @@ export default function RegisterPage() {
         <div className="rounded-2xl border bg-card p-6 relative overflow-hidden">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="p-3 rounded-lg bg-[hsl(0_80%_60%/0.1)] border border-[hsl(0_80%_60%/0.2)] text-sm text-destructive">
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
                 {error}
               </div>
             )}

@@ -47,7 +47,7 @@ export function PageMetrics({ items, loading }: PageMetricsProps) {
               "hover:border-primary/30 hover:-translate-y-0.5",
             )}
           >
-            <CardContent className="p-5 sm:p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-3">
                 <m.icon className={cn("w-4 h-4", m.accent ? "text-primary" : "text-muted-foreground")} />
                 <span className="text-[11px] uppercase tracking-wider font-mono font-semibold text-muted-foreground">

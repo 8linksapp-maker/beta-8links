@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Link as LinkIcon, Mail, ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Mail, ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Logo } from "@/components/ui/logo";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotPasswordPage() {
@@ -48,9 +49,7 @@ export default function ForgotPasswordPage() {
         className="w-full max-w-sm relative"
       >
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-[hsl(35,100%,60%)] flex items-center justify-center mx-auto mb-4 shadow-[0_0_32px_hsl(24_100%_55%/0.2)]">
-            <LinkIcon className="w-5 h-5 text-white" />
-          </div>
+          <Logo variant="mark" size="lg" className="mx-auto mb-4" />
           <h1 className="text-2xl font-extrabold font-[family-name:var(--font-display)] tracking-tight">
             Recuperar senha
           </h1>

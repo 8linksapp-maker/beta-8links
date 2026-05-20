@@ -100,7 +100,7 @@ export default function DashboardPage() {
 
       {/* Hero — primary CTA */}
       <Card className="border-primary/20">
-        <CardContent className="p-8 sm:p-10">
+        <CardContent className="p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
             <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shrink-0">
               <Sparkles className="w-8 h-8 text-white" />
@@ -207,7 +207,7 @@ function KpiCard({ icon: Icon, label, value, href, color }: {
   return (
     <Link href={href}>
       <Card className="card-interactive hover:border-primary/30 transition-colors cursor-pointer">
-        <CardContent className="p-5 sm:p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-3">
             <Icon className={`w-5 h-5 ${color}`} />
             <span className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wider font-mono font-semibold">{label}</span>
