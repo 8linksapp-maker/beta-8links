@@ -52,10 +52,10 @@ export default function DashboardPage() {
         { data: recentArt },
       ] = await Promise.all([
         supabase.from("keywords").select("id", { count: "exact", head: true }).eq("client_site_id", activeSite.id),
-        supabase.from("backlinks").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-        supabase.from("articles").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-        supabase.from("backlinks").select("id, anchor_text, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
-        supabase.from("articles").select("id, title, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+        supabase.from("backlinks").select("id", { count: "exact", head: true }).eq("client_site_id", activeSite.id),
+        supabase.from("articles").select("id", { count: "exact", head: true }).eq("client_site_id", activeSite.id),
+        supabase.from("backlinks").select("id, anchor_text, status, created_at").eq("client_site_id", activeSite.id).order("created_at", { ascending: false }).limit(5),
+        supabase.from("articles").select("id, title, status, created_at").eq("client_site_id", activeSite.id).order("created_at", { ascending: false }).limit(5),
       ]);
 
       setStats({

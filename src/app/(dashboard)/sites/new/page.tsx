@@ -109,6 +109,23 @@ export default function NewSitePage() {
         return;
       }
 
+      // Fetch the newly created site to get its ID
+      const { data: newSite } = await supabase
+        .from("client_sites")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("url", siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      // Set as active site immediately
+      if (newSite?.id) {
+        localStorage.setItem("8links_active_site", newSite.id);
+        // Trigger custom event for same-tab refresh
+        window.dispatchEvent(new CustomEvent("8links_sites_refresh"));
+      }
+
       toast.success("Pronto! Seu site foi adicionado.");
       // Hard navigation pra forçar refetch dos hooks (useActiveSite etc.) — evita
       // a tela do dashboard mostrar 0 quando acabamos de inserir.

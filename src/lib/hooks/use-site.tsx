@@ -93,6 +93,21 @@ export function SiteProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { loadSites(); }, []);
 
+  // Listen to storage changes so newly created sites can become active immediately
+  useEffect(() => {
+    const handleRefresh = () => {
+      loadSites();
+    };
+    // Custom event for same-tab dispatches (e.g., after creating a site)
+    window.addEventListener("8links_sites_refresh", handleRefresh);
+    // Storage event for cross-tab sync
+    window.addEventListener("storage", handleRefresh);
+    return () => {
+      window.removeEventListener("8links_sites_refresh", handleRefresh);
+      window.removeEventListener("storage", handleRefresh);
+    };
+  }, []);
+
   const setActiveSiteId = (id: string) => {
     setActiveSiteIdState(id);
     localStorage.setItem(STORAGE_KEY, id);
