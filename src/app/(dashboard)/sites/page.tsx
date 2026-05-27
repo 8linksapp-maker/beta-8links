@@ -352,39 +352,42 @@ export default function SitesPage() {
               <Card className={`card-interactive relative overflow-hidden cursor-pointer ${activeSiteId === site.id ? 'ring-1 ring-primary/30' : ''}`}
                 onClick={() => handleSelectSite(site.id)}>
 
-                <CardHeader className="pb-4 relative">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-12 w-12 rounded-xl bg-primary-light ring-1 ring-primary/20 flex items-center justify-center shrink-0">
-                        <Globe className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="min-w-0">
-                        <CardTitle className="text-lg truncate flex items-center gap-2">
-                          {site.url}
-                          {activeSiteId === site.id && <Badge variant="default" className="text-[10px] px-1.5">ativo</Badge>}
-                        </CardTitle>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          {site.niche ? (
-                            <Badge variant="outline" className="text-xs cursor-pointer hover:border-primary/50"
-                              onClick={(e) => { e.stopPropagation(); openDetect(site.id, site.fullUrl, site.niche); }}>
-                              {site.niche}
-                            </Badge>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); openDetect(site.id, site.fullUrl, site.niche); }}
-                              className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-primary/30 text-primary hover:bg-primary/10 cursor-pointer transition-colors font-semibold"
-                            >
-                              <Sparkles className="w-3 h-3" /> Definir nicho
-                            </button>
-                          )}
-                        </div>
+                {/* Delete button - fixed top right, always visible */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDeleteId(site.id); }}
+                  className="absolute top-2 right-2 z-10 p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                  aria-label="Excluir site"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-10 w-10 rounded-xl bg-primary-light ring-1 ring-primary/20 flex items-center justify-center shrink-0">
+                      <Globe className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-base truncate flex items-center gap-2">
+                        {site.url}
+                        {activeSiteId === site.id && <Badge variant="default" className="text-[10px] px-1.5">ativo</Badge>}
+                      </CardTitle>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {site.niche ? (
+                          <Badge variant="outline" className="text-xs cursor-pointer hover:border-primary/50"
+                            onClick={(e) => { e.stopPropagation(); openDetect(site.id, site.fullUrl, site.niche); }}>
+                            {site.niche}
+                          </Badge>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); openDetect(site.id, site.fullUrl, site.niche); }}
+                            className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-primary/30 text-primary hover:bg-primary/10 cursor-pointer transition-colors font-semibold"
+                          >
+                            <Sparkles className="w-3 h-3" /> Definir nicho
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive"
-                      onClick={(e) => { e.stopPropagation(); setDeleteId(site.id); }}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
                   </div>
                 </CardHeader>
 
@@ -404,8 +407,8 @@ export default function SitesPage() {
                     </div>
                   )}
 
-                  {/* Conexões pendentes */}
-                  <ConnectionsAlert site={site} variant="card" />
+                  {/* Conexões */}
+                  <ConnectionBadges site={site} variant="card" />
 
                   {/* CTA */}
                   <Button variant="outline" className="w-full gap-2">
@@ -457,51 +460,60 @@ export default function SitesPage() {
   );
 }
 
-function pendingConnectionsCount(site: EnrichedSite): number {
-  let pending = 0;
-  if (!site.hasGoogle) pending++;
-  if (!site.hasWordpress) pending++;
-  if (!site.hasGithub) pending++;
-  return pending;
-}
+function ConnectionBadges({ site, variant = "card" }: { site: EnrichedSite; variant?: "card" | "row" }) {
+  const connections = [
+    { name: "Google", connected: site.hasGoogle, icon: "🔍", key: "google" },
+    { name: "WordPress", connected: site.hasWordpress, icon: "📝", key: "wordpress" },
+    { name: "GitHub", connected: site.hasGithub, icon: "🐙", key: "github" },
+  ] as const;
 
-function ConnectionsAlert({ site, variant = "card" }: { site: EnrichedSite; variant?: "card" | "row" }) {
-  const pending = pendingConnectionsCount(site);
-  if (pending === 0) return null;
-
-  // No count — WordPress and GitHub are mutually exclusive, so a raw total
-  // would mislead (the user can't connect all three).
-  const text = "Conexões pendentes";
+  const handleClick = (e: React.MouseEvent, key: string) => {
+    e.stopPropagation();
+    // Abre a página de integrações já com o modal aberto
+    window.location.href = `/integracoes?open=${key}`;
+  };
 
   if (variant === "row") {
     return (
-      <Link
-        href="/integracoes"
-        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning-light text-warning border border-warning/20 hover:bg-warning/15 transition-colors text-xs font-semibold"
-      >
-        <Plug className="w-3 h-3" /> {text}
-      </Link>
+      <div className="flex items-center gap-1.5">
+        {connections.map(c => (
+          <button
+            key={c.name}
+            onClick={(e) => handleClick(e, c.key)}
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer ${
+              c.connected
+                ? "bg-success/15 text-success border border-success/25 hover:bg-success/25"
+                : "bg-muted text-muted-foreground border border-border hover:bg-warning/15 hover:text-warning hover:border-warning/30"
+            }`}
+            title={`${c.name}: ${c.connected ? "conectado" : "não conectado — clique para conectar"}`}
+          >
+            {c.icon} {c.name}
+          </button>
+        ))}
+      </div>
     );
   }
 
   return (
-    <Link
-      href="/integracoes"
-      onClick={(e: React.MouseEvent) => e.stopPropagation()}
-      className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg bg-warning-light border border-warning/20 hover:bg-warning/15 transition-colors group"
-    >
-      <Plug className="w-4 h-4 text-warning shrink-0" />
-      <span className="text-sm font-semibold flex-1">
-        {text}
-        <span className="block text-xs font-normal text-muted-foreground">
-          Clique pra conectar e desbloquear funcionalidades
-        </span>
-      </span>
-      <ArrowRight className="w-4 h-4 text-warning shrink-0 group-hover:translate-x-0.5 transition-transform" />
-    </Link>
+    <div className="flex flex-wrap gap-2">
+      {connections.map(c => (
+        <button
+          key={c.name}
+          onClick={(e) => handleClick(e, c.key)}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+            c.connected
+              ? "bg-success/15 text-success border border-success/25 hover:bg-success/25"
+              : "bg-muted text-muted-foreground border border-border hover:bg-warning/15 hover:text-warning hover:border-warning/30"
+          }`}
+          title={`${c.name}: ${c.connected ? "conectado" : "não conectado — clique para conectar"}`}
+        >
+          {c.icon} {c.name} {c.connected ? "✓" : "✕"}
+        </button>
+      ))}
+    </div>
   );
 }
+
 
 function KpiTile({ icon: Icon, label, value, format }: {
   icon: any; label: string; value: number; format?: "position";
@@ -539,7 +551,6 @@ function SitesList({ sites, activeSiteId, onSelect, onDelete, onDetectNiche }: {
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Palavras</th>
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Backlinks</th>
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Conexões</th>
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -550,9 +561,16 @@ function SitesList({ sites, activeSiteId, onSelect, onDelete, onDetectNiche }: {
                   className={`border-b last:border-0 hover:bg-muted/20 transition-colors cursor-pointer ${idx % 2 === 0 ? "" : "bg-muted/5"} ${activeSiteId === site.id ? "bg-primary/5" : ""}`}
                   onClick={() => onSelect(site.id)}>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <p className="text-sm font-semibold">{site.url}</p>
                       {activeSiteId === site.id && <Badge variant="default" className="text-[9px] px-1.5">ativo</Badge>}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(site.id); }}
+                        className="ml-1 text-muted-foreground/40 hover:text-destructive transition-colors cursor-pointer p-1"
+                        aria-label="Excluir site"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </td>
                   <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -587,23 +605,9 @@ function SitesList({ sites, activeSiteId, onSelect, onDelete, onDetectNiche }: {
                   <td className="px-4 py-3 text-sm font-mono">{site.keywords}</td>
                   <td className="px-4 py-3 text-sm font-mono">{site.backlinks}</td>
                   <td className="px-4 py-3">
-                    {pendingConnectionsCount(site) === 0 ? (
-                      <span className="inline-flex items-center gap-1.5 text-xs text-success font-semibold">
-                        <Check className="w-3.5 h-3.5" /> Tudo conectado
-                      </span>
-                    ) : (
-                      <ConnectionsAlert site={site} variant="row" />
-                    )}
+                    <ConnectionBadges site={site} variant="row" />
                   </td>
-                  <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => onDelete(site.id)}
-                      className="text-muted-foreground/40 hover:text-destructive transition-colors cursor-pointer p-2"
-                      aria-label="Excluir site"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
+                  <td className="px-4 py-3"></td>
                 </tr>
               );
             })}

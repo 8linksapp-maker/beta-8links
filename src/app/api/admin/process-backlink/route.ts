@@ -25,8 +25,18 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? "";
 export const maxDuration = 300; // Vercel Pro: 5 min timeout
 
 export async function POST(request: Request) {
-  const { backlinkId } = await request.json();
+  const { backlinkId, retry } = await request.json();
   if (!backlinkId) return NextResponse.json({ error: "backlinkId required" }, { status: 400 });
+
+  // Validate OpenAI API key before proceeding
+  const openAiKey = process.env.OPENAI_API_KEY;
+  if (!openAiKey || openAiKey.trim() === "") {
+    console.error("[process-backlink] OPENAI_API_KEY not configured");
+    return NextResponse.json({
+      error: "Erro ao processar. Tente novamente. Se persistir, exclua este backlink e crie um novo.",
+      detail: "OPENAI_API_KEY missing"
+    }, { status: 500 });
+  }
 
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
@@ -38,7 +48,12 @@ export async function POST(request: Request) {
     .single();
 
   if (!backlink) return NextResponse.json({ error: "Backlink não encontrado" }, { status: 404 });
-  if (backlink.status !== "queued") return NextResponse.json({ error: "Backlink já processado", status: backlink.status });
+
+  // Allow retry=true to reprocess backlinks with status "error"
+  const allowedStatuses = retry === true ? ["queued", "error"] : ["queued"];
+  if (!allowedStatuses.includes(backlink.status)) {
+    return NextResponse.json({ error: "Backlink já processado", status: backlink.status });
+  }
 
   // Sanitize target_url: legacy rows may have double slashes (https://site.com//path).
   // Normalize before generating the article so the GPT inserts the clean URL.

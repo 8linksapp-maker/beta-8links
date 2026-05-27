@@ -137,26 +137,29 @@ Não use "..." ou comentários dentro do JSON. Retorne o JSON completo e válido
   let outline: any = null;
   let outlineInputTokens = 0;
   let outlineOutputTokens = 0;
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const outlineRes = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "gpt-4.1-mini", temperature: 0.3, max_tokens: 2000, messages: [{ role: "user", content: outlinePrompt }], response_format: { type: "json_object" } }),
+        body: JSON.stringify({ model: "gpt-4.1-mini", temperature: 0.3, max_tokens: 2500, messages: [{ role: "user", content: outlinePrompt }], response_format: { type: "json_object" } }),
       });
       const outlineData = await outlineRes.json();
       if (outlineData.error) throw new Error(outlineData.error.message ?? JSON.stringify(outlineData.error));
       let content = outlineData.choices[0].message.content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      // Fix common JSON issues: trailing commas, unescaped quotes in strings
       content = content.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+      // Fix unescaped quotes inside string values
+      content = content.replace(/:\s*"([^"\\]*(?:\\.[^"\\]*)*?)(?<!\\)":/g, (m, p1) => `:"${p1.replace(/"/g, '\\"')}":`);
       outline = JSON.parse(content);
       outlineInputTokens = outlineData.usage?.prompt_tokens ?? 0;
       outlineOutputTokens = outlineData.usage?.completion_tokens ?? 0;
       steps.push({ step: "3. Consolidate outline", duration: Date.now() - s3, data: { headingsCount: outline.outline?.length, title: outline.title, attempt, inputTokens: outlineInputTokens, outputTokens: outlineOutputTokens } });
       break;
     } catch (e) {
-      if (attempt === 2) {
-        steps.push({ step: "3. Consolidate outline", duration: Date.now() - s3, data: { error: String(e), attempts: 2 } });
-        return NextResponse.json({ error: "Failed to generate outline", steps });
+      if (attempt === 3) {
+        steps.push({ step: "3. Consolidate outline", duration: Date.now() - s3, data: { error: String(e), attempts: 3 } });
+        return NextResponse.json({ error: "Não foi possível gerar o outline após 3 tentativas. Tente outra keyword.", steps });
       }
       console.warn(`[test-article] Outline attempt ${attempt} failed: ${e}. Retrying...`);
     }

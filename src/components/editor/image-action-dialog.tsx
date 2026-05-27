@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Loader2, Upload, Search, Link as LinkIcon, Trash2, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Search, Link as LinkIcon, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "insert" | "replace";
-type Tab = "search" | "upload" | "url";
+type Tab = "search" | "url";
 
 type SearchResult = { url: string; description?: string; credit?: string };
 
@@ -46,7 +46,6 @@ export function ImageActionDialog({
   const [url, setUrl] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   // Reseta ao abrir/fechar e pré-preenche o termo de busca
   useEffect(() => {
@@ -90,44 +89,6 @@ export function ImageActionDialog({
     setLoading(false);
   };
 
-  const handleUpload = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Selecione um arquivo de imagem (JPG, PNG ou WEBP).");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Imagem muito grande. O limite é 5 MB.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Sua sessão expirou. Faça login novamente.");
-        setLoading(false);
-        return;
-      }
-      const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-      const path = `articles/${user.id}/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("public").upload(path, file, {
-        contentType: file.type,
-        upsert: false,
-      });
-      if (upErr) {
-        console.error("[image-upload]", upErr);
-        toast.error("Não conseguimos enviar essa imagem. Tente outra.");
-        setLoading(false);
-        return;
-      }
-      const { data: urlData } = supabase.storage.from("public").getPublicUrl(path);
-      finish(urlData.publicUrl);
-    } catch (e) {
-      console.error("[image-upload]", e);
-      toast.error("Não conseguimos enviar essa imagem. Tente novamente.");
-    }
-    setLoading(false);
-  };
 
   const handleUrl = () => {
     const trimmed = url.trim();
@@ -145,7 +106,7 @@ export function ImageActionDialog({
         <DialogHeader>
           <DialogTitle>{mode === "replace" ? "Trocar imagem" : "Adicionar imagem"}</DialogTitle>
           <DialogDescription>
-            Escolha uma imagem para o artigo: busque uma foto pronta, envie do seu computador ou cole uma URL.
+            Escolha uma imagem para o artigo: busque uma foto pronta ou cole uma URL de imagem externa.
           </DialogDescription>
         </DialogHeader>
 
@@ -153,7 +114,6 @@ export function ImageActionDialog({
         <div className="flex gap-1 p-1 bg-muted/40 rounded-lg mb-4">
           {([
             { v: "search", label: "Buscar", icon: Search },
-            { v: "upload", label: "Enviar do PC", icon: Upload },
             { v: "url", label: "Colar URL", icon: LinkIcon },
           ] as const).map(t => (
             <button
@@ -235,37 +195,6 @@ export function ImageActionDialog({
           </div>
         )}
 
-        {tab === "upload" && (
-          <div className="space-y-3">
-            <input
-              type="file"
-              ref={fileRef}
-              accept="image/*"
-              className="hidden"
-              onChange={e => {
-                const f = e.target.files?.[0];
-                if (f) handleUpload(f);
-                e.target.value = "";
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              disabled={loading}
-              className="w-full border-2 border-dashed border-border hover:border-primary/40 rounded-xl py-12 flex flex-col items-center gap-2 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-wait"
-            >
-              {loading ? (
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              ) : (
-                <Upload className="w-8 h-8 text-muted-foreground" />
-              )}
-              <span className="text-sm font-semibold">
-                {loading ? "Enviando imagem..." : "Clique para escolher uma imagem"}
-              </span>
-              <span className="text-xs text-muted-foreground">JPG, PNG ou WEBP — até 5 MB</span>
-            </button>
-          </div>
-        )}
 
         {tab === "url" && (
           <div className="space-y-3">

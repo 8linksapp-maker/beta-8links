@@ -162,17 +162,22 @@ export default function BacklinksPage() {
    * Fase 1 — gera artigos pros backlinks que estão na fila (status=queued).
    * Usa após "Criar backlinks": dispara automaticamente pra ela revisar/publicar depois.
    * Não publica nada — apenas gera o conteúdo.
+   *
+   * Só processa backlinks criados nos últimos 30 segundos (evita reprocessar retry)
    */
   const generatePendingArticles = async (): Promise<void> => {
     if (!activeSiteId) return;
     setProcessingFila(true);
 
     const supabase = createClient();
+    // Only process backlinks created in the last 30 seconds (fresh from the dialog)
+    const thirtySecondsAgo = new Date(Date.now() - 30000).toISOString();
     const { data } = await supabase
       .from("backlinks")
       .select("id, anchor_text")
       .eq("client_site_id", activeSiteId)
-      .eq("status", "queued");
+      .eq("status", "queued")
+      .gte("created_at", thirtySecondsAgo);
     const queued = (data ?? []) as Array<{ id: string; anchor_text: string }>;
 
     if (queued.length === 0) {
@@ -289,13 +294,16 @@ export default function BacklinksPage() {
 
   const retry = async (bl: Backlink) => {
     const supabase = createClient();
+    // First reset the status so it can be processed again
     await supabase.from("backlinks").update({ status: "queued", error_message: null }).eq("id", bl.id);
     toast(`Tentando "${bl.anchor_text}" de novo...`);
+    // Small delay to ensure DB update is visible before API reads it
+    await new Promise(r => setTimeout(r, 100));
     try {
       const res = await fetch("/api/admin/process-backlink", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ backlinkId: bl.id }),
+        body: JSON.stringify({ backlinkId: bl.id, retry: true }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok || body?.error) toast.error(body?.error ?? humanizeError(body?.detail ?? `HTTP ${res.status}`).user);
@@ -421,8 +429,10 @@ export default function BacklinksPage() {
                         <td className="px-4 py-4"><StatusTag status={bl.status} /></td>
                         <td className="px-4 py-4">
                           <p className="text-sm font-semibold">{bl.anchor_text}</p>
-                          {bl.error_message && (
-                            <p className="text-xs text-destructive mt-1 max-w-xs truncate" title={bl.error_message}>{bl.error_message}</p>
+                          {bl.error_message && bl.status === "error" && (
+                            <p className="text-xs text-destructive mt-1.5 font-medium" title={bl.error_message}>
+                              ⚠️ {bl.error_message}
+                            </p>
                           )}
                         </td>
                         <td className="px-4 py-4 text-sm text-muted-foreground">
@@ -477,7 +487,11 @@ export default function BacklinksPage() {
                       <p className="text-sm font-semibold">{bl.anchor_text}</p>
                       <p className="text-xs text-muted-foreground font-mono mt-0.5 truncate">→ {bl.target_url.replace(/^https?:\/\//, "")}</p>
                       {bl.network_sites?.domain && <p className="text-xs text-muted-foreground mt-1">em {bl.network_sites.domain}</p>}
-                      {bl.error_message && <p className="text-xs text-destructive mt-1.5">{bl.error_message}</p>}
+                      {bl.error_message && bl.status === "error" && (
+                        <p className="text-xs text-destructive mt-1.5 font-medium">
+                          ⚠️ {bl.error_message}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 pt-1">
                       <RowActions

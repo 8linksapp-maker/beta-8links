@@ -24,7 +24,7 @@ export function humanizeError(input: unknown): { user: string; technical: string
   // Auth / API key
   if (/\b401\b|unauthor|invalid.?api.?key|invalid.?key/i.test(technical)) {
     return {
-      user: "Serviço temporariamente indisponível. Nossa equipe foi avisada — tente novamente em alguns minutos.",
+      user: "Erro ao processar. Tente novamente. Se persistir, exclua este backlink e crie um novo.",
       technical,
     };
   }

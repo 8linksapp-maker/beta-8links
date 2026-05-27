@@ -41,7 +41,8 @@ export async function GET(request: Request) {
     });
     const ghUser = await userRes.json();
 
-    // Save token to client_sites
+    // Save token to client_sites — ONLY if siteId is explicit in state
+    // This prevents the token from being saved to the wrong site
     const supabase = await createClient();
 
     const updateData = {
@@ -49,14 +50,13 @@ export async function GET(request: Request) {
       github_username: ghUser.login,
     };
 
-    if (state.siteId) {
-      await supabase.from("client_sites").update(updateData).eq("id", state.siteId);
-    } else {
-      const { data: sites } = await supabase.from("client_sites").select("id").eq("user_id", state.userId).limit(1);
-      if (sites?.[0]) {
-        await supabase.from("client_sites").update(updateData).eq("id", sites[0].id);
-      }
+    if (!state.siteId) {
+      console.error("[GitHub OAuth] No siteId in state — token NOT saved. User must connect from a specific site context.");
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/integracoes?error=github_no_siteId`);
     }
+
+    await supabase.from("client_sites").update(updateData).eq("id", state.siteId);
+    console.log(`[GitHub OAuth] Token saved to site ${state.siteId} (${ghUser.login})`);
 
     console.log(`[GitHub OAuth] Connected: ${ghUser.login}`);
     const redirectPath = state.redirect ?? "/settings";
