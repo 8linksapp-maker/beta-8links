@@ -150,7 +150,7 @@ Não use "..." ou comentários dentro do JSON. Retorne o JSON completo e válido
       // Fix common JSON issues: trailing commas, unescaped quotes in strings
       content = content.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
       // Fix unescaped quotes inside string values
-      content = content.replace(/:\s*"([^"\\]*(?:\\.[^"\\]*)*?)(?<!\\)":/g, (m, p1) => `:"${p1.replace(/"/g, '\\"')}":`);
+      content = content.replace(/:\s*"([^"\\]*(?:\\.[^"\\]*)*?)(?<!\\)":/g, (m: string, p1: string) => `:"${p1.replace(/"/g, '\\"')}":`);
       outline = JSON.parse(content);
       outlineInputTokens = outlineData.usage?.prompt_tokens ?? 0;
       outlineOutputTokens = outlineData.usage?.completion_tokens ?? 0;
