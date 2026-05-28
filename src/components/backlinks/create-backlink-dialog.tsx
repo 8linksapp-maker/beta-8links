@@ -243,8 +243,13 @@ export function CreateBacklinkDialog({ open, onClose, initialKeywordId, onCreate
 
   const updateCustomAnchor = (i: number, val: string) => {
     setCustomAnchors(prev => {
-      if (prev.length !== quantity) return prev;
-      return prev.map((v, idx) => idx === i ? val : v);
+      // Adjust array length if quantity changed
+      let adjusted = [...prev];
+      while (adjusted.length < quantity) {
+        adjusted.push("");
+      }
+      adjusted[i] = val;
+      return adjusted.slice(0, quantity);
     });
   };
 
