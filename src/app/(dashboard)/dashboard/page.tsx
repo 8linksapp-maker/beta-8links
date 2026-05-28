@@ -10,6 +10,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import { useUser } from "@/lib/hooks/use-user";
 import { useSite } from "@/lib/hooks/use-site";
 import { createClient } from "@/lib/supabase/client";
@@ -75,6 +82,9 @@ export default function DashboardPage() {
   const [recentCount, setRecentCount] = useState({ keywords: 0, backlinks: 0, articles: 0 });
   const [anchorDistribution, setAnchorDistribution] = useState<AnchorDistribution[]>([]);
   const [monthlyUsage, setMonthlyUsage] = useState({ backlinks: { used: 0, limit: 100 }, articles: { used: 0, limit: 100 } });
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [siteUrl, setSiteUrl] = useState("");
+  const [siteGoal, setSiteGoal] = useState("");
 
   const userName = profile?.name?.split(" ")[0] || profile?.email?.split("@")[0] || "";
 
@@ -291,7 +301,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Ações Rápidas / Créditos */}
+      {/* Créditos do Mês */}
       <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
         <CardContent className="p-6">
           <div className="flex flex-col gap-5">
@@ -369,7 +379,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Club + Gráfico de Anchors lado a lado */}
+      {/* Club + Distribuição de Âncoras lado a lado */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Club */}
         {nextSession && (
@@ -403,20 +413,20 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <Button className="w-full gap-2" size="lg">
+              <Button className="w-full gap-2" size="lg" onClick={() => setApplyOpen(true)}>
                 <Send className="w-4 h-4" /> Candidatar meu site
               </Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Gráfico de Anchors */}
+        {/* Distribuição de Âncoras */}
         <Card>
           <CardContent className="p-5">
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-1">
                 <LinkIcon className="w-4 h-4 text-primary" />
-                <h3 className="text-base font-bold">Distribuição de Anchors</h3>
+                <h3 className="text-base font-bold">Distribuição de Âncoras</h3>
               </div>
               <p className="text-xs text-muted-foreground">Tipos de texto âncora usados</p>
             </div>
@@ -495,6 +505,46 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Candidatura - mesmo da pagina /courses */}
+      <Dialog open={applyOpen} onOpenChange={setApplyOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Candidatar meu site para análise</DialogTitle>
+            <DialogDescription>
+              Preencha os dados abaixo. Nossa equipe selecionará até 5 sites por sessão. Você será notificado se for escolhido.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>URL do site</Label>
+              <Input placeholder="https://meusite.com.br" value={siteUrl} onChange={(e) => setSiteUrl(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>O que você quer melhorar?</Label>
+              <Textarea
+                placeholder="Ex: quero mais tráfego orgânico, não sei se meus backlinks estão funcionando..."
+                rows={4}
+                value={siteGoal}
+                onChange={(e) => setSiteGoal(e.target.value)}
+              />
+            </div>
+            <div className="bg-primary-light rounded-xl p-4 border border-primary/20">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-semibold text-primary">Como funciona:</span> A análise é feita ao vivo pela nossa equipe.
+                Vamos revisar seu site, backlinks, keywords, conteúdo, e dar recomendações práticas.
+                A gravação fica disponível nos replays para todos os membros.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApplyOpen(false)}>Cancelar</Button>
+            <Button onClick={handleApply}>
+              <Send className="w-4 h-4" /> Enviar candidatura
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -611,4 +661,21 @@ function timeAgo(iso: string): string {
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d atrás`;
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
+
+async function handleApply() {
+  if (!siteUrl.trim() || !siteGoal.trim()) return;
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { toast.error("Faça login para se candidatar."); return; }
+  const sessionId = nextSession?.id;
+  if (!sessionId) { toast.error("Nenhuma sessão disponível."); return; }
+  const { error } = await supabase
+    .from("club_candidates")
+    .insert({ session_id: sessionId, user_id: user.id, client_site_id: activeSite?.id, goal: siteGoal });
+  if (error) { toast.error("Erro ao enviar candidatura."); return; }
+  setApplyOpen(false);
+  toast.success("Candidatura enviada!");
+  setSiteUrl("");
+  setSiteGoal("");
 }
