@@ -81,7 +81,7 @@ export default function DashboardPage() {
   const [articleTrend, setArticleTrend] = useState<TrendData[]>([]);
   const [recentCount, setRecentCount] = useState({ keywords: 0, backlinks: 0, articles: 0 });
   const [anchorDistribution, setAnchorDistribution] = useState<AnchorDistribution[]>([]);
-  const [monthlyUsage, setMonthlyUsage] = useState({ backlinks: { used: 0, limit: 100 }, articles: { used: 0, limit: 100 } });
+  const [monthlyUsage, setMonthlyUsage] = useState({ backlinks: { used: 0, limit: 99999 }, articles: { used: 0, limit: 10 } });
   const [applyOpen, setApplyOpen] = useState(false);
   const [siteUrl, setSiteUrl] = useState("");
   const [siteGoal, setSiteGoal] = useState("");
@@ -128,8 +128,9 @@ export default function DashboardPage() {
         supabase.from("backlinks").select("id, created_at, anchor_type").eq("client_site_id", activeSite.id).order("created_at", { ascending: true }),
         supabase.from("articles").select("id, created_at").eq("client_site_id", activeSite.id).order("created_at", { ascending: true }),
         supabase.from("profiles").select("credits_balance, plan_id").eq("id", user.id).single(),
-        supabase.from("backlinks").select("id", { count: "exact", head: true }).eq("client_site_id", activeSite.id).gte("created_at", startOfMonthStr),
-        supabase.from("articles").select("id", { count: "exact", head: true }).eq("client_site_id", activeSite.id).gte("created_at", startOfMonthStr),
+        // Créditos são da CONTA, não por site — buscar por user_id
+        supabase.from("backlinks").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("created_at", startOfMonthStr),
+        supabase.from("articles").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("created_at", startOfMonthStr),
       ]);
 
       setStats({
@@ -230,13 +231,21 @@ export default function DashboardPage() {
         ]);
       }
 
-      // Process monthly usage
-      const planLimits: Record<string, number> = { starter: 100, pro: 500, agency: 2000 };
+      // Process credits - conta do usuário, não por site
+      const planLimits: Record<string, { backlinks: number; articles: number }> = {
+        starter: { backlinks: 99999, articles: 10 },
+        pro: { backlinks: 99999, articles: 100 },
+        agency: { backlinks: 99999, articles: 99999 },
+        legacy_monthly: { backlinks: 99999, articles: 99999 },
+        legacy: { backlinks: 99999, articles: 99999 },
+        lifetime: { backlinks: 99999, articles: 99999 },
+        club: { backlinks: 99999, articles: 10 },
+      };
       const planId = profile?.plan_id ?? "starter";
-      const monthlyLimit = planLimits[planId] ?? 100;
+      const limits = planLimits[planId] ?? { backlinks: 99999, articles: 10 };
       setMonthlyUsage({
-        backlinks: { used: blUsed ?? 0, limit: monthlyLimit },
-        articles: { used: artUsed ?? 0, limit: monthlyLimit },
+        backlinks: { used: blUsed ?? 0, limit: limits.backlinks },
+        articles: { used: artUsed ?? 0, limit: limits.articles },
       });
 
       setLoading(false);
@@ -308,36 +317,36 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Zap className="w-5 h-5 text-primary" />
-                <span className="text-base font-bold">Créditos do mês</span>
+                <span className="text-base font-bold">Créditos usados este mês</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                {/* Backlinks usage */}
+                {/* Backlinks */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-muted-foreground">Backlinks</span>
                     <span className="text-xs font-mono font-bold text-info">
-                      {monthlyUsage.backlinks.used}/{monthlyUsage.backlinks.limit}
+                      {monthlyUsage.backlinks.used}/{monthlyUsage.backlinks.limit === 99999 ? '∞' : monthlyUsage.backlinks.limit}
                     </span>
                   </div>
                   <div className="h-2 rounded-full bg-muted border border-border">
                     <div
                       className="h-2 rounded-full bg-info transition-all shadow-lg"
-                      style={{ width: `${Math.min(100, (monthlyUsage.backlinks.used / monthlyUsage.backlinks.limit) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (monthlyUsage.backlinks.used / Math.min(100, monthlyUsage.backlinks.limit)) * 100)}%` }}
                     />
                   </div>
                 </div>
-                {/* Artigos usage */}
+                {/* Artigos */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-muted-foreground">Artigos</span>
                     <span className="text-xs font-mono font-bold text-success">
-                      {monthlyUsage.articles.used}/{monthlyUsage.articles.limit}
+                      {monthlyUsage.articles.used}/{monthlyUsage.articles.limit === 99999 ? '∞' : monthlyUsage.articles.limit}
                     </span>
                   </div>
                   <div className="h-2 rounded-full bg-muted border border-border">
                     <div
                       className="h-2 rounded-full bg-success transition-all shadow-lg"
-                      style={{ width: `${Math.min(100, (monthlyUsage.articles.used / monthlyUsage.articles.limit) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (monthlyUsage.articles.used / Math.min(100, monthlyUsage.articles.limit)) * 100)}%` }}
                     />
                   </div>
                 </div>

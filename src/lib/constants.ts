@@ -6,9 +6,9 @@ export const PLANS = {
     billing: "monthly" as const,
     limits: {
       sites: 1,
-      backlinksMonthly: 999,          // ilimitado
-      keywordSearchesDaily: 10,       // 10 pesquisas/dia
-      keywordPlansMonthly: 1,         // 1 descoberta automática/mês
+      backlinksMonthly: 99999,        // ilimitado
+      keywordSearchesDaily: 99999,    // ilimitado
+      keywordPlansMonthly: 5,         // 5 planejamento/mês
       diagnosticsMonthly: 1,          // 1 diagnóstico/mês
       crmClients: 3,                  // 3 clientes para revenda
       articlesMonthly: 10,            // 10 artigos/mês
@@ -30,9 +30,9 @@ export const PLANS = {
     billing: "monthly" as const,
     limits: {
       sites: 5,
-      backlinksMonthly: 999,          // ilimitado
-      keywordSearchesDaily: 10,       // 10 pesquisas/dia
-      keywordPlansMonthly: 5,         // 5 descobertas/mês
+      backlinksMonthly: 99999,        // ilimitado
+      keywordSearchesDaily: 99999,    // ilimitado
+      keywordPlansMonthly: 5,         // 5 planejamento/mês
       diagnosticsMonthly: 5,          // 5 diagnósticos/mês
       crmClients: 10,                 // 10 clientes para revenda
       articlesMonthly: 100,           // 100 artigos/mês
@@ -47,19 +47,44 @@ export const PLANS = {
       support: "priority",
     },
   },
+  agency: {
+    id: "agency",
+    name: "Agency",
+    price: 997,
+    billing: "yearly" as const,
+    limits: {
+      sites: 30,
+      backlinksMonthly: 99999,        // ilimitado
+      keywordSearchesDaily: 99999,    // ilimitado
+      keywordPlansMonthly: 30,        // 30 planejamento/mês
+      diagnosticsMonthly: 30,         // 30 diagnósticos/mês
+      crmClients: 99999,              // ilimitado
+      articlesMonthly: 99999,         // ilimitado
+    },
+    features: {
+      wordpress: true,
+      crm: true,
+      whiteLabel: true,
+      aiVisibility: { platforms: ["chatgpt", "perplexity", "google_aio", "gemini"], frequency: "daily", prompts: 150 },
+      competitors: 10,
+      courses: "all",
+      support: "dedicated",
+      badgeFounder: true,
+    },
+  },
   legacy_monthly: {
     id: "legacy_monthly",
     name: "Legacy Mensal",
     price: 97,
     billing: "monthly" as const,
     limits: {
-      sites: 999,                     // ilimitado
-      backlinksMonthly: 999,          // ilimitado
-      keywordSearchesDaily: 20,       // 20 pesquisas/dia
-      keywordPlansMonthly: 40,        // 40 descobertas/mês
-      diagnosticsMonthly: 999,        // ilimitado
-      crmClients: 999,                // ilimitado
-      articlesMonthly: 999,           // ilimitado
+      sites: 99999,                   // ilimitado
+      backlinksMonthly: 99999,        // ilimitado
+      keywordSearchesDaily: 99999,    // ilimitado
+      keywordPlansMonthly: 99999,     // ilimitado
+      diagnosticsMonthly: 99999,      // ilimitado
+      crmClients: 99999,              // ilimitado
+      articlesMonthly: 99999,         // ilimitado
     },
     features: {
       wordpress: true,
@@ -78,13 +103,13 @@ export const PLANS = {
     price: 997,
     billing: "yearly" as const,
     limits: {
-      sites: 999,                     // ilimitado
-      backlinksMonthly: 999,          // ilimitado
-      keywordSearchesDaily: 20,       // 20 pesquisas/dia
-      keywordPlansMonthly: 40,        // 40 descobertas/mês
-      diagnosticsMonthly: 999,        // ilimitado
-      crmClients: 999,                // ilimitado
-      articlesMonthly: 999,           // ilimitado
+      sites: 99999,                   // ilimitado
+      backlinksMonthly: 99999,        // ilimitado
+      keywordSearchesDaily: 99999,    // ilimitado
+      keywordPlansMonthly: 99999,     // ilimitado
+      diagnosticsMonthly: 99999,      // ilimitado
+      crmClients: 99999,              // ilimitado
+      articlesMonthly: 99999,         // ilimitado
     },
     features: {
       wordpress: true,
@@ -97,19 +122,19 @@ export const PLANS = {
       badgeFounder: true,
     },
   },
-  agency: {
-    id: "agency",
-    name: "Agency",
-    price: 997,
-    billing: "yearly" as const,
+  lifetime: {
+    id: "lifetime",
+    name: "Lifetime",
+    price: 1997,
+    billing: "once" as const,
     limits: {
-      sites: 999,                     // ilimitado
-      backlinksMonthly: 999,          // ilimitado
-      keywordSearchesDaily: 20,       // 20 pesquisas/dia
-      keywordPlansMonthly: 40,        // 40 descobertas/mês
-      diagnosticsMonthly: 999,        // ilimitado
-      crmClients: 999,                // ilimitado
-      articlesMonthly: 999,           // ilimitado
+      sites: 99999,                   // ilimitado
+      backlinksMonthly: 99999,        // ilimitado
+      keywordSearchesDaily: 99999,    // ilimitado
+      keywordPlansMonthly: 99999,     // ilimitado
+      diagnosticsMonthly: 99999,      // ilimitado
+      crmClients: 99999,              // ilimitado
+      articlesMonthly: 99999,         // ilimitado
     },
     features: {
       wordpress: true,
@@ -118,7 +143,7 @@ export const PLANS = {
       aiVisibility: { platforms: ["chatgpt", "perplexity", "google_aio", "gemini"], frequency: "daily", prompts: 150 },
       competitors: 10,
       courses: "all",
-      support: "dedicated",
+      support: "vip",
       badgeFounder: true,
     },
   },
@@ -129,8 +154,8 @@ export const PLANS = {
     billing: "monthly" as const,
     limits: {
       sites: 1,
-      backlinksMonthly: 999,
-      keywordSearchesDaily: 10,
+      backlinksMonthly: 99999,        // ilimitado
+      keywordSearchesDaily: 99999,    // ilimitado
       keywordPlansMonthly: 1,
       diagnosticsMonthly: 1,
       crmClients: 3,
@@ -144,31 +169,6 @@ export const PLANS = {
       competitors: 1,
       courses: "all",
       support: "bot",
-    },
-  },
-  lifetime: {
-    id: "lifetime",
-    name: "Lifetime",
-    price: 1997,
-    billing: "once" as const,
-    limits: {
-      sites: 999,                     // ilimitado
-      backlinksMonthly: 999,          // ilimitado
-      keywordSearchesDaily: 20,       // 20 pesquisas/dia
-      keywordPlansMonthly: 40,        // 40 descobertas/mês
-      diagnosticsMonthly: 999,        // ilimitado
-      crmClients: 999,                // ilimitado
-      articlesMonthly: 999,           // ilimitado
-    },
-    features: {
-      wordpress: true,
-      crm: true,
-      whiteLabel: true,
-      aiVisibility: { platforms: ["chatgpt", "perplexity", "google_aio", "gemini"], frequency: "daily", prompts: 150 },
-      competitors: 10,
-      courses: "all",
-      support: "vip",
-      badgeFounder: true,
     },
   },
 } as const;
