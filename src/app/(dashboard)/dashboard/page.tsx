@@ -566,7 +566,8 @@ function KpiCardWithTrend({ icon: Icon, label, subtitle, value, href, color, tre
                   strokeWidth={2.5}
                   fill={`url(#${gradientId})`}
                   dot={false}
-                  isAnimationActive={false}
+                  isAnimationActive={true}
+                  animationDuration={1500}
                 />
               </AreaChart>
             </ResponsiveContainer>
