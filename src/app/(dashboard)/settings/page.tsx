@@ -8,9 +8,9 @@ import { useUser } from "@/lib/hooks/use-user";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import {
-  User, CreditCard, Plug, Bell, Palette, Shield,
+  User, CreditCard, Plug, Bell,
   Save, ExternalLink, Check, ChevronRight,
-  Link as LinkIcon, Globe, Zap, Layers, Sparkles,
+  Link as LinkIcon, Globe, Zap, Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,6 @@ const tabs = [
   { id: "profile", label: "Perfil", icon: User },
   { id: "billing", label: "Cobrança", icon: CreditCard },
   { id: "integrations", label: "Integrações", icon: Plug },
-  { id: "brand", label: "Voz da Marca", icon: Palette },
   { id: "notifications", label: "Notificações", icon: Bell },
 ];
 
@@ -450,35 +449,6 @@ export default function SettingsPage() {
                 </DialogContent>
               </Dialog>
             </div>
-          )}
-
-          {/* Brand Voice */}
-          {activeTab === "brand" && (
-            <Card>
-              <CardHeader><CardTitle>Voz da Marca</CardTitle></CardHeader>
-              <CardContent className="space-y-5">
-                <p className="text-sm text-muted-foreground">A IA vai usar essas informações em todos os artigos gerados para seu site.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-2"><Label>Nome do site</Label><Input defaultValue="TechReviews Brasil" /></div>
-                  <div className="space-y-2">
-                    <Label>Tom de voz</Label>
-                    <select className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm input-glow cursor-pointer">
-                      <option>Informal e acessível</option>
-                      <option>Formal e profissional</option>
-                      <option>Técnico e detalhado</option>
-                      <option>Descontraído e divertido</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="space-y-2"><Label>Público-alvo</Label><Input defaultValue="Entusiastas de tecnologia, gamers, profissionais" /></div>
-                <div className="space-y-2"><Label>Sobre o site</Label><Textarea defaultValue="Somos referência em reviews de notebooks e gadgets no Brasil desde 2022." rows={3} /></div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-2"><Label>Palavras-chave da marca</Label><Input defaultValue="notebook, gamer, tecnologia, review" /><p className="text-xs text-muted-foreground">Separadas por vírgula</p></div>
-                  <div className="space-y-2"><Label>Palavras proibidas</Label><Input defaultValue="barato, grátis, promoção" /><p className="text-xs text-muted-foreground">A IA nunca usará essas palavras</p></div>
-                </div>
-                <div className="flex justify-end"><Button onClick={() => toast.success("Voz da marca atualizada!")}><Save className="w-4 h-4" /> Salvar</Button></div>
-              </CardContent>
-            </Card>
           )}
 
           {/* Notifications */}
