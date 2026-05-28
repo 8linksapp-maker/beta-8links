@@ -318,31 +318,6 @@ export default function SettingsPage() {
           {/* Integrations */}
           {activeTab === "integrations" && (
             <div className="space-y-4">
-              {/* Simple → Full upgrade card (only when in simple mode) */}
-              {onboardingMode === "simple" && (
-                <Card className="border-primary/30 bg-primary/5">
-                  <CardContent className="p-5">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                        <Layers className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold flex items-center gap-2 mb-1">
-                          Ativar análise completa
-                          <Badge className="text-[9px]">Recomendado</Badge>
-                        </p>
-                        <p className="text-xs text-muted-foreground mb-3">
-                          Conectar Google, escanear seu site e configurar tracking de keywords desbloqueia o monitoramento e a brand voice automática. Leva uns 5 min.
-                        </p>
-                        <Button size="sm" className="gap-2" onClick={upgradeToFullOnboarding} disabled={upgradingMode}>
-                          {upgradingMode ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Abrindo...</> : <><Sparkles className="w-3.5 h-3.5" /> Configurar agora</>}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
               {/* Google Analytics + Search Console (same OAuth) */}
               <Card className="card-interactive">
                 <CardContent className="p-5">
