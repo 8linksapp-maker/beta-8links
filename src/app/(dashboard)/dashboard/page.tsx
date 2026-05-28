@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Sparkles, Plus, Search, FileText, Link as LinkIcon,
   Check, ArrowRight, Loader2, Zap, Video, Globe, Users, Clock, Send,
-  TrendingUp, TrendingDown,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { useUser } from "@/lib/hooks/use-user";
 import { useSite } from "@/lib/hooks/use-site";
 import { createClient } from "@/lib/supabase/client";
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import { AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 type RecentItem = {
   id: string;
@@ -73,7 +72,7 @@ export default function DashboardPage() {
   const [keywordTrend, setKeywordTrend] = useState<TrendData[]>([]);
   const [backlinkTrend, setBacklinkTrend] = useState<TrendData[]>([]);
   const [articleTrend, setArticleTrend] = useState<TrendData[]>([]);
-  const [growth, setGrowth] = useState({ keywords: 0, backlinks: 0, articles: 0 });
+  const [recentCount, setRecentCount] = useState({ keywords: 0, backlinks: 0, articles: 0 });
   const [anchorDistribution, setAnchorDistribution] = useState<AnchorDistribution[]>([]);
   const [monthlyUsage, setMonthlyUsage] = useState({ backlinks: { used: 0, limit: 100 }, articles: { used: 0, limit: 100 } });
 
@@ -167,48 +166,42 @@ export default function DashboardPage() {
         }, 0) / 60),
       });
 
-      // Process trends - last 30 days vs previous 30 days
-      const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      // Process trends - last 30 days (cumulative total)
+      const thirtyDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
 
-      const buildLast30DaysTrend = (items: any[]) => {
+      const buildCumulativeTrend = (items: any[]) => {
         const trend: TrendData[] = [];
-        for (let i = 29; i >= 0; i--) {
+        let cumulative = 0;
+        for (let i = 0; i < 30; i++) {
           const date = new Date(thirtyDaysAgo.getTime() + i * 24 * 60 * 60 * 1000);
           const dateStr = date.toISOString().split("T")[0];
+          // Count items created on this day and add to cumulative
           const dailyCount = items.filter((item) => item.created_at?.startsWith(dateStr)).length;
+          cumulative += dailyCount;
           trend.push({
             date: date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-            count: dailyCount,
+            count: cumulative,
           });
         }
         return trend;
       };
 
-      const countInPeriod = (items: any[], start: Date, end: Date) => {
-        const startStr = start.toISOString().split("T")[0];
-        const endStr = end.toISOString().split("T")[0];
+      // Calculate recent count (last 7 days)
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const countRecent = (items: any[]) => {
         return items.filter((item) => {
-          const itemDate = item.created_at?.split("T")[0];
-          return itemDate && itemDate >= startStr && itemDate < endStr;
+          const itemDate = new Date(item.created_at);
+          return itemDate >= sevenDaysAgo;
         }).length;
       };
 
-      // Calculate growth % vs previous 30 days
-      const calcGrowth = (items: any[]) => {
-        const prevPeriod = countInPeriod(items, sixtyDaysAgo, thirtyDaysAgo);
-        const currPeriod = countInPeriod(items, thirtyDaysAgo, now);
-        if (prevPeriod === 0) return currPeriod > 0 ? 100 : 0;
-        return Math.round(((currPeriod - prevPeriod) / prevPeriod) * 100);
-      };
-
-      setKeywordTrend(buildLast30DaysTrend(keywords ?? []));
-      setBacklinkTrend(buildLast30DaysTrend(backlinks ?? []));
-      setArticleTrend(buildLast30DaysTrend(articles ?? []));
-      setGrowth({
-        keywords: calcGrowth(keywords ?? []),
-        backlinks: calcGrowth(backlinks ?? []),
-        articles: calcGrowth(articles ?? []),
+      setKeywordTrend(buildCumulativeTrend(keywords ?? []));
+      setBacklinkTrend(buildCumulativeTrend(backlinks ?? []));
+      setArticleTrend(buildCumulativeTrend(articles ?? []));
+      setRecentCount({
+        keywords: countRecent(keywords ?? []),
+        backlinks: countRecent(backlinks ?? []),
+        articles: countRecent(articles ?? []),
       });
 
       // Process anchor distribution
@@ -274,7 +267,7 @@ export default function DashboardPage() {
           href="/palavras"
           color="text-primary"
           trend={keywordTrend}
-          growth={growth.keywords}
+          recentCount={recentCount.keywords}
         />
         <KpiCardWithTrend
           icon={LinkIcon}
@@ -284,7 +277,7 @@ export default function DashboardPage() {
           href="/backlinks"
           color="text-info"
           trend={backlinkTrend}
-          growth={growth.backlinks}
+          recentCount={recentCount.backlinks}
         />
         <KpiCardWithTrend
           icon={FileText}
@@ -294,7 +287,7 @@ export default function DashboardPage() {
           href="/articles"
           color="text-success"
           trend={articleTrend}
-          growth={growth.articles}
+          recentCount={recentCount.articles}
         />
       </div>
 
@@ -526,11 +519,9 @@ function KpiCard({ icon: Icon, label, value, href, color }: {
   );
 }
 
-function KpiCardWithTrend({ icon: Icon, label, subtitle, value, href, color, trend, growth }: {
-  icon: any; label: string; subtitle: string; value: number; href: string; color: string; trend: TrendData[]; growth: number;
+function KpiCardWithTrend({ icon: Icon, label, subtitle, value, href, color, trend, recentCount }: {
+  icon: any; label: string; subtitle: string; value: number; href: string; color: string; trend: TrendData[]; recentCount: number;
 }) {
-  const TrendIcon = growth >= 0 ? TrendingUp : TrendingDown;
-  const trendColor = growth >= 0 ? "text-success" : "text-destructive";
   const strokeColor = color.includes("primary") ? "hsl(24 100% 55%)" : color.includes("info") ? "hsl(200 100% 50%)" : "hsl(150 60% 45%)";
   const gradientId = `gradient-${label.replace(/\s/g, '')}`;
 
@@ -545,9 +536,8 @@ function KpiCardWithTrend({ icon: Icon, label, subtitle, value, href, color, tre
           <p className="text-[10px] text-muted-foreground mb-3">{subtitle}</p>
           <div className="flex items-end justify-between mb-2">
             <p className={`text-3xl font-extrabold font-[family-name:var(--font-display)] ${color}`}>{value}</p>
-            <div className={`flex items-center gap-1 text-xs font-semibold ${trendColor}`}>
-              <TrendIcon className="w-3 h-3" />
-              <span>{growth > 0 ? '+' : ''}{growth}%</span>
+            <div className="text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">{recentCount}</span> nos últimos 7 dias
             </div>
           </div>
           <div className="w-full h-14">
