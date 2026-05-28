@@ -230,24 +230,19 @@ export function CreateBacklinkDialog({ open, onClose, initialKeywordId, onCreate
     });
   }, [mode, stage2Ready, quantity, finalKeyword, finalTargetUrl, anchor]);
 
-  // Reset custom anchors when toggle activates or quantity changes — but
-  // never on every keystroke, so we only depend on customMode + quantity.
+  // Populate custom anchors only when customMode is enabled
   useEffect(() => {
     if (!customMode) {
       setCustomAnchors([]);
       return;
     }
     setCustomAnchors(anchorPreview.map(a => a.text));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customMode, quantity]);
+  }, [customMode, anchorPreview]);
 
   const updateCustomAnchor = (i: number, val: string) => {
     setCustomAnchors(prev => {
-      // Adjust array length if quantity changed
-      let adjusted = [...prev];
-      while (adjusted.length < quantity) {
-        adjusted.push("");
-      }
+      const adjusted = [...prev];
+      while (adjusted.length < quantity) adjusted.push("");
       adjusted[i] = val;
       return adjusted.slice(0, quantity);
     });
@@ -619,14 +614,14 @@ export function CreateBacklinkDialog({ open, onClose, initialKeywordId, onCreate
               ) : (
                 <>
                   <div className="rounded-lg border border-border bg-muted/20 p-2 max-h-[260px] overflow-y-auto space-y-1.5">
-                    {Array.from({ length: quantity }).map((_, i) => (
-                      <div key={i} className="flex items-center gap-2">
+                    {customAnchors.map((val, i) => (
+                      <div key={`anchor-${i}`} className="flex items-center gap-2">
                         <span className="text-[10px] font-mono text-muted-foreground w-5 text-right shrink-0">
                           {i + 1}.
                         </span>
                         <input
                           type="text"
-                          value={customAnchors[i] ?? ""}
+                          value={val}
                           onChange={e => updateCustomAnchor(i, e.target.value)}
                           placeholder={anchorPreview[i]?.text}
                           className="flex-1 h-8 px-2 text-sm bg-background border border-border rounded-md outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/40"

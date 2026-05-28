@@ -62,22 +62,31 @@ export function planAnchors(opts: {
     return [{ text: exact, type: "exact" }];
   }
 
-  // Target distribution
-  let exactN = Math.max(1, Math.round(count * 0.1));
-  let partialN = Math.max(1, Math.round(count * 0.3));
-  let brandedN = Math.max(1, Math.round(count * 0.2));
-  let genericN = Math.max(1, Math.round(count * 0.2));
-  let urlN = count - (exactN + partialN + brandedN + genericN);
+  // Target distribution — start with minimum 1 per bucket
+  let exactN = 1;
+  let partialN = 1;
+  let brandedN = 1;
+  let genericN = 1;
+  let urlN = 1;
 
-  // If rounding overshot the count, trim from less-critical buckets first.
+  // Distribute remaining count proportionally
+  const remaining = count - 5; // 5 buckets minimum
+  if (remaining > 0) {
+    exactN += Math.round(remaining * 0.1);
+    partialN += Math.round(remaining * 0.3);
+    brandedN += Math.round(remaining * 0.2);
+    genericN += Math.round(remaining * 0.2);
+    urlN += remaining - (Math.round(remaining * 0.1) + Math.round(remaining * 0.3) + Math.round(remaining * 0.2) + Math.round(remaining * 0.2));
+  }
+
+  // If count < 5, reduce from less-critical buckets first (url, generic, branded, partial, exact)
   while (exactN + partialN + brandedN + genericN + urlN > count) {
     if (urlN > 0) urlN--;
-    else if (genericN > 1) genericN--;
-    else if (brandedN > 1) brandedN--;
+    else if (genericN > 0) genericN--;
+    else if (brandedN > 0) brandedN--;
     else if (partialN > 1) partialN--;
     else exactN--;
   }
-  while (exactN + partialN + brandedN + genericN + urlN < count) urlN++;
 
   const buckets: Record<AnchorType, AnchorPlan[]> = {
     exact: Array.from({ length: exactN }, () => ({ text: exact, type: "exact" as const })),
