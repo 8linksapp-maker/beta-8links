@@ -60,7 +60,7 @@ async function handleOrderApproved(supabase: any, payload: any) {
   console.log("[Kiwify] Processing order_approved event...");
 
   const customerEmail = payload.Customer?.email;
-  const subscriptionId = payload.subscription_id;
+  const subscriptionId = payload.Subscription?.id;
   const subscriptionStatus = payload.Subscription?.status || "active";
   const nextPaymentDate = payload.Subscription?.next_payment;
 
@@ -126,7 +126,7 @@ async function handleOrderApproved(supabase: any, payload: any) {
 async function handleOrderRefunded(supabase: any, payload: any) {
   console.log("[Kiwify] Processing order_refunded event...");
 
-  const subscriptionId = payload.subscription_id;
+  const subscriptionId = payload.Subscription?.id;
   const orderStatus = "refunded";
 
   if (!subscriptionId) {
@@ -150,7 +150,7 @@ async function handleOrderRefunded(supabase: any, payload: any) {
 async function handleSubscriptionCanceled(supabase: any, payload: any) {
   console.log("[Kiwify] Processing subscription_canceled event...");
 
-  const subscriptionId = payload.subscription_id;
+  const subscriptionId = payload.Subscription?.id;
   const subscriptionStatus = payload.Subscription?.status || "canceled";
 
   if (!subscriptionId || !subscriptionStatus) {
@@ -174,7 +174,7 @@ async function handleSubscriptionCanceled(supabase: any, payload: any) {
 async function handleSubscriptionRenewed(supabase: any, payload: any) {
   console.log("[Kiwify] Processing subscription_renewed event...");
 
-  const subscriptionId = payload.subscription_id;
+  const subscriptionId = payload.Subscription?.id;
   const nextPaymentDate = payload.Subscription?.next_payment;
   const subscriptionStatus = "active";
 
@@ -206,7 +206,7 @@ async function handleSubscriptionRenewed(supabase: any, payload: any) {
 async function handleSubscriptionFailed(supabase: any, payload: any) {
   console.log("[Kiwify] Processing subscription_failed event...");
 
-  const subscriptionId = payload.subscription_id;
+  const subscriptionId = payload.Subscription?.id;
   const subscriptionStatus = "past_due";
 
   if (!subscriptionId) {

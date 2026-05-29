@@ -29,7 +29,7 @@ export async function POST() {
   console.log("[Test Kiwify] Simulando webhook:", JSON.stringify(payload, null, 2));
 
   const customerEmail = payload.Customer?.email;
-  const subscriptionId = payload.subscription_id;
+  const subscriptionId = payload.Subscription?.id;
   const subscriptionStatus = payload.Subscription?.status || "active";
   const nextPaymentDate = payload.Subscription?.next_payment;
 
