@@ -88,6 +88,23 @@ export default function DashboardPage() {
 
   const userName = profile?.name?.split(" ")[0] || profile?.email?.split("@")[0] || "";
 
+  async function handleApply() {
+    if (!siteUrl.trim() || !siteGoal.trim()) return;
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { toast.error("Faça login para se candidatar."); return; }
+    const sessionId = nextSession?.id;
+    if (!sessionId) { toast.error("Nenhuma sessão disponível."); return; }
+    const { error } = await supabase
+      .from("club_candidates")
+      .insert({ session_id: sessionId, user_id: user.id, client_site_id: activeSite?.id, goal: siteGoal });
+    if (error) { toast.error("Erro ao enviar candidatura."); return; }
+    setApplyOpen(false);
+    toast.success("Candidatura enviada!");
+    setSiteUrl("");
+    setSiteGoal("");
+  }
+
   useEffect(() => {
     if (sitesLoading || !activeSite) { setLoading(false); return; }
 
@@ -670,21 +687,4 @@ function timeAgo(iso: string): string {
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d atrás`;
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-}
-
-async function handleApply() {
-  if (!siteUrl.trim() || !siteGoal.trim()) return;
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) { toast.error("Faça login para se candidatar."); return; }
-  const sessionId = nextSession?.id;
-  if (!sessionId) { toast.error("Nenhuma sessão disponível."); return; }
-  const { error } = await supabase
-    .from("club_candidates")
-    .insert({ session_id: sessionId, user_id: user.id, client_site_id: activeSite?.id, goal: siteGoal });
-  if (error) { toast.error("Erro ao enviar candidatura."); return; }
-  setApplyOpen(false);
-  toast.success("Candidatura enviada!");
-  setSiteUrl("");
-  setSiteGoal("");
 }
