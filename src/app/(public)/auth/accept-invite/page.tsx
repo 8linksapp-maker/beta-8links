@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,23 +12,29 @@ import { Loader2, Key } from "lucide-react";
 
 export default function AcceptInvitePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = searchParams.get("token");
-    if (!token) {
-      toast.error("Link de convite inválido");
-      router.push("/login");
-      return;
-    }
-    setInviteToken(token);
-    setLoading(false);
-  }, [searchParams, router]);
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        toast.error("Sessão inválida. Por favor, clique no link do convite novamente.");
+        router.push("/login");
+        return;
+      }
+
+      setUserEmail(user.email ?? null);
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, [router]);
 
   async function handleSetPassword() {
     if (!password || password.length < 6) {
@@ -45,26 +51,13 @@ export default function AcceptInvitePage() {
     try {
       const supabase = createClient();
 
-      // Verificar o token de invite
-      const { data, error } = await supabase.auth.verifyOtp({
-        token: inviteToken!,
-        type: "invite",
-      });
-
-      if (error) {
-        console.error("[AcceptInvite] Verify error:", error);
-        toast.error("Token de convite inválido ou expirado");
-        setSubmitting(false);
-        return;
-      }
-
-      // Agora que o invite foi verificado, definir a senha
-      const { error: updateError } = await supabase.auth.updateUser({
+      // Definir a senha do usuário
+      const { error } = await supabase.auth.updateUser({
         password: password,
       });
 
-      if (updateError) {
-        console.error("[AcceptInvite] Update password error:", updateError);
+      if (error) {
+        console.error("[AcceptInvite] Update password error:", error);
         toast.error("Erro ao definir senha");
         setSubmitting(false);
         return;
@@ -91,7 +84,7 @@ export default function AcceptInvitePage() {
           <CardContent className="pt-6">
             <div className="flex flex-col items-center gap-4">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="text-muted-foreground">Verificando convite...</p>
+              <p className="text-muted-foreground">Carregando...</p>
             </div>
           </CardContent>
         </Card>
@@ -110,7 +103,7 @@ export default function AcceptInvitePage() {
             <CardTitle>Definir Senha</CardTitle>
           </div>
           <CardDescription>
-            Bem-vindo! Crie sua senha para acessar a plataforma 8links.
+            Bem-vindo{userEmail ? `, ${userEmail.split("@")[0]}` : ""}! Crie sua senha para acessar a plataforma 8links.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
