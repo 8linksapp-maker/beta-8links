@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
@@ -11,21 +11,26 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+function InviteRedirect() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Redirect to accept-invite if coming from invite link
   useEffect(() => {
     const type = searchParams.get("type");
     if (type === "invite") {
       router.push("/auth/accept-invite");
     }
   }, [searchParams, router]);
+
+  return null;
+}
+
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +63,10 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4 relative">
       <div className="absolute inset-0 overflow-hidden">
       </div>
+
+      <Suspense>
+        <InviteRedirect />
+      </Suspense>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
