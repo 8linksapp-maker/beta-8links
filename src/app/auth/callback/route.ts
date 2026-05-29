@@ -18,16 +18,20 @@ export async function GET(request: Request) {
     const { error, data } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Check if user needs to set password (new user from invite/signup)
       const user = data.user;
-      if (user && !user.aud) {
-        // New user without password set - redirect to accept invite
+
+      // Check if user has a profile with plan_id
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("plan_id")
+        .eq("id", user.id)
+        .single();
+
+      // If no profile or no plan_id, redirect to accept-invite
+      if (!profile || !profile.plan_id) {
         return NextResponse.redirect(`${origin}/auth/accept-invite`);
       }
 
-      // next is set by the page that initiated the flow:
-      // - forgot-password sets next=/reset-password
-      // - login/register defaults to /dashboard
       return NextResponse.redirect(`${origin}${next}`);
     }
 
