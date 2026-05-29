@@ -4,7 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const type = searchParams.get("type");
+  const token = searchParams.get("token");
   const next = searchParams.get("next") ?? "/dashboard";
+
+  // Invite flow - redirect to accept invite page with token
+  if (type === "invite" && token) {
+    return NextResponse.redirect(`${origin}/auth/accept-invite?token=${token}`);
+  }
 
   if (code) {
     const supabase = await createClient();
