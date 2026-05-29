@@ -271,18 +271,27 @@ async function findOrCreateUser(supabase: any, email: string): Promise<string | 
     return profile.id;
   }
 
-  // Create new user via invite
-  console.log(`[Kiwify] User not found, creating invite for: ${email}`);
+  // Create new user via signup link with custom redirect
+  console.log(`[Kiwify] User not found, creating signup link for: ${email}`);
 
-  const { data: newUser, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email);
+  const origin = process.env.NEXT_PUBLIC_APP_URL || "https://app.8links.com.br";
 
-  if (inviteError) {
-    console.error(`[Kiwify] Failed to invite user: ${inviteError.message}`);
-    throw new Error(`Failed to invite user: ${inviteError.message}`);
+  const { data: signupLink, error: linkError } = await supabase.auth.admin.generateLink({
+    type: "signup",
+    email: email,
+    options: {
+      redirectTo: `${origin}/auth/accept-invite`,
+    },
+  });
+
+  if (linkError) {
+    console.error(`[Kiwify] Failed to generate link: ${linkError.message}`);
+    throw new Error(`Failed to generate signup link: ${linkError.message}`);
   }
 
-  const userId = newUser.user.id;
-  console.log(`[Kiwify] New user invited: ${userId}`);
+  // O Supabase manda o email automaticamente com o link correto
+  const userId = signupLink.user?.id;
+  console.log(`[Kiwify] Signup link generated for user: ${userId}`);
 
   return userId;
 }
