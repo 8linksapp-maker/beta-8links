@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Redirect to accept-invite if coming from invite link
+  useEffect(() => {
+    const type = searchParams.get("type");
+    if (type === "invite") {
+      router.push("/auth/accept-invite");
+    }
+  }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
