@@ -8,9 +8,9 @@ export async function GET(request: Request) {
   const token = searchParams.get("token");
   const next = searchParams.get("next") ?? "/dashboard";
 
-  // Invite flow - redirect to accept invite page with token
-  if (type === "invite" && token) {
-    return NextResponse.redirect(`${origin}/auth/accept-invite?token=${token}`);
+  // Invite flow - redirect to accept invite page
+  if (type === "invite") {
+    return NextResponse.redirect(`${origin}/auth/accept-invite`);
   }
 
   if (code) {
