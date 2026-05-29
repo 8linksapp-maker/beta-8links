@@ -241,6 +241,9 @@ function detectPlan(rawPlanName: string): string | null {
   // Legacy (inclui "Lançamento", "Pré lançamento", "Pre lancamento")
   if (planName.includes("lanç") || planName.includes("lanc") || planName.includes("pré") || planName.includes("pre")) return "legacy";
 
+  // Bundle (Meu site com ia + 8links)
+  if (planName.includes("meu site com ia") || planName.includes("meu_site_com_ia")) return "pro";
+
   // Mensais
   if (planName.includes("starter")) return "starter";
   if (planName.includes("pro")) return "pro";
